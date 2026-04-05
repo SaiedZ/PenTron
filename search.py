@@ -8,7 +8,7 @@ Used by LLM tool dispatch when AI writes [SEARCH: query]
 
 import requests
 from bs4 import BeautifulSoup
-from duckduckgo_search import DDGS   # pip install duckduckgo-search
+from ddgs import DDGS   # pip install duckduckgo-search
 
 
 # ─────────────────────────────────────────────
