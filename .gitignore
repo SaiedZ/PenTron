@@ -1,4 +1,8 @@
-# Byte-compiled / optimized / DLL files
+reports/
+exports/
+venv/
+__pycache__/
+*.pyc# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
@@ -205,3 +209,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+reports/
+exports/
+venv/
+__pycache__/
+*.pyc
