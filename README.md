@@ -63,7 +63,7 @@ Metatron allows you to export scan results into clean, shareable report formats 
   <img src="screenshots/results.png" alt="Results" width="700"/>
   <br><i>Vulnerabilities saved to database</i>
 </p>
-<p align="center"> <img src="screenshots/export_menu.png" alt="Export Menu" width="700"/> <br><i>Export scan results as PDF, HTML</i> </p>
+<p align="center"> <img src="screenshots/export_menu.png" alt="Export Menu" width="700"/> <br><i>Export scan results as PDF and or HTML</i> </p>
 ---
 
 ## 🧱 Tech Stack
