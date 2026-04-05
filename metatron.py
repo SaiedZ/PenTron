@@ -4,7 +4,7 @@ METATRON - metatron.py
 Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
 Run with: python metatron.py
 """
-
+from export import export_menu
 import os
 import sys
 from db import (
@@ -205,6 +205,9 @@ def view_history():
         return
 
     print_session(data)
+
+    if confirm("Export this session?"):
+        export_menu(data)
 
     if confirm("Edit or delete anything in this session?"):
         edit_delete_menu(sl_no)
