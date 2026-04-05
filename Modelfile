@@ -3,6 +3,3 @@ PARAMETER num_ctx 16384
 PARAMETER temperature 0.7
 PARAMETER top_k 10
 PARAMETER top_p 0.9
-export OLLAMA_GPU_LAYERS=80
-export OLLAMA_NUM_THREAD=8
-ollama run metatron-qwen
