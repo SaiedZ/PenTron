@@ -34,7 +34,12 @@ You give it a target IP or domain. It runs real recon tools (nmap, whois, whatwe
 - ✏️ **Edit / Delete** — modify any saved result directly from the CLI
 - 🔁 **Agentic Loop** — AI can request more tool runs mid-analysis
 - 🚫 **No API Keys** — everything is free and local
+-📤 Export Reports
 
+Metatron allows you to export scan results into clean, shareable report formats by selecting '2.view history'->select slno and export
+
+📄 PDF — professional vulnerability reports
+🌐 HTML — browser-viewable reports
 ---
 
 ## 🖥️ Screenshots
@@ -58,7 +63,7 @@ You give it a target IP or domain. It runs real recon tools (nmap, whois, whatwe
   <img src="screenshots/results.png" alt="Results" width="700"/>
   <br><i>Vulnerabilities saved to database</i>
 </p>
-
+<p align="center"> <img src="screenshots/export_menu.png" alt="Export Menu" width="700"/> <br><i>Export scan results as PDF, HTML</i> </p>
 ---
 
 ## 🧱 Tech Stack
