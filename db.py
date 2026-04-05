@@ -69,15 +69,18 @@ def save_fix(sl_no: int, vuln_id: int, fix_text: str, source: str = "ai"):
     conn.close()
 
 
-def save_exploit(sl_no: int, exploit_name: str, tool_used: str,
-                 payload: str, result: str, notes: str):
-    """Insert an exploit attempt."""
+def save_exploit(sl_no, exploit_name, tool_used, payload, result, notes):
     conn = get_connection()
     c = conn.cursor()
     c.execute("""
         INSERT INTO exploits_attempted (sl_no, exploit_name, tool_used, payload, result, notes)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (sl_no, exploit_name, tool_used, payload, result, notes))
+    """, (sl_no,
+          str(exploit_name or "")[:500],
+          str(tool_used or "")[:200],
+          str(payload or ""),
+          str(result or "")[:500],
+          str(notes or "")))
     conn.commit()
     conn.close()
 
