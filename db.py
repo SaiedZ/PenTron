@@ -73,14 +73,17 @@ def save_exploit(sl_no, exploit_name, tool_used, payload, result, notes):
     conn = get_connection()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO exploits_attempted (sl_no, exploit_name, tool_used, payload, result, notes)
+        INSERT INTO exploits_attempted 
+        (sl_no, exploit_name, tool_used, payload, result, notes)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (sl_no,
-          str(exploit_name or "")[:500],
-          str(tool_used or "")[:200],
-          str(payload or ""),
-          str(result or "")[:500],
-          str(notes or "")))
+    """, (
+        sl_no,
+        str(exploit_name or "")[:1000],
+        str(tool_used  or "")[:500],
+        str(payload    or ""),
+        str(result     or "")[:2000],
+        str(notes      or "")
+    ))
     conn.commit()
     conn.close()
 
