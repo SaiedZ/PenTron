@@ -189,22 +189,19 @@ def format_recon_for_llm(results: dict) -> str:
     return output
 
 
+ALLOWED_TOOLS = {"nmap", "whois", "whatweb", "curl", "dig", "nikto"}
+
 def run_tool_by_command(command_str: str) -> str:
-    """
-    Called by LLM tool dispatch when AI writes [TOOL: nmap -sV 1.2.3.4].
-    Splits the string and runs it safely.
-    """
     parts = command_str.strip().split()
     if not parts:
         return "[!] Empty command."
-
-    # safety check — block destructive commands
-    blocked = ["rm", "dd", "mkfs", "shutdown", "reboot", "wget", "curl -o", "chmod"]
-    if parts[0] in blocked:
-        return f"[!] Blocked command: {parts[0]}"
-
+    
+    # allowlist only — reject anything not in the list
+    tool = parts[0].lower().split("/")[-1]  # handles /bin/nmap etc
+    if tool not in ALLOWED_TOOLS:
+        return f"[!] Tool '{parts[0]}' is not permitted. Allowed: {ALLOWED_TOOLS}"
+    
     return run_tool(parts)
-
 
 # ─────────────────────────────────────────────
 # INTERACTIVE TOOL SELECTOR (called from CLI)
