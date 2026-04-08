@@ -185,52 +185,52 @@ mysql -u metatron -p123 metatron
 
 ```sql
 CREATE TABLE history (
-    sl_no     INT AUTO_INCREMENT PRIMARY KEY,
-    target    VARCHAR(255) NOT NULL,
-    scan_date DATETIME NOT NULL,
-    status    VARCHAR(50) DEFAULT 'active'
+  sl_no     INT AUTO_INCREMENT PRIMARY KEY,
+  target    VARCHAR(255) NOT NULL,
+                      scan_date DATETIME NOT NULL,
+                      status    VARCHAR(50) DEFAULT 'active'
 );
 
 CREATE TABLE vulnerabilities (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    sl_no       INT,
-    vuln_name   VARCHAR(255),
-    severity    VARCHAR(50),
-    port        VARCHAR(20),
-    service     VARCHAR(100),
-    description TEXT,
-    FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no       INT,
+  vuln_name   TEXT,
+  severity    VARCHAR(50),
+                              port        VARCHAR(20),
+                              service     VARCHAR(100),
+                              description TEXT,
+                              FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 
 CREATE TABLE fixes (
-    id       INT AUTO_INCREMENT PRIMARY KEY,
-    sl_no    INT,
-    vuln_id  INT,
-    fix_text TEXT,
-    source   VARCHAR(50),
-    FOREIGN KEY (sl_no) REFERENCES history(sl_no),
-    FOREIGN KEY (vuln_id) REFERENCES vulnerabilities(id)
+  id       INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no    INT,
+  vuln_id  INT,
+  fix_text TEXT,
+  source   VARCHAR(50),
+                    FOREIGN KEY (sl_no) REFERENCES history(sl_no),
+                    FOREIGN KEY (vuln_id) REFERENCES vulnerabilities(id)
 );
 
 CREATE TABLE exploits_attempted (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    sl_no        INT,
-    exploit_name VARCHAR(255),
-    tool_used    VARCHAR(100),
-    payload      TEXT,
-    result       VARCHAR(100),
-    notes        TEXT,
-    FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no        INT,
+  exploit_name TEXT,
+  tool_used    TEXT,
+  payload      LONGTEXT,
+  result       TEXT,
+  notes        TEXT,
+  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 
 CREATE TABLE summary (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    sl_no        INT,
-    raw_scan     LONGTEXT,
-    ai_analysis  LONGTEXT,
-    risk_level   VARCHAR(50),
-    generated_at DATETIME,
-    FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no        INT,
+  raw_scan     LONGTEXT,
+  ai_analysis  LONGTEXT,
+  risk_level   VARCHAR(50),
+                      generated_at DATETIME,
+                      FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 ```
 
