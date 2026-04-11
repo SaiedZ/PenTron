@@ -12,9 +12,9 @@ import json
 from tools import run_tool_by_command, run_nmap, run_curl_headers
 from search import handle_search_dispatch
 
-OLLAMA_URL  = "http://localhost:11434/api/generate"
+OLLAMA_URL  = "http://localhost:11434/api/chat"
 MODEL_NAME  = "metatron-qwen"
-MAX_TOKENS  = 4096
+MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
 OLLAMA_TIMEOUT = 600 
 
@@ -52,23 +52,19 @@ NOTES: <any notes>
 End your analysis with:
 RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW>
 SUMMARY: <2-3 sentence overall summary>
-"""
+IMPORTANT: Never use markdown bold (**text**) or 
+headers (## text). Plain text only. No exceptions."""
 
 
 # ─────────────────────────────────────────────
 # OLLAMA API CALL
 # ─────────────────────────────────────────────
 
-def ask_ollama(prompt: str, context: list = None) -> str:
-    """
-    Send a prompt to metatron-qwen via Ollama API.
-    context: list of previous message dicts for multi-turn conversation.
-    Returns the AI response string.
-    """
+def ask_ollama(messages: list) -> str:
     try:
         payload = {
             "model":  MODEL_NAME,
-            "prompt": prompt,
+            "messages": messages,
             "stream": False,
             "options": {
                 "num_predict": MAX_TOKENS,
@@ -76,19 +72,14 @@ def ask_ollama(prompt: str, context: list = None) -> str:
                 "top_p": 0.9,
             }
         }
-
         print(f"\n[*] Sending to {MODEL_NAME}...")
         resp = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
         resp.raise_for_status()
-
         data = resp.json()
-        response = data.get("response", "").strip()
-
+        response = data.get("message", {}).get("content", "").strip()
         if not response:
             return "[!] Model returned empty response."
-
         return response
-
     except requests.exceptions.ConnectionError:
         return "[!] Cannot connect to Ollama. Is it running? Try: ollama serve"
     except requests.exceptions.Timeout:
@@ -120,7 +111,34 @@ def extract_tool_calls(response: str) -> list:
 
     return calls
 
+def summarize_tool_output(raw_output: str) -> str:
+    """
+    Compress raw tool output into security-relevant bullet points
+    before injecting into the LLM context.
+    Keeps context size manageable across rounds.
+    """
+    if len(raw_output) < 500:
+        return raw_output
 
+    try:
+        payload = {
+            "model":  MODEL_NAME,
+            "messages": [
+    {"role": "system", "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown."},
+    {"role": "user", "content": f"Compress this tool output:\n{raw_output[:6000]}"} ],
+            "stream": False,
+            "options": {
+                "num_predict": 512,
+                "temperature": 0.2,
+                "top_p": 0.9,
+            }
+        }
+        resp = requests.post(OLLAMA_URL, json=payload, timeout=120)
+        resp.raise_for_status()
+        summary = resp.json().get("message", {}).get("content", "").strip()
+        return summary if summary else raw_output
+    except Exception:
+        return raw_output
 def run_tool_calls(calls: list) -> str:
     """
     Execute all tool/search calls and return combined results string.
@@ -139,9 +157,10 @@ def run_tool_calls(calls: list) -> str:
         else:
             output = f"[!] Unknown call type: {call_type}"
 
+        compressed = summarize_tool_output(output.strip())
         results += f"\n[{call_type} RESULT: {call_content}]\n"
         results += "─" * 40 + "\n"
-        results += output.strip() + "\n"
+        results += compressed + "\n"
 
     return results
 
@@ -149,7 +168,8 @@ def run_tool_calls(calls: list) -> str:
 # ─────────────────────────────────────────────
 # PARSER — extract structured data from AI output
 # ─────────────────────────────────────────────
-
+def _clean(line: str) -> str:
+    return re.sub(r'\*+', '', line).strip()
 def parse_vulnerabilities(response: str) -> list:
     """
     Parse VULN: lines from AI response into dicts.
@@ -160,8 +180,7 @@ def parse_vulnerabilities(response: str) -> list:
 
     i = 0
     while i < len(lines):
-        line = lines[i].strip()
-
+        line = _clean(lines[i])
         if line.startswith("VULN:"):
             vuln = {
                 "vuln_name":   "",
@@ -188,7 +207,9 @@ def parse_vulnerabilities(response: str) -> list:
             # look ahead for DESC: and FIX: lines
             j = i + 1
             while j < len(lines) and j <= i + 5:
-                next_line = lines[j].strip()
+                next_line = _clean(lines[j])
+                if next_line.startswith(("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")):
+                    break
                 if next_line.startswith("DESC:"):
                     vuln["description"] = next_line.replace("DESC:", "").strip()
                 elif next_line.startswith("FIX:"):
@@ -213,8 +234,7 @@ def parse_exploits(response: str) -> list:
 
     i = 0
     while i < len(lines):
-        line = lines[i].strip()
-
+        line = _clean(lines[i])
         if line.startswith("EXPLOIT:"):
             exploit = {
                 "exploit_name": "",
@@ -236,7 +256,9 @@ def parse_exploits(response: str) -> list:
 
             j = i + 1
             while j < len(lines) and j <= i + 4:
-                next_line = lines[j].strip()
+                next_line = _clean(lines[j])
+                if next_line.startswith(("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")):
+                    break
                 if next_line.startswith("RESULT:"):
                     exploit["result"] = next_line.replace("RESULT:", "").strip()
                 elif next_line.startswith("NOTES:"):
@@ -258,9 +280,8 @@ def parse_risk_level(response: str) -> str:
 
 
 def parse_summary(response: str) -> str:
-    """Extract SUMMARY line from AI response."""
     match = re.search(r'SUMMARY:\s*(.+)', response, re.IGNORECASE)
-    return match.group(1).strip() if match else response[:500]
+    return match.group(1).strip() if match else ""
 
 
 # ─────────────────────────────────────────────
@@ -268,41 +289,27 @@ def parse_summary(response: str) -> str:
 # ─────────────────────────────────────────────
 
 def analyse_target(target: str, raw_scan: str) -> dict:
-    """
-    Full analysis pipeline:
-    1. Build initial prompt with scan data
-    2. Send to metatron-qwen
-    3. Run tool dispatch loop if AI requests tools
-    4. Parse structured output
-    5. Return everything ready for db.py to save
-
-    Returns dict with:
-      - full_response   : complete AI text
-      - vulnerabilities : list of parsed vuln dicts
-      - exploits        : list of parsed exploit dicts
-      - risk_level      : CRITICAL/HIGH/MEDIUM/LOW
-      - summary         : short summary text
-      - raw_scan        : original scan dump
-    """
-
-    # ── Step 1: initial prompt ──────────────────
-    initial_prompt = f"""{SYSTEM_PROMPT}
-
-TARGET: {target}
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        },
+        {
+            "role": "user",
+            "content": f"""TARGET: {target}
 
 RECON DATA:
 {raw_scan}
 
 Analyze this target completely. Use [TOOL:] or [SEARCH:] if you need more information.
-List all vulnerabilities, fixes, and suggest exploits where applicable.
-"""
+List all vulnerabilities, fixes, and suggest exploits where applicable."""
+        }
+    ]
 
-    full_conversation = initial_prompt
-    final_response    = ""
+    final_response = ""
 
-    # ── Step 2: tool dispatch loop ──────────────
     for loop in range(MAX_TOOL_LOOPS):
-        response = ask_ollama(full_conversation)
+        response = ask_ollama(messages)
 
         print(f"\n{'─'*60}")
         print(f"[METATRON - Round {loop + 1}]")
@@ -311,25 +318,27 @@ List all vulnerabilities, fixes, and suggest exploits where applicable.
 
         final_response = response
 
-        # check for tool calls
         tool_calls = extract_tool_calls(response)
         if not tool_calls:
             print("\n[*] No tool calls. Analysis complete.")
             break
 
-        # run all tool calls
         tool_results = run_tool_calls(tool_calls)
 
-        # feed results back into conversation
-        full_conversation = (
-            f"{full_conversation}\n\n"
-            f"[YOUR PREVIOUS RESPONSE]\n{response}\n\n"
-            f"[TOOL RESULTS]\n{tool_results}\n\n"
-            f"Continue your analysis with this new information. "
-            f"If analysis is complete, give the final RISK_LEVEL and SUMMARY."
-        )
+        # add assistant response and tool results as new messages
+        messages.append({
+            "role": "assistant",
+            "content": response
+        })
+        messages.append({
+            "role": "user",
+            "content": f"""[TOOL RESULTS]
+{tool_results}
 
-    # ── Step 3: parse structured output ─────────
+Continue your analysis with this new information.
+If analysis is complete, give the final RISK_LEVEL and SUMMARY."""
+        })
+
     vulnerabilities = parse_vulnerabilities(final_response)
     exploits        = parse_exploits(final_response)
     risk_level      = parse_risk_level(final_response)
@@ -345,8 +354,6 @@ List all vulnerabilities, fixes, and suggest exploits where applicable.
         "summary":         summary,
         "raw_scan":        raw_scan
     }
-
-
 # ─────────────────────────────────────────────
 # QUICK TEST
 # ─────────────────────────────────────────────
