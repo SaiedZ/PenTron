@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS summary (
 CREATE TABLE IF NOT EXISTS settings (
   id               INT PRIMARY KEY DEFAULT 1,
   provider         VARCHAR(50)  DEFAULT 'ollama',
-  model            VARCHAR(100) DEFAULT 'pentron-qwen',
+  model            VARCHAR(100) DEFAULT 'huihui_ai/qwen3.5-abliterated:9b',
   ollama_host      VARCHAR(255) DEFAULT NULL,
   api_key          VARCHAR(500) DEFAULT NULL,
   ollama_timeout   INT          DEFAULT 600,
