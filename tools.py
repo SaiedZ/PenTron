@@ -7,9 +7,11 @@ OS: Parrot OS (all these tools are pre-installed or easily available)
 """
 
 import ipaddress
+import shlex
 import socket
 import subprocess
 import time
+from functools import lru_cache
 from urllib.parse import urlparse, urljoin
 
 
@@ -445,6 +447,7 @@ _VALUE_FLAGS = {
     "-a", "-U", "--top-ports", "--connect-timeout", "--max-time",
     "--host-timeout", "--min-rate", "--max-rate", "--script",
     "--warnings", "--mode", "--openssl-timeout", "--openssl", "--proxy",
+    "-w", "--write-out", "-b", "-c", "-D", "-x", "--data-raw", "--referer",
 }
 
 
@@ -469,8 +472,25 @@ def _extract_positional_tokens(parts: list) -> list:
     return positional
 
 
+@lru_cache(maxsize=32)
+def _resolved_ips(hostname: str) -> frozenset:
+    """The session target's own resolved IPs — cached since the agentic loop
+    can dispatch many calls per scan and this is the same lookup every time."""
+    try:
+        return frozenset(info[4][0] for info in socket.getaddrinfo(hostname, None))
+    except socket.gaierror:
+        return frozenset()
+
+
 def run_tool_by_command(command_str: str, session_target: str) -> str:
-    parts = command_str.strip().split()
+    try:
+        # shlex, not .split() — a quoted argument like -H "Host: x.com" is
+        # ONE token, not two; splitting on whitespace breaks both the actual
+        # subprocess argv AND the scope check below (the quoted value's
+        # second word would wrongly look like a mismatched positional arg).
+        parts = shlex.split(command_str.strip())
+    except ValueError as e:
+        return f"[!] Could not parse command ({e}): {command_str}"
     if not parts:
         return "[!] Empty command."
 
@@ -489,7 +509,21 @@ def run_tool_by_command(command_str: str, session_target: str) -> str:
     # (e.g. "nmap target.com 10.0.0.5").
     positional = _extract_positional_tokens(parts[1:])
     target_host = session_target.lower()
-    if not positional or any(_resolve_host(p) != target_host for p in positional):
+
+    def _matches_target(token: str) -> bool:
+        resolved = _resolve_host(token)
+        if resolved == target_host:
+            return True
+        # a literal IP that the target's own hostname resolves to is still
+        # the same host, not a pivot — e.g. the AI following up an nmap
+        # against the IP curl/whatweb already reported for this target
+        try:
+            ipaddress.ip_address(resolved)
+        except ValueError:
+            return False
+        return resolved in _resolved_ips(session_target)
+
+    if not positional or any(not _matches_target(p) for p in positional):
         shown = ", ".join(positional) if positional else command_str
         return (f"[!] BLOCKED: target '{shown}' "
                 f"does not match session target '{session_target}'")
