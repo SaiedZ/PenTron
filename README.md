@@ -2,13 +2,13 @@
 ### AI-Powered Penetration Testing Assistant
 
 <p align="center">
-  <img src="screenshots/banner.png" alt="Metatron Banner" width="800"/>
+  <img src="screenshots/banner.png" alt="PenTron Banner" width="800"/>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python"/>
   <img src="https://img.shields.io/badge/OS-Parrot%20Linux-green?style=for-the-badge&logo=linux"/>
-  <img src="https://img.shields.io/badge/AI-metatron--qwen-red?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/AI-pentron--qwen-red?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/DB-MariaDB-orange?style=for-the-badge&logo=mariadb"/>
   <img src="https://img.shields.io/badge/Web-FastAPI-teal?style=for-the-badge&logo=fastapi"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"/>
@@ -16,11 +16,11 @@
 
 ---
 
-> 🔱 **This is a fork** of the original [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — all credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project.
+> 🔱 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since diverged substantially; see below.
 
-## 🆕 What this fork adds
+## 🆕 What's different from the original METATRON
 
-The original METATRON is a terminal-only tool with a single hardcoded local model and no target/scope enforcement beyond a tool-name allowlist. On top of that foundation, this fork adds:
+The original METATRON is a terminal-only tool with a single hardcoded local model and no target/scope enforcement beyond a tool-name allowlist. On top of that foundation, this project adds:
 
 - **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Launch scans, watch live progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports, all from a browser. The terminal CLI still works unchanged, side by side.
 - **Multi-provider AI** — the original is hardwired to one local Ollama model. This fork adds a provider abstraction (`providers.py`) supporting Ollama, OpenAI, Anthropic, and Google, switchable at runtime from the Settings screen — no code edit, no restart.
@@ -40,9 +40,9 @@ The original METATRON is a terminal-only tool with a single hardcoded local mode
 - **GPU as an explicit, documented choice** — CPU-only by default so the stack runs anywhere out of the box, with a one-line Compose overlay (`docker-compose.gpu.yml`) to opt into GPU passthrough, and a live (read-only, not a toggle) GPU status indicator in the UI.
 - **Full Dockerization** — `docker compose up -d` brings up MariaDB, Ollama, and the app together, with the schema applied automatically. The original requires manually installing and configuring every dependency (MariaDB, Ollama, system packages) natively.
 
-## 📌 What is Metatron?
+## 📌 What is PenTron?
 
-**Metatron** is an AI penetration testing assistant that runs entirely on your own machine — no cloud dependency required, no subscriptions.
+**PenTron** is an AI penetration testing assistant that runs entirely on your own machine — no cloud dependency required, no subscriptions.
 
 You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
@@ -112,7 +112,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 | Web backend   | FastAPI + Uvicorn                                   |
 | Web frontend  | Jinja2 + HTMX + Tailwind CSS                        |
 | AI Providers  | Ollama (local), OpenAI, Anthropic, Google            |
-| Default model | metatron-qwen (fine-tuned Qwen 3.5) via Ollama       |
+| Default model | pentron-qwen (fine-tuned Qwen 3.5) via Ollama       |
 | Database      | MariaDB                                             |
 | Containers    | Docker + Docker Compose (Kali Rolling base image)    |
 | Search        | DuckDuckGo (free, no key)                           |
@@ -124,7 +124,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 This is the fastest path and the only one that ships the web UI out of the box. Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 
 ```bash
-git clone <your-pentron-repo-url>
+git clone https://github.com/SaiedZ/PenTron.git
 cd PenTron
 docker compose up -d
 ```
@@ -135,12 +135,12 @@ This starts three services: `mariadb` (database, schema applied automatically), 
 http://localhost:8000
 ```
 
-> **Windows:** this whole stack runs fine on Windows too — install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (WSL2 backend) and run the same `docker compose up -d` from PowerShell or a WSL shell. The recon tools (nmap, nikto, etc.) run inside the Linux container regardless of host OS, so there's nothing extra to install natively. This is also the easiest way to run METATRON if your machine doesn't have the RAM/disk for a local Ollama model — point `OLLAMA_HOST` at a remote Ollama instance, or use a hosted provider (OpenAI/Anthropic/Google) from the Settings screen instead.
+> **Windows:** this whole stack runs fine on Windows too — install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (WSL2 backend) and run the same `docker compose up -d` from PowerShell or a WSL shell. The recon tools (nmap, nikto, etc.) run inside the Linux container regardless of host OS, so there's nothing extra to install natively. This is also the easiest way to run PenTron if your machine doesn't have the RAM/disk for a local Ollama model — point `OLLAMA_HOST` at a remote Ollama instance, or use a hosted provider (OpenAI/Anthropic/Google) from the Settings screen instead.
 
-If you'd rather use the original terminal menu instead of (or alongside) the web UI, it's still there as a fourth service:
+If you'd rather use the terminal menu instead of (or alongside) the web UI, it's still there as a fourth service:
 
 ```bash
-docker compose run --rm metatron
+docker compose run --rm pentron
 ```
 
 ### Loading a model into Ollama
@@ -148,9 +148,9 @@ docker compose run --rm metatron
 The web UI's Settings screen can list models already pulled into Ollama and let you pick one. To pull the default fine-tuned model:
 
 ```bash
-docker exec -it metatron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
-docker cp Modelfile metatron-ollama:/Modelfile
-docker exec -it metatron-ollama ollama create metatron-qwen -f /Modelfile
+docker exec -it pentron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
+docker cp Modelfile pentron-ollama:/Modelfile
+docker exec -it pentron-ollama ollama create pentron-qwen -f /Modelfile
 ```
 
 Or skip Ollama entirely and pick OpenAI / Anthropic / Google from Settings instead — paste an API key and you're set, no local model or GPU needed.
@@ -188,7 +188,7 @@ Still supported for CLI-only usage. The web UI additionally needs `fastapi`, `uv
 ### 1. Clone the repository
 
 ```bash
-git clone <your-pentron-repo-url>
+git clone https://github.com/SaiedZ/PenTron.git
 cd PenTron
 ```
 
@@ -235,15 +235,15 @@ ollama pull huihui_ai/qwen3.5-abliterated:9b
 > ```
 > Then edit `Modelfile` and change the FROM line to the 4b model.
 
-### Step 3 — Build the custom metatron-qwen model
+### Step 3 — Build the custom pentron-qwen model
 
 The repo includes a `Modelfile` that fine-tunes the base model with pentest-specific parameters:
 
 ```bash
-ollama create metatron-qwen -f Modelfile
+ollama create pentron-qwen -f Modelfile
 ```
 
-This creates your local `metatron-qwen` model with:
+This creates your local `pentron-qwen` model with:
 - 16,384 token context window
 - Temperature: 0.7
 - Top-k: 10
@@ -255,7 +255,7 @@ This creates your local `metatron-qwen` model with:
 ollama list
 ```
 
-You should see `metatron-qwen` in the list.
+You should see `pentron-qwen` in the list.
 
 > Prefer a cloud provider instead? Skip this whole section and set `LLM_PROVIDER`/`OPENAI_API_KEY` (or the Anthropic/Google equivalents) via environment variables, or configure it from the web UI's Settings screen.
 
@@ -277,9 +277,9 @@ mysql -u root
 ```
 
 ```sql
-CREATE DATABASE metatron;
-CREATE USER 'metatron'@'localhost' IDENTIFIED BY '123';
-GRANT ALL PRIVILEGES ON metatron.* TO 'metatron'@'localhost';
+CREATE DATABASE pentron;
+CREATE USER 'pentron'@'localhost' IDENTIFIED BY '123';
+GRANT ALL PRIVILEGES ON pentron.* TO 'pentron'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -287,7 +287,7 @@ EXIT;
 ### Step 3 — Create the tables
 
 ```bash
-mysql -u metatron -p123 metatron < docker/schema.sql
+mysql -u pentron -p123 pentron < docker/schema.sql
 ```
 
 (`docker/schema.sql` is the same file the Docker `mariadb` service auto-applies on first start — it covers all six tables including `settings`.)
@@ -306,7 +306,7 @@ mysql -u metatron -p123 metatron < docker/schema.sql
 
 ### Terminal CLI
 
-Metatron's CLI needs the AI model loaded and reachable, and MariaDB running — both handled automatically if you're on Docker (`docker compose run --rm metatron` waits for both).
+PenTron's CLI needs the AI model loaded and reachable, and MariaDB running — both handled automatically if you're on Docker (`docker compose run --rm pentron` waits for both).
 
 **1. Main menu appears:**
 ```
@@ -340,7 +340,7 @@ or
   [n] Run all + nikto (slow)
 ```
 
-**4. Metatron runs the tools, feeds results to the AI, and prints the analysis.**
+**4. PenTron runs the tools, feeds results to the AI, and prints the analysis.**
 
 **5. Everything is saved to MariaDB automatically — visible from the web UI too.**
 
@@ -352,7 +352,7 @@ or
 
 ```
 PenTron/
-├── metatron.py           ← CLI entry point
+├── pentron.py            ← CLI entry point
 ├── db.py                 ← MariaDB connection and all CRUD operations
 ├── tools.py               ← recon tool runners (nmap, whois, etc.)
 ├── llm.py                 ← AI provider interface and tool dispatch loop
@@ -371,9 +371,9 @@ PenTron/
 │   ├── templates/             ← Jinja2 + HTMX pages
 │   ├── static/                  ← compiled Tailwind CSS + JS
 │   ├── input.css                 ← Tailwind source
-├── Modelfile               ← custom model config for metatron-qwen
+├── Modelfile               ← custom model config for pentron-qwen
 ├── Dockerfile               ← Kali Rolling image (recon tools + Tailwind build)
-├── docker-compose.yml       ← mariadb + ollama + web + metatron (CLI) services
+├── docker-compose.yml       ← mariadb + ollama + web + pentron (CLI) services
 ├── docker-compose.gpu.yml   ← GPU overlay for the ollama service
 ├── docker/
 │   ├── schema.sql             ← full DB schema, auto-applied on first start
@@ -412,7 +412,7 @@ settings              ← single row: active provider, model, timeouts, API key
 
 This tool is intended for **educational purposes and authorized penetration testing only**.
 
-- Only use Metatron on systems you own or have **explicit written permission** to test.
+- Only use PenTron on systems you own or have **explicit written permission** to test.
 - Unauthorized scanning or exploitation of systems is **illegal**.
 - The author is not responsible for any misuse of this tool.
 - A domain that resolves to a private/loopback/internal address is refused automatically (see Features) — if you're intentionally testing your own local network, enter the IP address directly rather than a hostname.
@@ -422,8 +422,10 @@ This tool is intended for **educational purposes and authorized penetration test
 
 ## 👤 Author
 
-**Soorya Thejas**
-- GitHub: [@sooryathejas](https://github.com/sooryathejas)
+**SaiedZ**
+- GitHub: [@SaiedZ](https://github.com/SaiedZ)
+
+Originally forked from [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas).
 
 ---
 
