@@ -41,10 +41,22 @@ Voir `tools.py::discover_subdomains`, `tests/test_subdomain_discovery.py`,
 `tests/test_scope_guard.py` (tests `test_subdomain_in_allowed_set_is_permitted`
 / `test_subdomain_not_in_allowed_set_still_blocked`).
 
-### Détection de WAF (`wafw00f`)
+### ✅ Détection de WAF (`wafw00f`) — implémenté
 Savoir si un pare-feu applicatif protège la cible change l'interprétation des
 résultats — un scan "propre" derrière un WAF ne veut pas dire grand-chose.
-Outil léger, une seule requête, faible risque.
+
+Ajouté comme 9e outil du menu (checkbox dédiée, comme sslscan/testssl —
+opt-in, pas dans le bundle par défaut). Teste http et https en un seul
+appel. Les codes couleur ANSI que wafw00f émet systématiquement (même sans
+tty) sont retirés du texte transmis à l'IA.
+
+Bug de build rencontré et corrigé au passage : l'installation apt de
+wafw00f entraîne `python3-urllib3`/`requests`/`certifi`/`idna` en paquets
+Debian, ce qui fait échouer `pip install` sur `requirements.txt` (impossible
+de désinstaller un paquet apt sans fichier RECORD). Fix : `--ignore-installed`
+sur la commande pip du Dockerfile.
+
+Voir `tools.py::run_waf_detect`, `tests/test_waf_detection.py`.
 
 ### ✅ Enregistrements DNS de sécurité email (SPF/DKIM/DMARC) — implémenté
 Extension du `dig` existant : en plus des A/MX/NS/TXT habituels, `run_dig`
@@ -128,9 +140,9 @@ actée :
 ~~1. Découverte de sous-domaines (crt.sh + subfinder)~~ — **fait**, voir
 ci-dessus.
 ~~2. Vérification SPF/DKIM/DMARC via dig~~ — **fait**, voir ci-dessus.
+~~3. Détection de WAF (wafw00f)~~ — **fait**, voir ci-dessus.
 
 Prochains meilleurs candidats valeur/risque, dans l'ordre :
 
-1. **Détection de WAF** (`wafw00f`)
-2. **Analyse des en-têtes de sécurité HTTP** (CSP, HSTS, X-Frame-Options...)
-3. **robots.txt / security.txt**
+1. **Analyse des en-têtes de sécurité HTTP** (CSP, HSTS, X-Frame-Options...)
+2. **robots.txt / security.txt**
