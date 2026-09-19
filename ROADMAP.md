@@ -85,9 +85,19 @@ pu vérifier. Le rapport dit "Could not check" dans ce cas.
 
 Voir `tools.py::_analyze_security_headers`, `tests/test_security_headers.py`.
 
-### Vérification robots.txt / security.txt
-Triviale, un curl de plus, donne des infos utiles (chemins que l'admin ne
-veut pas indexer = parfois des indices).
+### ✅ Vérification robots.txt / security.txt — implémenté
+Ajouté comme 10e outil du menu (`run_robots_and_security_txt`), opt-in.
+`robots.txt` peut révéler des chemins que l'admin ne veut pas indexer (un
+signal faible, pas une vulnérabilité en soi). `security.txt` (RFC 9116,
+vérifié sur `/.well-known/security.txt` puis, à défaut, sur le chemin
+historique `/security.txt`) indique si la cible a un processus de
+divulgation de vulnérabilités documenté.
+
+Testé en réel sur `github.com` : robots.txt et security.txt (contact
+HackerOne) récupérés correctement. Sortie plafonnée en longueur pour éviter
+de saturer le contexte de l'IA avec un fichier volumineux.
+
+Voir `tools.py::run_robots_and_security_txt`, `tests/test_robots_security_txt.py`.
 
 ---
 
@@ -150,7 +160,8 @@ ci-dessus.
 ~~2. Vérification SPF/DKIM/DMARC via dig~~ — **fait**, voir ci-dessus.
 ~~3. Détection de WAF (wafw00f)~~ — **fait**, voir ci-dessus.
 ~~4. Analyse des en-têtes de sécurité HTTP~~ — **fait**, voir ci-dessus.
+~~5. robots.txt / security.txt~~ — **fait**, voir ci-dessus.
 
-Prochain meilleur candidat valeur/risque :
-
-1. **robots.txt / security.txt**
+Toute la catégorie "fort intérêt, faible risque, facile à ajouter" est
+maintenant implémentée. Prochaine étape : discuter des candidats "plus
+intrusifs" (gobuster/ffuf, nuclei, wpscan) ci-dessus avant d'aller plus loin.
