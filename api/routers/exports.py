@@ -14,7 +14,9 @@ import db
 from api.security import verify_token
 from export import export_html, export_pdf
 
-router = APIRouter(prefix="/api", tags=["exports"], dependencies=[Depends(verify_token)])
+router = APIRouter(
+    prefix="/api", tags=["exports"], dependencies=[Depends(verify_token)]
+)
 
 # Not export_menu's `~/PenTron/reports` default — that path isn't
 # meaningful for a container serving a download back over HTTP.

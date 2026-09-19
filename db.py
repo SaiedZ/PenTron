@@ -14,19 +14,21 @@ from datetime import datetime
 # CONNECTION
 # ─────────────────────────────────────────────
 
+
 def get_connection():
     """Returns a MariaDB connection. Values overridable via env vars for Docker."""
     return mysql.connector.connect(
         host=os.environ.get("DB_HOST", "localhost"),
         user=os.environ.get("DB_USER", "pentron"),
         password=os.environ.get("DB_PASSWORD", "123"),
-        database=os.environ.get("DB_NAME", "pentron")
+        database=os.environ.get("DB_NAME", "pentron"),
     )
 
 
 # ─────────────────────────────────────────────
 # WRITE FUNCTIONS
 # ─────────────────────────────────────────────
+
 
 def create_session(target: str) -> int:
     """Insert new row into history. Returns sl_no."""
@@ -35,7 +37,7 @@ def create_session(target: str) -> int:
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute(
         "INSERT INTO history (target, scan_date, status) VALUES (%s, %s, %s)",
-        (target, now, "active")
+        (target, now, "active"),
     )
     conn.commit()
     sl_no = c.lastrowid
@@ -43,15 +45,19 @@ def create_session(target: str) -> int:
     return sl_no
 
 
-def save_vulnerability(sl_no: int, vuln_name: str, severity: str,
-                       port: str, service: str, description: str) -> int:
+def save_vulnerability(
+    sl_no: int, vuln_name: str, severity: str, port: str, service: str, description: str
+) -> int:
     """Insert a vulnerability. Returns its id."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         INSERT INTO vulnerabilities (sl_no, vuln_name, severity, port, service, description)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (sl_no, vuln_name, severity, port, service, description))
+    """,
+        (sl_no, vuln_name, severity, port, service, description),
+    )
     conn.commit()
     vuln_id = c.lastrowid
     conn.close()
@@ -62,10 +68,13 @@ def save_fix(sl_no: int, vuln_id: int, fix_text: str, source: str = "ai"):
     """Insert a fix linked to a vulnerability."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         INSERT INTO fixes (sl_no, vuln_id, fix_text, source)
         VALUES (%s, %s, %s, %s)
-    """, (sl_no, vuln_id, fix_text, source))
+    """,
+        (sl_no, vuln_id, fix_text, source),
+    )
     conn.commit()
     conn.close()
 
@@ -73,18 +82,21 @@ def save_fix(sl_no: int, vuln_id: int, fix_text: str, source: str = "ai"):
 def save_exploit(sl_no, exploit_name, tool_used, payload, result, notes):
     conn = get_connection()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         INSERT INTO exploits_attempted 
         (sl_no, exploit_name, tool_used, payload, result, notes)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (
-        sl_no,
-        str(exploit_name or "")[:1000],
-        str(tool_used  or "")[:500],
-        str(payload    or ""),
-        str(result     or "")[:2000],
-        str(notes      or "")
-    ))
+    """,
+        (
+            sl_no,
+            str(exploit_name or "")[:1000],
+            str(tool_used or "")[:500],
+            str(payload or ""),
+            str(result or "")[:2000],
+            str(notes or ""),
+        ),
+    )
     conn.commit()
     conn.close()
 
@@ -94,10 +106,13 @@ def save_summary(sl_no: int, raw_scan: str, ai_analysis: str, risk_level: str):
     conn = get_connection()
     c = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("""
+    c.execute(
+        """
         INSERT INTO summary (sl_no, raw_scan, ai_analysis, risk_level, generated_at)
         VALUES (%s, %s, %s, %s, %s)
-    """, (sl_no, raw_scan, ai_analysis, risk_level, now))
+    """,
+        (sl_no, raw_scan, ai_analysis, risk_level, now),
+    )
     conn.commit()
     conn.close()
 
@@ -106,11 +121,14 @@ def save_summary(sl_no: int, raw_scan: str, ai_analysis: str, risk_level: str):
 # READ FUNCTIONS
 # ─────────────────────────────────────────────
 
+
 def get_all_history():
     """Return all rows from history ordered by newest first."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT sl_no, target, scan_date, status FROM history ORDER BY sl_no DESC")
+    c.execute(
+        "SELECT sl_no, target, scan_date, status FROM history ORDER BY sl_no DESC"
+    )
     rows = c.fetchall()
     conn.close()
     return rows
@@ -139,11 +157,11 @@ def get_session(sl_no: int) -> dict:
     conn.close()
 
     return {
-        "history":   history,
-        "vulns":     vulns,
-        "fixes":     fixes,
-        "exploits":  exploits,
-        "summary":   summary
+        "history": history,
+        "vulns": vulns,
+        "fixes": fixes,
+        "exploits": exploits,
+        "summary": summary,
     }
 
 
@@ -178,6 +196,7 @@ def get_exploits(sl_no: int):
 # EDIT FUNCTIONS
 # ─────────────────────────────────────────────
 
+
 def edit_vulnerability(vuln_id: int, field: str, value: str):
     """Edit a single field in vulnerabilities by id."""
     allowed = {"vuln_name", "severity", "port", "service", "description"}
@@ -187,8 +206,7 @@ def edit_vulnerability(vuln_id: int, field: str, value: str):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        f"UPDATE vulnerabilities SET {field} = %s WHERE id = %s",
-        (value, vuln_id)
+        f"UPDATE vulnerabilities SET {field} = %s WHERE id = %s", (value, vuln_id)
     )
     conn.commit()
     conn.close()
@@ -214,8 +232,7 @@ def edit_exploit(exploit_id: int, field: str, value: str):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        f"UPDATE exploits_attempted SET {field} = %s WHERE id = %s",
-        (value, exploit_id)
+        f"UPDATE exploits_attempted SET {field} = %s WHERE id = %s", (value, exploit_id)
     )
     conn.commit()
     conn.close()
@@ -226,7 +243,9 @@ def edit_summary_risk(sl_no: int, risk_level: str):
     """Update the risk level on a summary."""
     conn = get_connection()
     c = conn.cursor()
-    c.execute("UPDATE summary SET risk_level = %s WHERE sl_no = %s", (risk_level, sl_no))
+    c.execute(
+        "UPDATE summary SET risk_level = %s WHERE sl_no = %s", (risk_level, sl_no)
+    )
     conn.commit()
     conn.close()
     print(f"[+] Summary risk_level updated for SL#{sl_no}")
@@ -235,6 +254,7 @@ def edit_summary_risk(sl_no: int, risk_level: str):
 # ─────────────────────────────────────────────
 # DELETE FUNCTIONS
 # ─────────────────────────────────────────────
+
 
 def delete_vulnerability(vuln_id: int):
     """Delete a single vulnerability and its linked fixes."""
@@ -289,15 +309,17 @@ def delete_full_session(sl_no: int):
 # ─────────────────────────────────────────────
 
 _SETTINGS_DEFAULTS = {
-    "provider":          os.environ.get("LLM_PROVIDER", "ollama"),
-    "model":             os.environ.get("PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b"),
-    "ollama_host":       os.environ.get("OLLAMA_HOST", "localhost:11434"),
-    "api_key":           None,
-    "ollama_timeout":    int(os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)),
-    "summary_timeout":   int(os.environ.get("PENTRON_SUMMARY_TIMEOUT", 120)),
+    "provider": os.environ.get("LLM_PROVIDER", "ollama"),
+    "model": os.environ.get("PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b"),
+    "ollama_host": os.environ.get("OLLAMA_HOST", "localhost:11434"),
+    "api_key": None,
+    "ollama_timeout": int(os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)),
+    "summary_timeout": int(os.environ.get("PENTRON_SUMMARY_TIMEOUT", 120)),
     "scan_delay_seconds": int(os.environ.get("PENTRON_SCAN_DELAY", 0)),
-    "user_agent":        os.environ.get("PENTRON_USER_AGENT") or None,
-    "subdomain_discovery_level": int(os.environ.get("PENTRON_SUBDOMAIN_DISCOVERY_LEVEL", 0)),
+    "user_agent": os.environ.get("PENTRON_USER_AGENT") or None,
+    "subdomain_discovery_level": int(
+        os.environ.get("PENTRON_SUBDOMAIN_DISCOVERY_LEVEL", 0)
+    ),
 }
 
 
@@ -323,9 +345,15 @@ def _ensure_settings_table(cursor):
         )
     """)
     # upgrade path for DB volumes created before these columns existed
-    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS scan_delay_seconds INT DEFAULT 0")
-    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500) DEFAULT NULL")
-    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS subdomain_discovery_level INT DEFAULT 0")
+    cursor.execute(
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS scan_delay_seconds INT DEFAULT 0"
+    )
+    cursor.execute(
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500) DEFAULT NULL"
+    )
+    cursor.execute(
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS subdomain_discovery_level INT DEFAULT 0"
+    )
 
 
 def get_settings() -> dict:
@@ -365,7 +393,7 @@ def save_settings(**fields) -> None:
     c.execute(
         f"INSERT INTO settings (id, {', '.join(columns)}) VALUES (1, {placeholders}) "
         f"ON DUPLICATE KEY UPDATE {update_clause}",
-        values
+        values,
     )
     conn.commit()
     conn.close()
@@ -375,10 +403,11 @@ def save_settings(**fields) -> None:
 # DISPLAY HELPERS
 # ─────────────────────────────────────────────
 
+
 def print_history(rows):
-    print("\n" + "─"*65)
+    print("\n" + "─" * 65)
     print(f"{'SL#':<6} {'TARGET':<28} {'DATE':<22} {'STATUS'}")
-    print("─"*65)
+    print("─" * 65)
     for row in rows:
         print(f"{row[0]:<6} {row[1]:<28} {str(row[2]):<22} {row[3]}")
     print()
@@ -386,14 +415,16 @@ def print_history(rows):
 
 def print_session(data: dict):
     h = data["history"]
-    print(f"\n{'═'*60}")
+    print(f"\n{'═' * 60}")
     print(f"  SL# {h[0]} | Target: {h[1]} | {h[2]} | {h[3]}")
-    print(f"{'═'*60}")
+    print(f"{'═' * 60}")
 
     print("\n[ VULNERABILITIES ]")
     if data["vulns"]:
         for v in data["vulns"]:
-            print(f"  id={v[0]} | {v[2]} | Severity: {v[3]} | Port: {v[4]} | Service: {v[5]}")
+            print(
+                f"  id={v[0]} | {v[2]} | Severity: {v[3]} | Port: {v[4]} | Service: {v[5]}"
+            )
             print(f"           {v[6]}")
     else:
         print("  None recorded.")
@@ -419,7 +450,9 @@ def print_session(data: dict):
         s = data["summary"]
         print(f"  Risk Level : {s[4]}")
         print(f"  Generated  : {s[5]}")
-        print(f"\n  AI Analysis:\n  {s[3][:500]}{'...' if len(str(s[3])) > 500 else ''}")
+        print(
+            f"\n  AI Analysis:\n  {s[3][:500]}{'...' if len(str(s[3])) > 500 else ''}"
+        )
     else:
         print("  None recorded.")
     print()

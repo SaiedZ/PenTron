@@ -12,8 +12,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 VALID_STATES = (
-    "QUEUED", "RECON_RUNNING", "AI_ANALYSIS_ROUND",
-    "SAVING_RESULTS", "DONE", "FAILED",
+    "QUEUED",
+    "RECON_RUNNING",
+    "AI_ANALYSIS_ROUND",
+    "SAVING_RESULTS",
+    "DONE",
+    "FAILED",
 )
 
 
@@ -92,21 +96,36 @@ def resolve_status(sl_no: int):
         return job.to_dict()
 
     import db
+
     data = db.get_session(sl_no)
     if not data["history"]:
         return None
     if data["summary"]:
         return {
-            "sl_no": sl_no, "state": "DONE", "detail": "",
-            "current_tool": None, "planned_tools": [], "completed_tools": [],
-            "round_num": None, "max_rounds": None,
-            "dispatched_calls": [], "blocked_calls": [],
-            "risk_level": data["summary"][4], "error": None,
+            "sl_no": sl_no,
+            "state": "DONE",
+            "detail": "",
+            "current_tool": None,
+            "planned_tools": [],
+            "completed_tools": [],
+            "round_num": None,
+            "max_rounds": None,
+            "dispatched_calls": [],
+            "blocked_calls": [],
+            "risk_level": data["summary"][4],
+            "error": None,
         }
     return {
-        "sl_no": sl_no, "state": "UNKNOWN", "detail": "process restarted, check history",
-        "current_tool": None, "planned_tools": [], "completed_tools": [],
-        "round_num": None, "max_rounds": None,
-        "dispatched_calls": [], "blocked_calls": [],
-        "risk_level": None, "error": None,
+        "sl_no": sl_no,
+        "state": "UNKNOWN",
+        "detail": "process restarted, check history",
+        "current_tool": None,
+        "planned_tools": [],
+        "completed_tools": [],
+        "round_num": None,
+        "max_rounds": None,
+        "dispatched_calls": [],
+        "blocked_calls": [],
+        "risk_level": None,
+        "error": None,
     }

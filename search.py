@@ -8,12 +8,13 @@ Used by LLM tool dispatch when AI writes [SEARCH: query]
 
 import requests
 from bs4 import BeautifulSoup
-from ddgs import DDGS   # pip install duckduckgo-search
+from ddgs import DDGS  # pip install duckduckgo-search
 
 
 # ─────────────────────────────────────────────
 # DDG SEARCH
 # ─────────────────────────────────────────────
+
 
 def web_search(query: str, max_results: int = 5) -> str:
     """
@@ -45,6 +46,7 @@ def web_search(query: str, max_results: int = 5) -> str:
 # ─────────────────────────────────────────────
 # CVE SPECIFIC SEARCH
 # ─────────────────────────────────────────────
+
 
 def search_cve(cve_id: str) -> str:
     """
@@ -84,13 +86,16 @@ def search_fix(vuln_name: str) -> str:
 # PAGE FETCHER
 # ─────────────────────────────────────────────
 
+
 def fetch_page(url: str, max_chars: int = 3000) -> str:
     """
     Fetch a URL and return extracted plain text.
     Strips all HTML tags. Truncated to max_chars for LLM context.
     """
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0"
+        }
         resp = requests.get(url, headers=headers, timeout=15)
         resp.raise_for_status()
 
@@ -125,6 +130,7 @@ def fetch_page(url: str, max_chars: int = 3000) -> str:
 # TOOL DISPATCH HANDLER
 # ─────────────────────────────────────────────
 
+
 def handle_search_dispatch(query: str) -> str:
     """
     Called by llm.py when AI writes [SEARCH: something].
@@ -134,17 +140,24 @@ def handle_search_dispatch(query: str) -> str:
 
     # CVE pattern — CVE-YYYY-NNNNN
     import re
-    cve_pattern = re.compile(r'CVE-\d{4}-\d{4,7}', re.IGNORECASE)
+
+    cve_pattern = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
     cve_match = cve_pattern.search(query)
     if cve_match:
         return search_cve(cve_match.group())
 
     # exploit keywords
-    if any(word in query.lower() for word in ["exploit", "poc", "payload", "rce", "lfi", "sqli"]):
+    if any(
+        word in query.lower()
+        for word in ["exploit", "poc", "payload", "rce", "lfi", "sqli"]
+    ):
         return web_search(query + " exploit poc github", max_results=5)
 
     # fix/patch keywords
-    if any(word in query.lower() for word in ["fix", "patch", "mitigate", "harden", "secure"]):
+    if any(
+        word in query.lower()
+        for word in ["fix", "patch", "mitigate", "harden", "secure"]
+    ):
         return search_fix(query)
 
     # default general search

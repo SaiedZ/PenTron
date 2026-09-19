@@ -8,6 +8,7 @@ selectable levels (settings.subdomain_discovery_level):
                targets for this scan (see run_tool_by_command's
                allowed_subdomains param).
 """
+
 import tools
 
 
@@ -36,32 +37,42 @@ def test_level_0_is_disabled_and_never_calls_out(monkeypatch):
 
 def test_level_1_passive_queries_crtsh_only(monkeypatch):
     monkeypatch.setattr(
-        tools.requests, "get",
-        lambda *a, **kw: _FakeResponse([
-            {"name_value": "mail.clubs.ma\n*.dev.clubs.ma"},
-            {"name_value": "clubs.ma"},  # apex itself — must be excluded
-        ]),
+        tools.requests,
+        "get",
+        lambda *a, **kw: _FakeResponse(
+            [
+                {"name_value": "mail.clubs.ma\n*.dev.clubs.ma"},
+                {"name_value": "clubs.ma"},  # apex itself — must be excluded
+            ]
+        ),
     )
     monkeypatch.setattr(
-        tools, "run_tool",
-        lambda *a, **kw: (_ for _ in ()).throw(AssertionError("level 1 must not run subfinder")),
+        tools,
+        "run_tool",
+        lambda *a, **kw: (_ for _ in ()).throw(
+            AssertionError("level 1 must not run subfinder")
+        ),
     )
 
     text, allowed = tools.discover_subdomains("clubs.ma", 1)
     assert "mail.clubs.ma" in text
     assert "dev.clubs.ma" in text
-    assert "clubs.ma" not in text.replace("mail.clubs.ma", "").replace("dev.clubs.ma", "")
+    assert "clubs.ma" not in text.replace("mail.clubs.ma", "").replace(
+        "dev.clubs.ma", ""
+    )
     # passive-only: informative, but scope guard is NOT widened
     assert allowed == frozenset()
 
 
 def test_level_2_active_merges_sources_and_widens_scope(monkeypatch):
     monkeypatch.setattr(
-        tools.requests, "get",
+        tools.requests,
+        "get",
         lambda *a, **kw: _FakeResponse([{"name_value": "mail.clubs.ma"}]),
     )
     monkeypatch.setattr(
-        tools, "run_tool",
+        tools,
+        "run_tool",
         lambda command, **kw: "mail.clubs.ma\nstaging.clubs.ma\n",
     )
 
@@ -90,10 +101,13 @@ def test_crtsh_failure_degrades_to_empty_not_a_crash(monkeypatch):
 
 def test_subfinder_failure_falls_back_to_passive_results_only(monkeypatch):
     monkeypatch.setattr(
-        tools.requests, "get",
+        tools.requests,
+        "get",
         lambda *a, **kw: _FakeResponse([{"name_value": "mail.clubs.ma"}]),
     )
-    monkeypatch.setattr(tools, "run_tool", lambda *a, **kw: "[!] Tool not found: subfinder")
+    monkeypatch.setattr(
+        tools, "run_tool", lambda *a, **kw: "[!] Tool not found: subfinder"
+    )
 
     text, allowed = tools.discover_subdomains("clubs.ma", 2)
     assert "mail.clubs.ma" in text
