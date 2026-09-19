@@ -31,7 +31,7 @@ from db import (
     print_history,
     print_session
 )
-from tools import interactive_tool_run, format_recon_for_llm, run_default_recon, check_target_safety
+from tools import interactive_tool_run, format_recon_for_llm, run_default_recon, check_target_safety, discover_subdomains
 from llm import analyse_target
 
 
@@ -125,7 +125,15 @@ def new_scan():
     scan_settings = get_settings()
     delay = scan_settings.get("scan_delay_seconds", 0)
     user_agent = scan_settings.get("user_agent") or None
-    raw_scan = interactive_tool_run(target, delay=delay, user_agent=user_agent)
+    subdomain_level = scan_settings.get("subdomain_discovery_level", 0)
+
+    subdomain_text, allowed_subdomains = "", frozenset()
+    if subdomain_level > 0:
+        info("Discovering subdomains...")
+        subdomain_text, allowed_subdomains = discover_subdomains(target, subdomain_level)
+        print(subdomain_text)
+
+    raw_scan = subdomain_text + interactive_tool_run(target, delay=delay, user_agent=user_agent)
 
     if not raw_scan.strip():
         warn("No scan data collected. Aborting.")
@@ -134,7 +142,7 @@ def new_scan():
 
     # send to AI
     divider("AI ANALYSIS")
-    result = analyse_target(target, raw_scan)
+    result = analyse_target(target, raw_scan, allowed_subdomains=allowed_subdomains)
 
     # ── save everything to DB ──────────────────
     divider("SAVING TO DATABASE")

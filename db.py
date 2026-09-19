@@ -297,6 +297,7 @@ _SETTINGS_DEFAULTS = {
     "summary_timeout":   int(os.environ.get("METATRON_SUMMARY_TIMEOUT", 120)),
     "scan_delay_seconds": int(os.environ.get("METATRON_SCAN_DELAY", 0)),
     "user_agent":        os.environ.get("METATRON_USER_AGENT") or None,
+    "subdomain_discovery_level": int(os.environ.get("METATRON_SUBDOMAIN_DISCOVERY_LEVEL", 0)),
 }
 
 
@@ -317,12 +318,14 @@ def _ensure_settings_table(cursor):
           summary_timeout  INT          DEFAULT 120,
           scan_delay_seconds INT        DEFAULT 0,
           user_agent       VARCHAR(500) DEFAULT NULL,
+          subdomain_discovery_level INT DEFAULT 0,
           updated_at       DATETIME     DEFAULT NULL
         )
     """)
     # upgrade path for DB volumes created before these columns existed
     cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS scan_delay_seconds INT DEFAULT 0")
     cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500) DEFAULT NULL")
+    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS subdomain_discovery_level INT DEFAULT 0")
 
 
 def get_settings() -> dict:

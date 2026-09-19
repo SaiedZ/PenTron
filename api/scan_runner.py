@@ -11,7 +11,7 @@ from api import jobs
 import db
 from llm import analyse_target
 from providers import get_provider
-from tools import run_selected_tools, format_recon_for_llm, resolve_tool_plan
+from tools import run_selected_tools, format_recon_for_llm, resolve_tool_plan, discover_subdomains
 
 
 def _make_on_progress(sl_no: int):
@@ -50,15 +50,26 @@ def _make_on_progress(sl_no: int):
 def run_scan_job(sl_no: int, target: str, tool_keys) -> None:
     on_progress = _make_on_progress(sl_no)
     try:
+        settings = db.get_settings()
+        planned_tools = resolve_tool_plan(tool_keys)
+        if settings.get("subdomain_discovery_level", 0) > 0:
+            planned_tools = ["Subdomain discovery"] + planned_tools
         jobs.update_job(
             sl_no, state="RECON_RUNNING", detail="starting recon",
-            planned_tools=resolve_tool_plan(tool_keys), completed_tools=[],
+            planned_tools=planned_tools, completed_tools=[],
         )
-        settings = db.get_settings()
         delay = settings.get("scan_delay_seconds", 0)
         user_agent = settings.get("user_agent") or None
+        subdomain_level = settings.get("subdomain_discovery_level", 0)
+
+        subdomain_text, allowed_subdomains = "", frozenset()
+        if subdomain_level > 0:
+            on_progress("tool_start", "Subdomain discovery")
+            subdomain_text, allowed_subdomains = discover_subdomains(target, subdomain_level)
+            on_progress("tool_done", "Subdomain discovery")
+
         results = run_selected_tools(target, tool_keys, on_progress=on_progress, delay=delay, user_agent=user_agent)
-        raw_scan = format_recon_for_llm(results)
+        raw_scan = subdomain_text + format_recon_for_llm(results)
 
         if not raw_scan.strip():
             jobs.update_job(sl_no, state="FAILED", error="No scan data collected.")
@@ -66,7 +77,7 @@ def run_scan_job(sl_no: int, target: str, tool_keys) -> None:
             return
 
         provider = get_provider()
-        result = analyse_target(target, raw_scan, provider=provider, on_progress=on_progress)
+        result = analyse_target(target, raw_scan, provider=provider, on_progress=on_progress, allowed_subdomains=allowed_subdomains)
 
         jobs.update_job(sl_no, state="SAVING_RESULTS", detail="saving results")
 

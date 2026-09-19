@@ -32,6 +32,7 @@ The original METATRON is a terminal-only tool with a single hardcoded local mode
   - *CVE citation check* — flags any CVE the AI cites in its findings that never actually appeared in the scan data, instead of trusting the citation at face value.
 - **Configurable rate limiting + automatic retries** — an optional delay between recon tools (0 by default), set from the Settings screen, so a scan doesn't hit a small target with several tools back to back; short network-flaky tools (whois, curl headers, dig) auto-retry once on a timeout before giving up.
 - **Configurable User-Agent** — override the HTTP User-Agent sent by curl/whatweb/nikto (e.g. to see how a target behaves for a browser vs. a tool that's WAF-signature-blocked by default). A fixed, operator-chosen value applied to every scan — deliberately **not** randomized or rotated per request, which would trade traceability for evasion.
+- **Subdomain discovery (3 levels)** — the original only ever scans the exact declared target, missing `mail.`/`dev.`/`staging.` subdomains where real issues often live. Set from the Settings screen: disabled (default), passive (crt.sh certificate transparency — zero traffic to the target, listed in the report only), or active (crt.sh + subfinder — discovered subdomains also become valid scope-guard targets for that scan, so the AI can follow up on them). Passive never widens scope; only active does, and only for what it actually found.
 - **GPU as an explicit, documented choice** — CPU-only by default so the stack runs anywhere out of the box, with a one-line Compose overlay (`docker-compose.gpu.yml`) to opt into GPU passthrough, and a live (read-only, not a toggle) GPU status indicator in the UI.
 - **Full Dockerization** — `docker compose up -d` brings up MariaDB, Ollama, and the app together, with the schema applied automatically. The original requires manually installing and configuring every dependency (MariaDB, Ollama, system packages) natively.
 
@@ -62,6 +63,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 - 🛡️ **Scoped tool dispatch** — every `[TOOL:]` call the AI issues must have *every* positional argument match the operator-declared target; anything else (a pivot to another host, or a second target smuggled alongside the real one) is blocked and reported, not silently run
 - ⏱️ **Rate limiting + retries** — optional delay between recon tools (Settings screen, default off) plus a single automatic retry on timeout for network-flaky tools (whois, curl headers, dig)
 - 🪪 **Configurable User-Agent** — override the HTTP User-Agent for curl/whatweb/nikto from the Settings screen; a fixed value applied to every scan, not randomized
+- 🌐 **Subdomain discovery (3 levels)** — disabled (default) / passive (crt.sh, informative only) / active (crt.sh + subfinder, discovered subdomains become scannable) — set from the Settings screen
 - 🔒 **Detection only, no exploitation** — `ALLOWED_TOOLS` is recon/fingerprinting tools only; the AI's `EXPLOIT:` suggestions are text proposals for a human to review, never code that gets run against the target
 - 🔒 **SSRF-guarded recon** — header fetches don't blindly follow redirects onto localhost/internal services/cloud metadata, including same-host redirects to a different, non-standard port
 - 🧭 **Pre-flight target check** — before any recon runs, a domain that resolves to a private/loopback/internal address is refused outright (its DNS could have been changed to redirect scans onto your own infrastructure); a literal IP typed directly by the operator is always allowed
@@ -198,8 +200,10 @@ pip install -r requirements.txt
 ### 4. Install system tools
 
 ```bash
-sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh
+sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh subfinder
 ```
+
+`subfinder` is only needed if you enable active subdomain discovery (level 2) from the Settings screen — the feature is disabled by default.
 
 ---
 
