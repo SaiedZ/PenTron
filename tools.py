@@ -2,11 +2,12 @@
 """
 METATRON - tools.py
 Recon tool runners — all output returned as strings to feed into the LLM.
-Tools used: nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh
+Tools used: nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f
 OS: Parrot OS (all these tools are pre-installed or easily available)
 """
 
 import ipaddress
+import re
 import shlex
 import socket
 import subprocess
@@ -309,6 +310,24 @@ def run_testssl(target: str, user_agent: str = None) -> str:
     return run_tool(["testssl", "--quiet", "--color", "0", "--warnings", "batch", target], timeout=240)
 
 
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+
+
+def run_waf_detect(target: str, user_agent: str = None) -> str:
+    """
+    wafw00f — fingerprints whether a Web Application Firewall sits in front
+    of the target. Matters for interpreting the rest of the scan: a "clean"
+    nikto/nmap pass behind an active WAF doesn't mean much on its own — the
+    WAF may be the thing that made it look clean.
+    user_agent is accepted but unused — wafw00f sends its own fingerprinting
+    probes regardless; kept for a uniform dispatch signature.
+    """
+    urls = [f"http://{target}", f"https://{target}"]
+    print(f"  [*] wafw00f {' '.join(urls)}")
+    output = run_tool(["wafw00f"] + urls, timeout=60)
+    return _ANSI_RE.sub("", output)
+
+
 # ─────────────────────────────────────────────
 # SUBDOMAIN DISCOVERY (3 configurable levels)
 # ─────────────────────────────────────────────
@@ -406,6 +425,7 @@ TOOLS_MENU = {
     "6": ("nikto",        run_nikto),
     "7": ("sslscan",      run_sslscan),
     "8": ("testssl.sh",   run_testssl),
+    "9": ("wafw00f",      run_waf_detect),
 }
 
 
@@ -532,7 +552,7 @@ def format_recon_for_llm(results: dict) -> str:
     return output
 
 
-ALLOWED_TOOLS = {"nmap", "whois", "whatweb", "curl", "dig", "nikto", "sslscan", "testssl"}
+ALLOWED_TOOLS = {"nmap", "whois", "whatweb", "curl", "dig", "nikto", "sslscan", "testssl", "wafw00f"}
 
 
 def _resolve_host(token: str) -> str:
@@ -655,7 +675,7 @@ def interactive_tool_run(target: str, delay: float = 0, user_agent: str = None) 
     print("\n[ SELECT TOOLS TO RUN ]")
     for key, (name, _) in TOOLS_MENU.items():
         print(f"  [{key}] {name}")
-    print("  [a] Run all (except nikto, sslscan, testssl.sh)")
+    print("  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f)")
     print("  [n] Run all + nikto (slow)")
 
     choice = input("\nChoice(s) e.g. 1 2 4 or a: ").strip().lower()

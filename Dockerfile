@@ -24,13 +24,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         sslscan \
         testssl.sh \
         subfinder \
+        wafw00f \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+# --ignore-installed: wafw00f pulls in python3-urllib3/requests/certifi/idna
+# as Debian-packaged apt dependencies (no RECORD file), which pip can't
+# uninstall to replace with the pinned versions below — shadow them instead
+# of failing the build trying to remove them.
+RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed -r requirements.txt
 
 COPY . .
 
