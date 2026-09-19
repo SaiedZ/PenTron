@@ -121,11 +121,14 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
         return raw_output
 
 
-def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=None) -> str:
+def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=None, allowed_subdomains: frozenset = frozenset()) -> str:
     """
     Execute all tool/search calls and return combined results string.
     session_target binds any [TOOL:] call back to the operator-declared
-    scan target — see tools.run_tool_by_command for why.
+    scan target — see tools.run_tool_by_command for why. allowed_subdomains
+    is the (possibly empty) set discover_subdomains() found at discovery
+    level 2 — the only case where a tool call against a non-session-target
+    host is permitted.
     """
     if not calls:
         return ""
@@ -135,7 +138,7 @@ def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=
         print(f"\n  [DISPATCH] {call_type}: {call_content}")
 
         if call_type == "TOOL":
-            output = run_tool_by_command(call_content, session_target)
+            output = run_tool_by_command(call_content, session_target, allowed_subdomains)
         elif call_type == "SEARCH":
             output = handle_search_dispatch(call_content)
         else:
@@ -297,7 +300,7 @@ def verify_cve_citations(vulnerabilities: list, raw_scan: str) -> list:
 # MAIN ANALYSIS FUNCTION
 # ─────────────────────────────────────────────
 
-def analyse_target(target: str, raw_scan: str, provider=None, on_progress=None) -> dict:
+def analyse_target(target: str, raw_scan: str, provider=None, on_progress=None, allowed_subdomains: frozenset = frozenset()) -> dict:
     provider = provider or get_provider()
     messages = [
         {
@@ -339,7 +342,7 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
         if on_progress:
             on_progress("tool_dispatch", tool_calls)
 
-        tool_results = run_tool_calls(tool_calls, target, provider, on_progress)
+        tool_results = run_tool_calls(tool_calls, target, provider, on_progress, allowed_subdomains)
 
         # add assistant response and tool results as new messages
         messages.append({
