@@ -22,7 +22,8 @@ router = APIRouter(tags=["pages"])
 
 @router.get("/")
 def dashboard(request: Request):
-    return templates.TemplateResponse(request, "dashboard.html")
+    settings = db.get_settings()
+    return templates.TemplateResponse(request, "dashboard.html", {"settings": settings})
 
 
 @router.get("/scans/{sl_no}")
