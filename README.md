@@ -188,7 +188,7 @@ Avoid rebuilding or restarting the `web` service while a scan is actively in pro
 
 ## 🛠️ Alternative: native install (no Docker)
 
-Still supported for CLI-only usage. The web UI additionally needs `fastapi`, `uvicorn`, `jinja2`, and `python-multipart` (already pinned in `requirements.txt`) plus the [Tailwind standalone CLI](https://tailwindcss.com/blog/standalone-cli) to compile `web/static/css/tailwind.css` once (`tailwindcss -i web/input.css -o web/static/css/tailwind.css --minify`) before `uvicorn api.main:app` will serve styled pages.
+Still supported for CLI-only usage. The web UI additionally needs `fastapi`, `uvicorn`, `jinja2`, and `python-multipart` (already pinned in `pyproject.toml`) plus the [Tailwind standalone CLI](https://tailwindcss.com/blog/standalone-cli) to compile `web/static/css/tailwind.css` once (`tailwindcss -i web/input.css -o web/static/css/tailwind.css --minify`) before `uvicorn api.main:app` will serve styled pages.
 
 ### 1. Clone the repository
 
@@ -197,20 +197,25 @@ git clone https://github.com/SaiedZ/PenTron.git
 cd PenTron
 ```
 
-### 2. Create and activate virtual environment
+### 2. Install Python dependencies
+
+Uses [`uv`](https://docs.astral.sh/uv/) — creates `.venv` and installs from the committed `uv.lock` in one step (`pip install -e .` also works if you'd rather not install `uv`, see below):
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+uv sync
 ```
 
-### 3. Install Python dependencies
+Add `--extra dev` to also pull in `pytest`, `ruff`, and `mypy`:
 
 ```bash
-pip install -r requirements.txt
+uv sync --extra dev
 ```
 
-### 4. Install system tools
+Then activate the venv it created (`source .venv/bin/activate`), or prefix commands with `uv run` instead.
+
+> Without `uv`: `python3 -m venv venv && source venv/bin/activate && pip install -e .` (or `pip install -e ".[dev]"`) works the same way, just without the lockfile's exact transitive-dependency pins. Editable install (`-e`) matters here — `api/main.py` resolves `web/` (templates/static) relative to its own file location, and a plain non-editable `pip install .` would copy the code into site-packages and break that.
+
+### 3. Install system tools
 
 ```bash
 sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh subfinder wafw00f
@@ -381,7 +386,8 @@ PenTron/
 ├── docker/
 │   ├── schema.sql             ← full DB schema, auto-applied on first start
 │   └── entrypoint.sh            ← waits for MariaDB/Ollama before launching
-├── requirements.txt         ← Python dependencies
+├── pyproject.toml           ← Python deps (runtime + optional [dev]/[test]), ruff/mypy config
+├── uv.lock                  ← locked transitive dependency versions (re-run `uv lock` after editing pyproject.toml)
 ├── .gitignore                ← excludes venv, pycache, generated CSS, db files
 ├── LICENSE                   ← MIT License
 ├── README.md                  ← this file
