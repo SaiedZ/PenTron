@@ -9,6 +9,7 @@ import os
 import sys
 from db import (
     get_connection,
+    get_settings,
     create_session,
     save_vulnerability,
     save_fix,
@@ -30,7 +31,7 @@ from db import (
     print_history,
     print_session
 )
-from tools import interactive_tool_run, format_recon_for_llm, run_default_recon
+from tools import interactive_tool_run, format_recon_for_llm, run_default_recon, check_target_safety
 from llm import analyse_target
 
 
@@ -42,14 +43,14 @@ def banner():
     os.system("clear")
     print("""
 \033[91m
-    ███╗   ███╗███████╗████████╗ █████╗ ████████╗██████╗  ██████╗ ███╗   ██╗
-    ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║
-    ██╔████╔██║█████╗     ██║   ███████║   ██║   ██████╔╝██║   ██║██╔██╗ ██║
-    ██║╚██╔╝██║██╔══╝     ██║   ██╔══██║   ██║   ██╔══██╗██║   ██║██║╚██╗██║
-    ██║ ╚═╝ ██║███████╗   ██║   ██║  ██║   ██║   ██║  ██║╚██████╔╝██║ ╚████║
-    ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+    ██████╗ ███████╗███╗   ██╗████████╗██████╗  ██████╗ ███╗   ██╗
+    ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║
+    ██████╔╝█████╗  ██╔██╗ ██║   ██║   ██████╔╝██║   ██║██╔██╗ ██║
+    ██╔═══╝ ██╔══╝  ██║╚██╗██║   ██║   ██╔══██╗██║   ██║██║╚██╗██║
+    ██║     ███████╗██║ ╚████║   ██║   ██║  ██║╚██████╔╝██║ ╚████║
+    ╚═╝     ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 \033[0m
-    \033[90mAI Penetration Testing Assistant  |  Model: metatron-qwen  |  Parrot OS\033[0m
+    \033[90mAI Penetration Testing Assistant  |  Model: metatron-qwen  |  fork of METATRON\033[0m
     \033[90m─────────────────────────────────────────────────────────────────────\033[0m
 """)
 
@@ -101,6 +102,11 @@ def new_scan():
         warn("No target entered.")
         return
 
+    unsafe = check_target_safety(target)
+    if unsafe:
+        error(unsafe)
+        return
+
     # check if target was scanned before
     history = get_all_history()
     past = [row for row in history if row[1] == target]
@@ -116,7 +122,10 @@ def new_scan():
     # run recon tools
     divider("RECON")
     info("Choose recon tools to run:")
-    raw_scan = interactive_tool_run(target)
+    scan_settings = get_settings()
+    delay = scan_settings.get("scan_delay_seconds", 0)
+    user_agent = scan_settings.get("user_agent") or None
+    raw_scan = interactive_tool_run(target, delay=delay, user_agent=user_agent)
 
     if not raw_scan.strip():
         warn("No scan data collected. Aborting.")

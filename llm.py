@@ -6,13 +6,15 @@ Builds prompts, handles AI responses, runs tool dispatch loop.
 Model: metatron-qwen (fine-tuned from huihui_ai/qwen3.5-abliterated:9b)
 """
 
+import os
 import re
 import requests
 import json
 from tools import run_tool_by_command, run_nmap, run_curl_headers
 from search import handle_search_dispatch
+from providers import get_provider, OllamaProvider
 
-OLLAMA_URL  = "http://localhost:11434/api/chat"
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
 MODEL_NAME  = "metatron-qwen"
 MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
@@ -69,33 +71,9 @@ IMPORTANT RULES FOR ACCURACY:
 # ─────────────────────────────────────────────
 
 def ask_ollama(messages: list) -> str:
-    try:
-        payload = {
-            "model":  MODEL_NAME,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "num_predict": MAX_TOKENS,
-                "temperature": 0.7,
-                "top_p": 0.9,
-            }
-        }
-        print(f"\n[*] Sending to {MODEL_NAME}...")
-        resp = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
-        response = data.get("message", {}).get("content", "").strip()
-        if not response:
-            return "[!] Model returned empty response."
-        return response
-    except requests.exceptions.ConnectionError:
-        return "[!] Cannot connect to Ollama. Is it running? Try: ollama serve"
-    except requests.exceptions.Timeout:
-        return "[!] Ollama timed out. Model may be loading, try again."
-    except requests.exceptions.HTTPError as e:
-        return f"[!] Ollama HTTP error: {e}"
-    except Exception as e:
-        return f"[!] Unexpected error: {e}"
+    """Thin wrapper kept for direct/test use — analyse_target uses get_provider() instead."""
+    print(f"\n[*] Sending to {MODEL_NAME}...")
+    return OllamaProvider(MODEL_NAME, timeout=OLLAMA_TIMEOUT).send(messages, max_tokens=MAX_TOKENS)
 
 
 # ─────────────────────────────────────────────
@@ -119,7 +97,7 @@ def extract_tool_calls(response: str) -> list:
 
     return calls
 
-def summarize_tool_output(raw_output: str) -> str:
+def summarize_tool_output(raw_output: str, provider=None) -> str:
     """
     Compress raw tool output into security-relevant bullet points
     before injecting into the LLM context.
@@ -129,27 +107,25 @@ def summarize_tool_output(raw_output: str) -> str:
         return raw_output
 
     try:
-        payload = {
-            "model":  MODEL_NAME,
-            "messages": [
-    {"role": "system", "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown."},
-    {"role": "user", "content": f"Compress this tool output:\n{raw_output[:6000]}"} ],
-            "stream": False,
-            "options": {
-                "num_predict": 512,
-                "temperature": 0.2,
-                "top_p": 0.9,
-            }
-        }
-        resp = requests.post(OLLAMA_URL, json=payload, timeout=120)
-        resp.raise_for_status()
-        summary = resp.json().get("message", {}).get("content", "").strip()
-        return summary if summary else raw_output
+        provider = provider or get_provider()
+        summary = provider.send(
+            [
+                {"role": "system", "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown."},
+                {"role": "user", "content": f"Compress this tool output:\n{raw_output[:6000]}"},
+            ],
+            max_tokens=512,
+            temperature=0.2,
+        )
+        return summary if summary and not summary.startswith("[!]") else raw_output
     except Exception:
         return raw_output
-def run_tool_calls(calls: list) -> str:
+
+
+def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=None) -> str:
     """
     Execute all tool/search calls and return combined results string.
+    session_target binds any [TOOL:] call back to the operator-declared
+    scan target — see tools.run_tool_by_command for why.
     """
     if not calls:
         return ""
@@ -159,13 +135,16 @@ def run_tool_calls(calls: list) -> str:
         print(f"\n  [DISPATCH] {call_type}: {call_content}")
 
         if call_type == "TOOL":
-            output = run_tool_by_command(call_content)
+            output = run_tool_by_command(call_content, session_target)
         elif call_type == "SEARCH":
             output = handle_search_dispatch(call_content)
         else:
             output = f"[!] Unknown call type: {call_type}"
 
-        compressed = summarize_tool_output(output.strip())
+        if on_progress and output.strip().startswith("[!] BLOCKED:"):
+            on_progress("call_blocked", f"{call_type}: {call_content} -> {output.strip()}")
+
+        compressed = summarize_tool_output(output.strip(), provider)
         results += f"\n[{call_type} RESULT: {call_content}]\n"
         results += "─" * 40 + "\n"
         results += compressed + "\n"
@@ -292,11 +271,34 @@ def parse_summary(response: str) -> str:
     return match.group(1).strip() if match else ""
 
 
+CVE_RE = re.compile(r'CVE-\d{4}-\d{4,7}', re.IGNORECASE)
+
+
+def verify_cve_citations(vulnerabilities: list, raw_scan: str) -> list:
+    """
+    Flag any CVE ID the model cited that never appeared in the actual scan
+    data it was given. Models sometimes cite a plausible-sounding but wrong
+    CVE for a service/version (e.g. Log4Shell for a plain Apache banner).
+    The finding isn't dropped — it may still be a real, correctly-reasoned
+    vulnerability — it's just marked as unverified against the raw evidence.
+    """
+    raw_upper = raw_scan.upper()
+    for vuln in vulnerabilities:
+        text = f"{vuln.get('description', '')} {vuln.get('fix', '')}"
+        for cve in CVE_RE.findall(text):
+            if cve.upper() not in raw_upper and "[UNVERIFIED CVE" not in vuln["description"]:
+                vuln["description"] = (
+                    vuln["description"] + f" [UNVERIFIED CVE — {cve} not present in scan data]"
+                ).strip()
+    return vulnerabilities
+
+
 # ─────────────────────────────────────────────
 # MAIN ANALYSIS FUNCTION
 # ─────────────────────────────────────────────
 
-def analyse_target(target: str, raw_scan: str) -> dict:
+def analyse_target(target: str, raw_scan: str, provider=None, on_progress=None) -> dict:
+    provider = provider or get_provider()
     messages = [
         {
             "role": "system",
@@ -317,7 +319,10 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
     final_response = ""
 
     for loop in range(MAX_TOOL_LOOPS):
-        response = ask_ollama(messages)
+        if on_progress:
+            on_progress("ai_round_start", f"{loop + 1}/{MAX_TOOL_LOOPS}")
+
+        response = provider.send(messages, max_tokens=MAX_TOKENS)
 
         print(f"\n{'─'*60}")
         print(f"[METATRON - Round {loop + 1}]")
@@ -331,7 +336,10 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
             print("\n[*] No tool calls. Analysis complete.")
             break
 
-        tool_results = run_tool_calls(tool_calls)
+        if on_progress:
+            on_progress("tool_dispatch", tool_calls)
+
+        tool_results = run_tool_calls(tool_calls, target, provider, on_progress)
 
         # add assistant response and tool results as new messages
         messages.append({
@@ -348,6 +356,7 @@ If analysis is complete, give the final RISK_LEVEL and SUMMARY."""
         })
 
     vulnerabilities = parse_vulnerabilities(final_response)
+    vulnerabilities = verify_cve_citations(vulnerabilities, raw_scan)
     exploits        = parse_exploits(final_response)
     risk_level      = parse_risk_level(final_response)
     summary         = parse_summary(final_response)
@@ -371,7 +380,7 @@ if __name__ == "__main__":
 
     # test if ollama is reachable
     try:
-        r = requests.get("http://localhost:11434", timeout=5)
+        r = requests.get(f"http://{OLLAMA_HOST}", timeout=5)
         print("[+] Ollama is running.")
     except Exception:
         print("[!] Ollama not reachable. Run: ollama serve")

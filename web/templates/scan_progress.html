@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Scan #{{ sl_no }} — PenTron{% endblock %}
+
+{% block content %}
+<h1 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Scan #{{ sl_no }}</h1>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+  Live progress — this page refreshes automatically.
+</p>
+
+<div class="mt-6">
+  <div id="scan-status" hx-get="/scans/{{ sl_no }}/status-fragment" hx-trigger="load" hx-swap="outerHTML">
+    <p class="text-sm text-slate-500 dark:text-slate-400">Loading status…</p>
+  </div>
+</div>
+{% endblock %}
