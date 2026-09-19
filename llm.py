@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-METATRON - llm.py
-Ollama interface for metatron-qwen model.
+PENTRON - llm.py
+Ollama interface for pentron-qwen model.
 Builds prompts, handles AI responses, runs tool dispatch loop.
-Model: metatron-qwen (fine-tuned from huihui_ai/qwen3.5-abliterated:9b)
+Model: pentron-qwen (fine-tuned from huihui_ai/qwen3.5-abliterated:9b)
 """
 
 import os
@@ -15,7 +15,7 @@ from search import handle_search_dispatch
 from providers import get_provider, OllamaProvider
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
-MODEL_NAME  = "metatron-qwen"
+MODEL_NAME  = "pentron-qwen"
 MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
 OLLAMA_TIMEOUT = 600 
@@ -24,7 +24,7 @@ OLLAMA_TIMEOUT = 600
 # SYSTEM PROMPT
 # ─────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are METATRON, an elite AI penetration testing assistant running on Parrot OS.
+SYSTEM_PROMPT = """You are PENTRON, an elite AI penetration testing assistant running on Parrot OS.
 You are precise, technical, and direct. No fluff.
 
 You have access to real tools. To use them, write tags in your response:
@@ -54,7 +54,7 @@ NOTES: <any notes>
 End your analysis with:
 RISK_LEVEL: <CRITICAL|HIGH|MEDIUM|LOW>
 SUMMARY: <2-3 sentence overall summary>
-IMPORTANT: Never use markdown bold (**text**) or 
+IMPORTANT: Never use markdown bold (**text**) or
 headers (## text). Plain text only. No exceptions.
 IMPORTANT RULES FOR ACCURACY:
 - nmap filtered or no-response means INCONCLUSIVE not vulnerable
@@ -328,7 +328,7 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
         response = provider.send(messages, max_tokens=MAX_TOKENS)
 
         print(f"\n{'─'*60}")
-        print(f"[METATRON - Round {loop + 1}]")
+        print(f"[PENTRON - Round {loop + 1}]")
         print(f"{'─'*60}")
         print(response)
 

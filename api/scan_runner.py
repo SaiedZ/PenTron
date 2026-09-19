@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-METATRON - api/scan_runner.py
+PENTRON - api/scan_runner.py
 Background function launched via FastAPI's BackgroundTasks for POST
-/api/scans. Mirrors metatron.py::new_scan()'s recon -> AI -> save pipeline
+/api/scans. Mirrors pentron.py::new_scan()'s recon -> AI -> save pipeline
 exactly, reusing the same db.py/tools.py/llm.py functions, but reports
 live progress into the api.jobs store instead of print()ing to a terminal.
 """

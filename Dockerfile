@@ -1,4 +1,4 @@
-# METATRON - AI Penetration Testing Assistant
+# PENTRON - AI Penetration Testing Assistant
 # Base image: Kali Rolling, so nmap/whois/whatweb/nikto etc. match the
 # tools the app expects (originally built for Parrot OS).
 
@@ -56,4 +56,4 @@ RUN mkdir -p /app/exports
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-CMD ["python3", "metatron.py"]
+CMD ["python3", "pentron.py"]

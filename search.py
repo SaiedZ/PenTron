@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - search.py
+PENTRON - search.py
 Free web search via DuckDuckGo — no API key needed.
 Also fetches and extracts plain text from URLs.
 Used by LLM tool dispatch when AI writes [SEARCH: query]

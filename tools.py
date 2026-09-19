@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - tools.py
+PENTRON - tools.py
 Recon tool runners — all output returned as strings to feed into the LLM.
 Tools used: nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f
 OS: Parrot OS (all these tools are pre-installed or easily available)

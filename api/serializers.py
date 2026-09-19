@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/serializers.py
+PENTRON - api/serializers.py
 Map db.py's raw tuple rows (column order defined in docker/schema.sql) to
 named dicts, in one place, so raw index-based tuples never leak into JSON
 responses.

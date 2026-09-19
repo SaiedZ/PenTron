@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/routers/exports.py
+PENTRON - api/routers/exports.py
 Generate a PDF/HTML report and stream it back as a download, reusing
 export.py's existing export_pdf/export_html unchanged.
 """
@@ -16,9 +16,9 @@ from export import export_html, export_pdf
 
 router = APIRouter(prefix="/api", tags=["exports"], dependencies=[Depends(verify_token)])
 
-# Not export_menu's `~/METATRON/reports` default — that path isn't
+# Not export_menu's `~/PenTron/reports` default — that path isn't
 # meaningful for a container serving a download back over HTTP.
-EXPORTS_DIR = os.environ.get("METATRON_EXPORTS_DIR", "/app/exports")
+EXPORTS_DIR = os.environ.get("PENTRON_EXPORTS_DIR", "/app/exports")
 
 
 @router.get("/history/{sl_no}/export")
