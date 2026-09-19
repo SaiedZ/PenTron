@@ -2,7 +2,7 @@
 ### AI-Powered Penetration Testing Assistant
 
 <p align="center">
-  <img src="screenshots/banner.png" alt="PenTron Banner" width="800"/>
+  <img width="524" height="161" alt="image" src="https://github.com/user-attachments/assets/1d9476ca-1fc8-4eec-940e-7fa41dd08ad3" />
 </p>
 
 <p align="center">
@@ -82,18 +82,18 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 ## 🖥️ Screenshots
 
 <p align="center">
-  <img width="1010" height="322" alt="image" src="https://github.com/user-attachments/assets/1676aa87-6051-4875-9ef6-62c2060da16c" />
+  <img width="736" height="347" alt="image" src="https://github.com/user-attachments/assets/056328f0-49c7-4dd1-9297-daabe3e736ee" />
   <br><i>Main Menu (CLI)</i>
 </p>
 
 <p align="center">
-  <img src="screenshots/scan_running.png" alt="Scan Running" width="700"/>
-  <br><i>Recon tools running on target</i>
+  <img width="748" height="724" alt="image" src="https://github.com/user-attachments/assets/a14c147d-d349-4086-a0ef-81b6c0c68cdb" />
+  <br><i>Recon tools running on target (CLI)</i>
 </p>
 
 <p align="center">
-  <img src="screenshots/ai_analysis.png" alt="AI Analysis" width="700"/>
-  <br><i>AI analyzing scan results</i>
+  <img width="731" height="571" alt="image" src="https://github.com/user-attachments/assets/e1f2d2c2-69ed-4065-8665-36b5e751ed61" />
+  <br><i>Settings (CLI)</i>
 </p>
 
 <p align="center">
