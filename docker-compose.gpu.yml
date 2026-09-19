@@ -1,0 +1,16 @@
+# GPU overlay for Ollama. Layer this on top of the base compose file
+# instead of editing it:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#
+# To go back to CPU-only, just drop the -f docker-compose.gpu.yml flag on
+# your next `up`.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

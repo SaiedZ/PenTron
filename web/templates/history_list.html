@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}History — PenTron{% endblock %}
+
+{% block content %}
+<h1 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Scan history</h1>
+
+{% if not rows %}
+<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">No scans yet.</p>
+{% else %}
+<div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+  <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">
+    <thead class="bg-slate-50 dark:bg-slate-900">
+      <tr>
+        <th class="px-4 py-2 text-left font-medium text-slate-500 dark:text-slate-400">SL#</th>
+        <th class="px-4 py-2 text-left font-medium text-slate-500 dark:text-slate-400">Target</th>
+        <th class="px-4 py-2 text-left font-medium text-slate-500 dark:text-slate-400">Date</th>
+        <th class="px-4 py-2 text-left font-medium text-slate-500 dark:text-slate-400">Status</th>
+        <th class="px-4 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
+      {% for row in rows %}
+      <tr>
+        <td class="px-4 py-2 text-slate-700 dark:text-slate-300">{{ row.sl_no }}</td>
+        <td class="px-4 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.target }}</td>
+        <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ row.scan_date }}</td>
+        <td class="px-4 py-2 text-slate-500 dark:text-slate-400">{{ row.status }}</td>
+        <td class="px-4 py-2 text-right">
+          <a href="/history/{{ row.sl_no }}" class="text-rose-600 hover:underline dark:text-rose-400">View</a>
+          <button onclick="confirmAndDelete('/api/history/{{ row.sl_no }}', 'Delete session #{{ row.sl_no }} permanently?')"
+            class="ml-3 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400">
+            Delete
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

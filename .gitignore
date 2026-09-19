@@ -2,7 +2,12 @@ reports/
 exports/
 venv/
 __pycache__/
-*.pyc# Byte-compiled / optimized / DLL files
+*.pyc
+.claude/
+# generated at Docker build time
+web/static/css/tailwind.css
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
