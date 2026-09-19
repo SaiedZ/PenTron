@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-METATRON - metatron.py
+PENTRON - pentron.py
 Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
-Run with: python metatron.py
+Run with: python pentron.py
 """
 from export import export_menu
 import os
@@ -50,7 +50,7 @@ def banner():
     ██║     ███████╗██║ ╚████║   ██║   ██║  ██║╚██████╔╝██║ ╚████║
     ╚═╝     ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 \033[0m
-    \033[90mAI Penetration Testing Assistant  |  Model: metatron-qwen  |  fork of METATRON\033[0m
+    \033[90mAI Penetration Testing Assistant  |  Model: pentron-qwen  |  originally forked from METATRON\033[0m
     \033[90m─────────────────────────────────────────────────────────────────────\033[0m
 """)
 
@@ -419,7 +419,7 @@ def main_menu():
         print("  \033[92m[3]\033[0m  Exit")
         divider()
 
-        choice = prompt("metatron> ")
+        choice = prompt("pentron> ")
 
         if choice == "1":
             new_scan()
@@ -430,7 +430,7 @@ def main_menu():
             input("\n\033[90mPress Enter to continue...\033[0m")
 
         elif choice == "3":
-            print("\n\033[91m[*] Shutting down Metatron. Stay legal.\033[0m\n")
+            print("\n\033[91m[*] Shutting down Pentron. Stay legal.\033[0m\n")
             sys.exit(0)
 
         else:
