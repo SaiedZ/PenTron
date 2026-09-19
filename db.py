@@ -6,9 +6,9 @@ Database: pentron
 """
 
 import os
-import mysql.connector
 from datetime import datetime
 
+import mysql.connector
 
 # ─────────────────────────────────────────────
 # CONNECTION
@@ -53,7 +53,8 @@ def save_vulnerability(
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO vulnerabilities (sl_no, vuln_name, severity, port, service, description)
+        INSERT INTO vulnerabilities
+            (sl_no, vuln_name, severity, port, service, description)
         VALUES (%s, %s, %s, %s, %s, %s)
     """,
         (sl_no, vuln_name, severity, port, service, description),
@@ -349,10 +350,12 @@ def _ensure_settings_table(cursor):
         "ALTER TABLE settings ADD COLUMN IF NOT EXISTS scan_delay_seconds INT DEFAULT 0"
     )
     cursor.execute(
-        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500) DEFAULT NULL"
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS "
+        "user_agent VARCHAR(500) DEFAULT NULL"
     )
     cursor.execute(
-        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS subdomain_discovery_level INT DEFAULT 0"
+        "ALTER TABLE settings ADD COLUMN IF NOT EXISTS "
+        "subdomain_discovery_level INT DEFAULT 0"
     )
 
 
@@ -423,7 +426,8 @@ def print_session(data: dict):
     if data["vulns"]:
         for v in data["vulns"]:
             print(
-                f"  id={v[0]} | {v[2]} | Severity: {v[3]} | Port: {v[4]} | Service: {v[5]}"
+                f"  id={v[0]} | {v[2]} | Severity: {v[3]} | "
+                f"Port: {v[4]} | Service: {v[5]}"
             )
             print(f"           {v[6]}")
     else:

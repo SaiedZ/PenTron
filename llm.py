@@ -10,11 +10,12 @@ MODEL_NAME below is only used by the direct/test wrapper ask_ollama()).
 
 import os
 import re
+
 import requests
-import json
-from tools import run_tool_by_command, run_nmap, run_curl_headers
+
+from providers import OllamaProvider, get_provider
 from search import handle_search_dispatch
-from providers import get_provider, OllamaProvider
+from tools import run_tool_by_command
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
 MODEL_NAME = "huihui_ai/qwen3.5-abliterated:9b"
@@ -26,7 +27,8 @@ OLLAMA_TIMEOUT = 600
 # SYSTEM PROMPT
 # ─────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are PENTRON, an elite AI penetration testing assistant running on Kali.
+SYSTEM_PROMPT = """You are PENTRON, an elite AI penetration testing assistant \
+running on Kali.
 You are precise, technical, and direct. No fluff.
 
 You have access to real tools. To use them, write tags in your response:
@@ -74,7 +76,10 @@ IMPORTANT RULES FOR ACCURACY:
 
 
 def ask_ollama(messages: list) -> str:
-    """Thin wrapper kept for direct/test use — analyse_target uses get_provider() instead."""
+    """Thin wrapper kept for direct/test use.
+
+    analyse_target uses get_provider() instead.
+    """
     print(f"\n[*] Sending to {MODEL_NAME}...")
     return OllamaProvider(MODEL_NAME, timeout=OLLAMA_TIMEOUT).send(
         messages, max_tokens=MAX_TOKENS
@@ -119,7 +124,11 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
             [
                 {
                     "role": "system",
-                    "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown.",
+                    "content": (
+                        "You are a security data compressor. Extract only "
+                        "security-relevant facts. Return maximum 15 bullet "
+                        "points. Plain text only. No markdown."
+                    ),
                 },
                 {
                     "role": "user",
@@ -405,7 +414,8 @@ If analysis is complete, give the final RISK_LEVEL and SUMMARY.""",
     summary = parse_summary(final_response)
 
     print(
-        f"\n[+] Parsed: {len(vulnerabilities)} vulns, {len(exploits)} exploits | Risk: {risk_level}"
+        f"\n[+] Parsed: {len(vulnerabilities)} vulns, "
+        f"{len(exploits)} exploits | Risk: {risk_level}"
     )
 
     return {

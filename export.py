@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 
-import os
 import datetime
-from db import get_session as fetch_session, get_all_history as fetch_all_history
-from reportlab.lib.pagesizes import A4
+import os
+
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
-    SimpleDocTemplate,
+    HRFlowable,
     Paragraph,
+    SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
-    HRFlowable,
 )
-from reportlab.lib.enums import TA_CENTER
+
+from db import get_all_history as fetch_all_history
+from db import get_session as fetch_session
 
 SEVERITY_COLORS = {
     "critical": "#c0392b",
@@ -360,7 +363,8 @@ body{{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#e0e0e0;padding
 .header p{{color:#888;font-size:.95em}}
 .meta-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:30px}}
 .meta-card{{background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:14px}}
-.meta-card .label{{font-size:.75em;color:#888;text-transform:uppercase;margin-bottom:4px}}
+.meta-card .label{{font-size:.75em;color:#888;text-transform:uppercase;
+                   margin-bottom:4px}}
 .meta-card .value{{font-size:1.1em;font-weight:bold}}
 .risk{{color:{rc}}}
 section{{margin-bottom:30px}}
@@ -410,17 +414,42 @@ a{{color:#555}}
 
 <section>
   <h2>Vulnerabilities</h2>
-  {"<table><thead><tr><th>#</th><th>Vulnerability</th><th>Severity</th><th>Port</th><th>Service</th></tr></thead><tbody>" + vuln_rows + "</tbody></table>" if data["vulns"] else '<p style="color:#888">None recorded.</p>'}
+  {
+        (
+            "<table><thead><tr><th>#</th><th>Vulnerability</th>"
+            "<th>Severity</th><th>Port</th><th>Service</th></tr></thead><tbody>"
+            + vuln_rows
+            + "</tbody></table>"
+        )
+        if data["vulns"]
+        else '<p style="color:#888">None recorded.</p>'
+    }
 </section>
 
 <section>
   <h2>Fixes &amp; Mitigations</h2>
-  {"<table><thead><tr><th>#</th><th>Vuln</th><th>Fix</th><th>Source</th></tr></thead><tbody>" + fix_rows + "</tbody></table>" if data["fixes"] else '<p style="color:#888">None recorded.</p>'}
+  {
+        (
+            "<table><thead><tr><th>#</th><th>Vuln</th><th>Fix</th>"
+            "<th>Source</th></tr></thead><tbody>" + fix_rows + "</tbody></table>"
+        )
+        if data["fixes"]
+        else '<p style="color:#888">None recorded.</p>'
+    }
 </section>
 
 <section>
   <h2>Exploits Attempted</h2>
-  {"<table><thead><tr><th>#</th><th>Exploit</th><th>Tool</th><th>Payload</th><th>Result</th></tr></thead><tbody>" + exp_rows + "</tbody></table>" if data["exploits"] else '<p style="color:#888">None recorded.</p>'}
+  {
+        (
+            "<table><thead><tr><th>#</th><th>Exploit</th><th>Tool</th>"
+            "<th>Payload</th><th>Result</th></tr></thead><tbody>"
+            + exp_rows
+            + "</tbody></table>"
+        )
+        if data["exploits"]
+        else '<p style="color:#888">None recorded.</p>'
+    }
 </section>
 
 <section>

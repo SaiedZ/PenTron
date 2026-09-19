@@ -12,7 +12,8 @@ def test_ansi_color_codes_are_stripped(monkeypatch):
         tools,
         "run_tool",
         lambda *a, **kw: (
-            "[+] The site \x1b[1;94mhttps://clubs.ma\x1b[0m is behind \x1b[1;96mCloudflare\x1b[0m WAF."
+            "[+] The site \x1b[1;94mhttps://clubs.ma\x1b[0m is behind "
+            "\x1b[1;96mCloudflare\x1b[0m WAF."
         ),
     )
     result = tools.run_waf_detect("clubs.ma")

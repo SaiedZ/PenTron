@@ -33,7 +33,10 @@ def test_all_headers_missing_are_flagged():
 
 
 def test_partial_headers_are_individually_flagged():
-    headers = "HTTP/1.1 200 OK\nX-Frame-Options: SAMEORIGIN\nX-Content-Type-Options: nosniff\n"
+    headers = (
+        "HTTP/1.1 200 OK\nX-Frame-Options: SAMEORIGIN\n"
+        "X-Content-Type-Options: nosniff\n"
+    )
     result = tools._analyze_security_headers(headers)
     assert "present : x-frame-options" in result
     assert "present : x-content-type-options" in result
