@@ -29,4 +29,5 @@ app.include_router(settings.router)
 # Page routes (dashboard/scan-progress/history/settings) are added in
 # api/routers/pages.py alongside the Jinja2 templates.
 from api.routers import pages  # noqa: E402
+
 app.include_router(pages.router)

@@ -19,7 +19,9 @@ class BaseProvider(ABC):
         self.timeout = timeout
 
     @abstractmethod
-    def send(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    def send(
+        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+    ) -> str:
         """Return the assistant's text reply, or a '[!] ...' string on failure."""
 
     @abstractmethod
@@ -32,7 +34,9 @@ class OllamaProvider(BaseProvider):
         super().__init__(model, timeout, **kwargs)
         self.host = host or os.environ.get("OLLAMA_HOST", "localhost:11434")
 
-    def send(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    def send(
+        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+    ) -> str:
         try:
             payload = {
                 "model": self.model,
@@ -44,7 +48,9 @@ class OllamaProvider(BaseProvider):
                     "top_p": 0.9,
                 },
             }
-            resp = requests.post(f"http://{self.host}/api/chat", json=payload, timeout=self.timeout)
+            resp = requests.post(
+                f"http://{self.host}/api/chat", json=payload, timeout=self.timeout
+            )
             resp.raise_for_status()
             data = resp.json()
             response = data.get("message", {}).get("content", "").strip()
@@ -68,16 +74,27 @@ class OllamaProvider(BaseProvider):
 
 
 class OpenAIProvider(BaseProvider):
-    def __init__(self, model: str, timeout: int = 600, api_key: str = None,
-                 base_url: str = "https://api.openai.com/v1", **kwargs):
+    def __init__(
+        self,
+        model: str,
+        timeout: int = 600,
+        api_key: str = None,
+        base_url: str = "https://api.openai.com/v1",
+        **kwargs,
+    ):
         super().__init__(model, timeout, **kwargs)
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
         self.base_url = base_url.rstrip("/")
 
     def _headers(self) -> dict:
-        return {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        return {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
 
-    def send(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    def send(
+        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+    ) -> str:
         try:
             payload = {
                 "model": self.model,
@@ -85,8 +102,12 @@ class OpenAIProvider(BaseProvider):
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
-            resp = requests.post(f"{self.base_url}/chat/completions",
-                                  headers=self._headers(), json=payload, timeout=self.timeout)
+            resp = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json=payload,
+                timeout=self.timeout,
+            )
             resp.raise_for_status()
             data = resp.json()
             content = data["choices"][0]["message"]["content"].strip()
@@ -100,7 +121,9 @@ class OpenAIProvider(BaseProvider):
 
     def list_models(self) -> list:
         try:
-            resp = requests.get(f"{self.base_url}/models", headers=self._headers(), timeout=10)
+            resp = requests.get(
+                f"{self.base_url}/models", headers=self._headers(), timeout=10
+            )
             resp.raise_for_status()
             return [m["id"] for m in resp.json().get("data", [])]
         except Exception:
@@ -132,7 +155,9 @@ class AnthropicProvider(BaseProvider):
                 rest.append(m)
         return system_text, rest
 
-    def send(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    def send(
+        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+    ) -> str:
         try:
             system_text, rest = self._split_system(messages)
             payload = {
@@ -143,8 +168,12 @@ class AnthropicProvider(BaseProvider):
             }
             if system_text:
                 payload["system"] = system_text
-            resp = requests.post("https://api.anthropic.com/v1/messages",
-                                  headers=self._headers(), json=payload, timeout=self.timeout)
+            resp = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers=self._headers(),
+                json=payload,
+                timeout=self.timeout,
+            )
             resp.raise_for_status()
             data = resp.json()
             blocks = data.get("content", [])
@@ -159,8 +188,11 @@ class AnthropicProvider(BaseProvider):
 
     def list_models(self) -> list:
         try:
-            resp = requests.get("https://api.anthropic.com/v1/models",
-                                 headers=self._headers(), timeout=10)
+            resp = requests.get(
+                "https://api.anthropic.com/v1/models",
+                headers=self._headers(),
+                timeout=10,
+            )
             resp.raise_for_status()
             return [m["id"] for m in resp.json().get("data", [])]
         except Exception:
@@ -186,17 +218,24 @@ class GoogleProvider(BaseProvider):
                 contents.append({"role": role, "parts": [{"text": m["content"]}]})
         return system_text, contents
 
-    def send(self, messages: list, max_tokens: int = 8192, temperature: float = 0.7) -> str:
+    def send(
+        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+    ) -> str:
         try:
             system_text, contents = self._to_gemini_contents(messages)
             payload = {
                 "contents": contents,
-                "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temperature},
+                "generationConfig": {
+                    "maxOutputTokens": max_tokens,
+                    "temperature": temperature,
+                },
             }
             if system_text:
                 payload["systemInstruction"] = {"parts": [{"text": system_text}]}
-            url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-                   f"{self.model}:generateContent?key={self.api_key}")
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{self.model}:generateContent?key={self.api_key}"
+            )
             resp = requests.post(url, json=payload, timeout=self.timeout)
             resp.raise_for_status()
             data = resp.json()
@@ -215,7 +254,9 @@ class GoogleProvider(BaseProvider):
             url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
             resp = requests.get(url, timeout=10)
             resp.raise_for_status()
-            return [m["name"].replace("models/", "") for m in resp.json().get("models", [])]
+            return [
+                m["name"].replace("models/", "") for m in resp.json().get("models", [])
+            ]
         except Exception:
             return []
 
@@ -237,19 +278,28 @@ def get_provider(settings: dict = None) -> BaseProvider:
     if settings is None:
         try:
             from db import get_settings
+
             settings = get_settings()
         except Exception:
             settings = {}
 
-    name = (settings.get("provider") or os.environ.get("LLM_PROVIDER") or "ollama").lower()
+    name = (
+        settings.get("provider") or os.environ.get("LLM_PROVIDER") or "ollama"
+    ).lower()
     provider_cls = PROVIDERS.get(name, OllamaProvider)
 
-    model = settings.get("model") or os.environ.get("PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b")
-    timeout = int(settings.get("ollama_timeout") or os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600))
+    model = settings.get("model") or os.environ.get(
+        "PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b"
+    )
+    timeout = int(
+        settings.get("ollama_timeout") or os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)
+    )
 
     kwargs = {}
     if name == "ollama":
-        kwargs["host"] = settings.get("ollama_host") or os.environ.get("OLLAMA_HOST", "localhost:11434")
+        kwargs["host"] = settings.get("ollama_host") or os.environ.get(
+            "OLLAMA_HOST", "localhost:11434"
+        )
     else:
         kwargs["api_key"] = settings.get("api_key")
 

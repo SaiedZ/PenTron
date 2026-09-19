@@ -13,7 +13,9 @@ from api.schemas import ScanCreateRequest
 from api.security import verify_token
 from tools import check_target_safety
 
-router = APIRouter(prefix="/api/scans", tags=["scans"], dependencies=[Depends(verify_token)])
+router = APIRouter(
+    prefix="/api/scans", tags=["scans"], dependencies=[Depends(verify_token)]
+)
 
 
 @router.post("")
@@ -28,7 +30,11 @@ def start_scan(payload: ScanCreateRequest, background_tasks: BackgroundTasks):
     sl_no = db.create_session(payload.target)
     jobs.create_job(sl_no)
     background_tasks.add_task(
-        run_scan_job, sl_no, payload.target, payload.tools, payload.subdomain_discovery_level
+        run_scan_job,
+        sl_no,
+        payload.target,
+        payload.tools,
+        payload.subdomain_discovery_level,
     )
     return {"sl_no": sl_no}
 

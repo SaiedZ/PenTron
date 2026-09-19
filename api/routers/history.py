@@ -8,11 +8,18 @@ around db.py's existing CRUD functions.
 from fastapi import APIRouter, Depends, HTTPException
 
 import db
-from api.schemas import ExploitEditRequest, FixEditRequest, RiskEditRequest, VulnEditRequest
+from api.schemas import (
+    ExploitEditRequest,
+    FixEditRequest,
+    RiskEditRequest,
+    VulnEditRequest,
+)
 from api.security import verify_token
 from api.serializers import history_to_dict, session_to_dict
 
-router = APIRouter(prefix="/api", tags=["history"], dependencies=[Depends(verify_token)])
+router = APIRouter(
+    prefix="/api", tags=["history"], dependencies=[Depends(verify_token)]
+)
 
 
 @router.get("/history")

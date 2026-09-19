@@ -5,6 +5,7 @@ robots.txt sometimes leaks paths an admin doesn't want indexed; security.txt
 disclosure process. Checked at the standard /.well-known/ path first, with
 a fallback to the legacy root path some sites still use instead.
 """
+
 import tools
 
 

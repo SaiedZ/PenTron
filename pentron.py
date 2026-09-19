@@ -4,6 +4,7 @@ PENTRON - pentron.py
 Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
 Run with: python pentron.py
 """
+
 from export import export_menu
 import os
 import sys
@@ -29,15 +30,22 @@ from db import (
     delete_fix,
     delete_full_session,
     print_history,
-    print_session
+    print_session,
 )
-from tools import interactive_tool_run, format_recon_for_llm, run_default_recon, check_target_safety, discover_subdomains
+from tools import (
+    interactive_tool_run,
+    format_recon_for_llm,
+    run_default_recon,
+    check_target_safety,
+    discover_subdomains,
+)
 from llm import analyse_target
 
 
 # ─────────────────────────────────────────────
 # BANNER
 # ─────────────────────────────────────────────
+
 
 def banner():
     os.system("clear")
@@ -46,7 +54,7 @@ def banner():
     except Exception:
         model = "unknown"
     print(f"""
-\033[91m
+\033[38;2;88;166;255m
     ██████╗ ███████╗███╗   ██╗████████╗██████╗  ██████╗ ███╗   ██╗
     ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║
     ██████╔╝█████╗  ██╔██╗ ██║   ██║   ██████╔╝██║   ██║██╔██╗ ██║
@@ -63,11 +71,12 @@ def banner():
 # HELPERS
 # ─────────────────────────────────────────────
 
+
 def divider(label=""):
     if label:
-        print(f"\n\033[33m{'─'*20} {label} {'─'*20}\033[0m")
+        print(f"\n\033[33m{'─' * 20} {label} {'─' * 20}\033[0m")
     else:
-        print(f"\033[90m{'─'*60}\033[0m")
+        print(f"\033[90m{'─' * 60}\033[0m")
 
 
 def prompt(text):
@@ -98,6 +107,7 @@ def confirm(question: str) -> bool:
 # ─────────────────────────────────────────────
 # NEW SCAN
 # ─────────────────────────────────────────────
+
 
 def new_scan():
     divider("NEW SCAN")
@@ -134,10 +144,14 @@ def new_scan():
     subdomain_text, allowed_subdomains = "", frozenset()
     if subdomain_level > 0:
         info("Discovering subdomains...")
-        subdomain_text, allowed_subdomains = discover_subdomains(target, subdomain_level)
+        subdomain_text, allowed_subdomains = discover_subdomains(
+            target, subdomain_level
+        )
         print(subdomain_text)
 
-    raw_scan = subdomain_text + interactive_tool_run(target, delay=delay, user_agent=user_agent)
+    raw_scan = subdomain_text + interactive_tool_run(
+        target, delay=delay, user_agent=user_agent
+    )
 
     if not raw_scan.strip():
         warn("No scan data collected. Aborting.")
@@ -159,7 +173,7 @@ def new_scan():
             vuln["severity"],
             vuln["port"],
             vuln["service"],
-            vuln["description"]
+            vuln["description"],
         )
         if vuln.get("fix"):
             save_fix(sl_no, vuln_id, vuln["fix"], source="ai")
@@ -173,16 +187,13 @@ def new_scan():
             exp["tool_used"],
             exp["payload"],
             exp["result"],
-            exp["notes"]
+            exp["notes"],
         )
         success(f"Saved exploit: {exp['exploit_name']}")
 
     # save summary
     save_summary(
-        sl_no,
-        result["raw_scan"],
-        result["full_response"],
-        result["risk_level"]
+        sl_no, result["raw_scan"], result["full_response"], result["risk_level"]
     )
 
     success(f"All data saved. SL# {sl_no} | Risk: {result['risk_level']}")
@@ -199,6 +210,7 @@ def new_scan():
 # ─────────────────────────────────────────────
 # VIEW HISTORY
 # ─────────────────────────────────────────────
+
 
 def view_history():
     divider("SCAN HISTORY")
@@ -237,6 +249,7 @@ def view_history():
 # ─────────────────────────────────────────────
 # EDIT / DELETE MENU
 # ─────────────────────────────────────────────
+
 
 def edit_delete_menu(sl_no: int):
     while True:
@@ -383,10 +396,12 @@ def edit_delete_menu(sl_no: int):
 
         # ── DELETE FULL SESSION ───────────────
         elif choice == "8":
-            if confirm(f"\n\033[91mPermanently delete ENTIRE session SL# {sl_no} from all tables?\033[0m"):
+            if confirm(
+                f"\n\033[91mPermanently delete ENTIRE session SL# {sl_no} from all tables?\033[0m"
+            ):
                 delete_full_session(sl_no)
                 success(f"Session SL# {sl_no} wiped.")
-                return   # go back to main menu
+                return  # go back to main menu
 
         # ── BACK ──────────────────────────────
         elif choice == "9":
@@ -399,6 +414,7 @@ def edit_delete_menu(sl_no: int):
 # ─────────────────────────────────────────────
 # DB CONNECTION CHECK
 # ─────────────────────────────────────────────
+
 
 def check_db():
     try:
@@ -414,6 +430,7 @@ def check_db():
 # ─────────────────────────────────────────────
 # MAIN MENU
 # ─────────────────────────────────────────────
+
 
 def main_menu():
     while True:

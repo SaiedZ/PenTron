@@ -22,14 +22,19 @@ import requests
 # PRE-FLIGHT TARGET SAFETY CHECK
 # ─────────────────────────────────────────────
 
+
 def _is_unsafe_ip(ip_str: str) -> bool:
     try:
         ip = ipaddress.ip_address(ip_str)
     except ValueError:
         return False
     return (
-        ip.is_private or ip.is_loopback or ip.is_link_local
-        or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
     )
 
 
@@ -75,7 +80,10 @@ def check_target_safety(target: str) -> str:
 # BASE RUNNER
 # ─────────────────────────────────────────────
 
-def run_tool(command: list, timeout: int = 120, retries: int = 0, retry_delay: float = 2.0) -> str:
+
+def run_tool(
+    command: list, timeout: int = 120, retries: int = 0, retry_delay: float = 2.0
+) -> str:
     """
     Execute a shell command, return combined stdout + stderr as string.
     Never crashes the program — always returns something.
@@ -89,10 +97,7 @@ def run_tool(command: list, timeout: int = 120, retries: int = 0, retry_delay: f
     while True:
         try:
             result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                timeout=timeout
+                command, capture_output=True, text=True, timeout=timeout
             )
             output = result.stdout.strip()
             errors = result.stderr.strip()
@@ -109,7 +114,9 @@ def run_tool(command: list, timeout: int = 120, retries: int = 0, retry_delay: f
         except subprocess.TimeoutExpired:
             if attempt < retries:
                 attempt += 1
-                print(f"  [!] Timed out after {timeout}s, retrying ({attempt}/{retries})...")
+                print(
+                    f"  [!] Timed out after {timeout}s, retrying ({attempt}/{retries})..."
+                )
                 time.sleep(retry_delay)
                 continue
             tried = f" (tried {attempt + 1}x)" if retries else ""
@@ -123,6 +130,7 @@ def run_tool(command: list, timeout: int = 120, retries: int = 0, retry_delay: f
 # ─────────────────────────────────────────────
 # INDIVIDUAL TOOLS
 # ─────────────────────────────────────────────
+
 
 def run_nmap(target: str, user_agent: str = None) -> str:
     """
@@ -218,11 +226,11 @@ def _fetch_headers_guarded(url: str, target: str, user_agent: str = None) -> str
 
 _SECURITY_HEADERS = {
     "strict-transport-security": "HSTS — enforces HTTPS, protects against protocol downgrade/SSL-stripping",
-    "content-security-policy":   "CSP — restricts what scripts/resources a page can load, mitigates XSS",
-    "x-frame-options":           "mitigates clickjacking (largely superseded by CSP frame-ancestors, but still widely checked)",
-    "x-content-type-options":    "prevents the browser from MIME-sniffing a response away from its declared Content-Type",
-    "referrer-policy":           "controls how much of the URL leaks to other sites via the Referer header",
-    "permissions-policy":        "restricts access to browser features/APIs (camera, geolocation, etc.)",
+    "content-security-policy": "CSP — restricts what scripts/resources a page can load, mitigates XSS",
+    "x-frame-options": "mitigates clickjacking (largely superseded by CSP frame-ancestors, but still widely checked)",
+    "x-content-type-options": "prevents the browser from MIME-sniffing a response away from its declared Content-Type",
+    "referrer-policy": "controls how much of the URL leaks to other sites via the Referer header",
+    "permissions-policy": "restricts access to browser features/APIs (camera, geolocation, etc.)",
 }
 
 
@@ -300,7 +308,9 @@ def run_robots_and_security_txt(target: str, user_agent: str = None) -> str:
         robots = _fetch_text_file(f"{scheme}://{target}", "/robots.txt", user_agent)
 
     print(f"  [*] curl {scheme}://{target}/.well-known/security.txt")
-    security = _fetch_text_file(f"{scheme}://{target}", "/.well-known/security.txt", user_agent)
+    security = _fetch_text_file(
+        f"{scheme}://{target}", "/.well-known/security.txt", user_agent
+    )
     if "[HTTP 200]" not in security:
         print(f"  [*] curl {scheme}://{target}/security.txt (legacy path)")
         legacy = _fetch_text_file(f"{scheme}://{target}", "/security.txt", user_agent)
@@ -318,22 +328,35 @@ def run_dig(target: str, user_agent: str = None) -> str:
     concept; kept for a uniform TOOLS_MENU dispatch signature.
     """
     print(f"  [*] dig {target} ANY")
-    a_record  = run_tool(["dig", "+short", "A",   target], timeout=15, retries=1)
-    mx_record = run_tool(["dig", "+short", "MX",  target], timeout=15, retries=1)
-    ns_record = run_tool(["dig", "+short", "NS",  target], timeout=15, retries=1)
-    txt_record= run_tool(["dig", "+short", "TXT", target], timeout=15, retries=1)
+    a_record = run_tool(["dig", "+short", "A", target], timeout=15, retries=1)
+    mx_record = run_tool(["dig", "+short", "MX", target], timeout=15, retries=1)
+    ns_record = run_tool(["dig", "+short", "NS", target], timeout=15, retries=1)
+    txt_record = run_tool(["dig", "+short", "TXT", target], timeout=15, retries=1)
 
     print(f"  [*] dig _dmarc.{target} TXT")
-    dmarc_record = run_tool(["dig", "+short", "TXT", f"_dmarc.{target}"], timeout=15, retries=1)
+    dmarc_record = run_tool(
+        ["dig", "+short", "TXT", f"_dmarc.{target}"], timeout=15, retries=1
+    )
 
     print(f"  [*] dig default._domainkey.{target} TXT")
-    dkim_record = run_tool(["dig", "+short", "TXT", f"default._domainkey.{target}"], timeout=15, retries=1)
+    dkim_record = run_tool(
+        ["dig", "+short", "TXT", f"default._domainkey.{target}"], timeout=15, retries=1
+    )
 
-    spf_status = "present" if "v=spf1" in txt_record.lower() else "MISSING — domain is not protected against sender spoofing via SPF"
-    dmarc_status = "present" if "v=dmarc1" in dmarc_record.lower() else "MISSING — no policy telling mail servers what to do with spoofed mail"
+    spf_status = (
+        "present"
+        if "v=spf1" in txt_record.lower()
+        else "MISSING — domain is not protected against sender spoofing via SPF"
+    )
+    dmarc_status = (
+        "present"
+        if "v=dmarc1" in dmarc_record.lower()
+        else "MISSING — no policy telling mail servers what to do with spoofed mail"
+    )
     dkim_found = bool(dkim_record.strip()) and not dkim_record.startswith("[!]")
     dkim_status = (
-        "found under selector 'default'" if dkim_found
+        "found under selector 'default'"
+        if dkim_found
         else "not found under selector 'default' (DKIM may still exist under another selector — this only checks the common default one)"
     )
 
@@ -384,11 +407,16 @@ def run_testssl(target: str, user_agent: str = None) -> str:
     WARNING: slower and noisier than sslscan, run selectively.
     user_agent is accepted but unused — same reasoning as sslscan.
     """
-    print(f"  [*] testssl --quiet --color 0 --warnings batch {target}  (this may take a while...)")
-    return run_tool(["testssl", "--quiet", "--color", "0", "--warnings", "batch", target], timeout=240)
+    print(
+        f"  [*] testssl --quiet --color 0 --warnings batch {target}  (this may take a while...)"
+    )
+    return run_tool(
+        ["testssl", "--quiet", "--color", "0", "--warnings", "batch", target],
+        timeout=240,
+    )
 
 
-_ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def run_waf_detect(target: str, user_agent: str = None) -> str:
@@ -409,6 +437,7 @@ def run_waf_detect(target: str, user_agent: str = None) -> str:
 # ─────────────────────────────────────────────
 # SUBDOMAIN DISCOVERY (3 configurable levels)
 # ─────────────────────────────────────────────
+
 
 def _discover_subdomains_passive(target: str) -> list:
     """
@@ -495,15 +524,15 @@ def discover_subdomains(target: str, level: int) -> tuple:
 # ─────────────────────────────────────────────
 
 TOOLS_MENU = {
-    "1": ("nmap",         run_nmap),
-    "2": ("whois",        run_whois),
-    "3": ("whatweb",      run_whatweb),
+    "1": ("nmap", run_nmap),
+    "2": ("whois", run_whois),
+    "3": ("whatweb", run_whatweb),
     "4": ("curl headers", run_curl_headers),
-    "5": ("dig DNS",      run_dig),
-    "6": ("nikto",        run_nikto),
-    "7": ("sslscan",      run_sslscan),
-    "8": ("testssl.sh",   run_testssl),
-    "9": ("wafw00f",      run_waf_detect),
+    "5": ("dig DNS", run_dig),
+    "6": ("nikto", run_nikto),
+    "7": ("sslscan", run_sslscan),
+    "8": ("testssl.sh", run_testssl),
+    "9": ("wafw00f", run_waf_detect),
     "10": ("robots/security.txt", run_robots_and_security_txt),
 }
 
@@ -525,7 +554,9 @@ def resolve_tool_plan(tool_keys) -> list:
     return [TOOLS_MENU[k][0] for k in tool_keys if k in TOOLS_MENU]
 
 
-def run_default_recon(target: str, on_progress=None, delay: float = 0, user_agent: str = None) -> dict:
+def run_default_recon(
+    target: str, on_progress=None, delay: float = 0, user_agent: str = None
+) -> dict:
     """
     Run the standard recon pipeline (everything except nikto).
     Returns a dict of {tool_name: output_string}.
@@ -558,11 +589,11 @@ def run_default_recon(target: str, on_progress=None, delay: float = 0, user_agen
         return output
 
     results = {}
-    results["nmap"]         = _run("nmap", run_nmap)
-    results["whois"]        = _run("whois", run_whois)
-    results["whatweb"]      = _run("whatweb", run_whatweb)
+    results["nmap"] = _run("nmap", run_nmap)
+    results["whois"] = _run("whois", run_whois)
+    results["whatweb"] = _run("whatweb", run_whatweb)
     results["curl_headers"] = _run("curl headers", run_curl_headers)
-    results["dig"]          = _run("dig", run_dig)
+    results["dig"] = _run("dig", run_dig)
 
     print("─" * 50)
     print("[+] Recon complete.\n")
@@ -577,7 +608,9 @@ def run_single_tool(tool_key: str, target: str) -> str:
     return f"[!] Unknown tool key: {tool_key}"
 
 
-def run_selected_tools(target: str, tool_keys, on_progress=None, delay: float = 0, user_agent: str = None) -> dict:
+def run_selected_tools(
+    target: str, tool_keys, on_progress=None, delay: float = 0, user_agent: str = None
+) -> dict:
     """
     Pure equivalent of interactive_tool_run's dispatch logic, without the
     input()/print() coupling — used by the web API. tool_keys is either a
@@ -587,10 +620,14 @@ def run_selected_tools(target: str, tool_keys, on_progress=None, delay: float = 
     user_agent, if set, overrides the HTTP User-Agent for tools that send one.
     """
     if tool_keys == "a":
-        return run_default_recon(target, on_progress=on_progress, delay=delay, user_agent=user_agent)
+        return run_default_recon(
+            target, on_progress=on_progress, delay=delay, user_agent=user_agent
+        )
 
     if tool_keys == "n":
-        results = run_default_recon(target, on_progress=on_progress, delay=delay, user_agent=user_agent)
+        results = run_default_recon(
+            target, on_progress=on_progress, delay=delay, user_agent=user_agent
+        )
         if delay > 0:
             time.sleep(delay)
         if on_progress:
@@ -624,14 +661,24 @@ def format_recon_for_llm(results: dict) -> str:
     """
     output = ""
     for tool, data in results.items():
-        output += f"\n{'='*50}\n"
+        output += f"\n{'=' * 50}\n"
         output += f"[ {tool.upper()} OUTPUT ]\n"
-        output += f"{'='*50}\n"
+        output += f"{'=' * 50}\n"
         output += data.strip() + "\n"
     return output
 
 
-ALLOWED_TOOLS = {"nmap", "whois", "whatweb", "curl", "dig", "nikto", "sslscan", "testssl", "wafw00f"}
+ALLOWED_TOOLS = {
+    "nmap",
+    "whois",
+    "whatweb",
+    "curl",
+    "dig",
+    "nikto",
+    "sslscan",
+    "testssl",
+    "wafw00f",
+}
 
 
 def _resolve_host(token: str) -> str:
@@ -646,11 +693,40 @@ def _resolve_host(token: str) -> str:
 # argument — e.g. "-p 80,443" must skip "80,443", not treat it as the
 # command's target.
 _VALUE_FLAGS = {
-    "-p", "-T", "-o", "-oN", "-oX", "-oG", "-oA", "-A", "-H", "-d", "-X", "-e",
-    "-a", "-U", "--top-ports", "--connect-timeout", "--max-time",
-    "--host-timeout", "--min-rate", "--max-rate", "--script",
-    "--warnings", "--mode", "--openssl-timeout", "--openssl", "--proxy",
-    "-w", "--write-out", "-b", "-c", "-D", "-x", "--data-raw", "--referer",
+    "-p",
+    "-T",
+    "-o",
+    "-oN",
+    "-oX",
+    "-oG",
+    "-oA",
+    "-A",
+    "-H",
+    "-d",
+    "-X",
+    "-e",
+    "-a",
+    "-U",
+    "--top-ports",
+    "--connect-timeout",
+    "--max-time",
+    "--host-timeout",
+    "--min-rate",
+    "--max-rate",
+    "--script",
+    "--warnings",
+    "--mode",
+    "--openssl-timeout",
+    "--openssl",
+    "--proxy",
+    "-w",
+    "--write-out",
+    "-b",
+    "-c",
+    "-D",
+    "-x",
+    "--data-raw",
+    "--referer",
 }
 
 
@@ -685,7 +761,9 @@ def _resolved_ips(hostname: str) -> frozenset:
         return frozenset()
 
 
-def run_tool_by_command(command_str: str, session_target: str, allowed_subdomains: frozenset = frozenset()) -> str:
+def run_tool_by_command(
+    command_str: str, session_target: str, allowed_subdomains: frozenset = frozenset()
+) -> str:
     try:
         # shlex, not .split() — a quoted argument like -H "Host: x.com" is
         # ONE token, not two; splitting on whitespace breaks both the actual
@@ -700,7 +778,9 @@ def run_tool_by_command(command_str: str, session_target: str, allowed_subdomain
     # allowlist only — reject anything not in the list
     tool = parts[0].lower().split("/")[-1]  # handles /bin/nmap etc
     if tool not in ALLOWED_TOOLS:
-        return f"[!] BLOCKED: tool '{parts[0]}' is not permitted. Allowed: {ALLOWED_TOOLS}"
+        return (
+            f"[!] BLOCKED: tool '{parts[0]}' is not permitted. Allowed: {ALLOWED_TOOLS}"
+        )
 
     # scope guard — the LLM controls the rest of the command line, including
     # the target, and the recon text it reasons over (banners, headers, page
@@ -734,14 +814,18 @@ def run_tool_by_command(command_str: str, session_target: str, allowed_subdomain
 
     if not positional or any(not _matches_target(p) for p in positional):
         shown = ", ".join(positional) if positional else command_str
-        return (f"[!] BLOCKED: target '{shown}' "
-                f"does not match session target '{session_target}'")
+        return (
+            f"[!] BLOCKED: target '{shown}' "
+            f"does not match session target '{session_target}'"
+        )
 
     return run_tool(parts)
+
 
 # ─────────────────────────────────────────────
 # INTERACTIVE TOOL SELECTOR (called from CLI)
 # ─────────────────────────────────────────────
+
 
 def interactive_tool_run(target: str, delay: float = 0, user_agent: str = None) -> str:
     """
@@ -754,7 +838,9 @@ def interactive_tool_run(target: str, delay: float = 0, user_agent: str = None) 
     print("\n[ SELECT TOOLS TO RUN ]")
     for key, (name, _) in TOOLS_MENU.items():
         print(f"  [{key}] {name}")
-    print("  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, robots/security.txt)")
+    print(
+        "  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, robots/security.txt)"
+    )
     print("  [n] Run all + nikto (slow)")
 
     choice = input("\nChoice(s) e.g. 1 2 4 or a: ").strip().lower()

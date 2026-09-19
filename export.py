@@ -7,116 +7,201 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    HRFlowable,
+)
 from reportlab.lib.enums import TA_CENTER
 
 SEVERITY_COLORS = {
     "critical": "#c0392b",
-    "high":     "#e67e22",
-    "medium":   "#f1c40f",
-    "low":      "#27ae60",
-    "unknown":  "#7f8c8d",
+    "high": "#e67e22",
+    "medium": "#f1c40f",
+    "low": "#27ae60",
+    "unknown": "#7f8c8d",
 }
 
 RISK_COLORS = {
     "CRITICAL": "#c0392b",
-    "HIGH":     "#e67e22",
-    "MEDIUM":   "#f1c40f",
-    "LOW":      "#27ae60",
-    "UNKNOWN":  "#7f8c8d",
+    "HIGH": "#e67e22",
+    "MEDIUM": "#f1c40f",
+    "LOW": "#27ae60",
+    "UNKNOWN": "#7f8c8d",
 }
 
 
 def export_pdf(data: dict, output_dir: str) -> str:
-    h        = data["history"]
-    sl       = h[0]
-    tgt      = h[1]
-    date     = str(h[2])
-    risk     = data["summary"][4] if data["summary"] else "UNKNOWN"
-    ai       = data["summary"][3] if data["summary"] else ""
+    h = data["history"]
+    sl = h[0]
+    tgt = h[1]
+    date = str(h[2])
+    risk = data["summary"][4] if data["summary"] else "UNKNOWN"
+    ai = data["summary"][3] if data["summary"] else ""
 
     os.makedirs(output_dir, exist_ok=True)
-    safe = tgt.replace("https://","").replace("http://","").replace("/","_").replace(".","_")
+    safe = (
+        tgt.replace("https://", "")
+        .replace("http://", "")
+        .replace("/", "_")
+        .replace(".", "_")
+    )
     filename = os.path.join(output_dir, f"pentron_SL{sl}_{safe}.pdf")
-    doc      = SimpleDocTemplate(filename, pagesize=A4,
-                                  topMargin=15*mm, bottomMargin=15*mm,
-                                  leftMargin=15*mm, rightMargin=15*mm)
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=A4,
+        topMargin=15 * mm,
+        bottomMargin=15 * mm,
+        leftMargin=15 * mm,
+        rightMargin=15 * mm,
+    )
 
-    title_style  = ParagraphStyle("t",  fontSize=22, fontName="Helvetica-Bold",
-                                   textColor=colors.HexColor("#c0392b"), spaceAfter=4)
-    sub_style    = ParagraphStyle("s",  fontSize=10, fontName="Helvetica",
-                                   textColor=colors.HexColor("#555555"), spaceAfter=2)
-    h1_style     = ParagraphStyle("h1", fontSize=13, fontName="Helvetica-Bold",
-                                   textColor=colors.HexColor("#2c3e50"),
-                                   spaceBefore=10, spaceAfter=4)
-    body_style   = ParagraphStyle("b",  fontSize=9,  fontName="Helvetica",
-                                   textColor=colors.black, leading=13)
-    code_style   = ParagraphStyle("c",  fontSize=7.5, fontName="Courier",
-                                   textColor=colors.HexColor("#2c3e50"),
-                                   backColor=colors.HexColor("#f4f4f4"),
-                                   leading=11, leftIndent=6, rightIndent=6,
-                                   spaceBefore=2, spaceAfter=2)
-    footer_style = ParagraphStyle("f",  fontSize=7,
-                                   textColor=colors.HexColor("#aaaaaa"),
-                                   alignment=TA_CENTER)
+    title_style = ParagraphStyle(
+        "t",
+        fontSize=22,
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor("#c0392b"),
+        spaceAfter=4,
+    )
+    sub_style = ParagraphStyle(
+        "s",
+        fontSize=10,
+        fontName="Helvetica",
+        textColor=colors.HexColor("#555555"),
+        spaceAfter=2,
+    )
+    h1_style = ParagraphStyle(
+        "h1",
+        fontSize=13,
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor("#2c3e50"),
+        spaceBefore=10,
+        spaceAfter=4,
+    )
+    body_style = ParagraphStyle(
+        "b", fontSize=9, fontName="Helvetica", textColor=colors.black, leading=13
+    )
+    code_style = ParagraphStyle(
+        "c",
+        fontSize=7.5,
+        fontName="Courier",
+        textColor=colors.HexColor("#2c3e50"),
+        backColor=colors.HexColor("#f4f4f4"),
+        leading=11,
+        leftIndent=6,
+        rightIndent=6,
+        spaceBefore=2,
+        spaceAfter=2,
+    )
+    footer_style = ParagraphStyle(
+        "f", fontSize=7, textColor=colors.HexColor("#aaaaaa"), alignment=TA_CENTER
+    )
     story = []
 
     story.append(Paragraph("PENTRON", title_style))
     story.append(Paragraph("AI Penetration Testing Report", sub_style))
-    story.append(HRFlowable(width="100%", thickness=1.5,
-                             color=colors.HexColor("#c0392b"), spaceAfter=8))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=1.5, color=colors.HexColor("#c0392b"), spaceAfter=8
+        )
+    )
 
     risk_color = colors.HexColor(RISK_COLORS.get(risk.upper(), "#7f8c8d"))
-    meta = [["Target", tgt], ["Scan Date", date],
-            ["Session", f"SL# {sl}"], ["Risk Level", risk],
-            ["Generated", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")]]
-    mt = Table(meta, colWidths=[35*mm, 130*mm])
-    mt.setStyle(TableStyle([
-        ("FONTNAME",       (0,0), (-1,-1), "Helvetica"),
-        ("FONTSIZE",       (0,0), (-1,-1), 9),
-        ("FONTNAME",       (0,0), (0,-1),  "Helvetica-Bold"),
-        ("TEXTCOLOR",      (0,0), (0,-1),  colors.HexColor("#2c3e50")),
-        ("TEXTCOLOR",      (1,3), (1,3),   risk_color),
-        ("FONTNAME",       (1,3), (1,3),   "Helvetica-Bold"),
-        ("ROWBACKGROUNDS", (0,0), (-1,-1), [colors.HexColor("#f9f9f9"), colors.white]),
-        ("GRID",           (0,0), (-1,-1), 0.3, colors.HexColor("#dddddd")),
-        ("PADDING",        (0,0), (-1,-1), 5),
-    ]))
+    meta = [
+        ["Target", tgt],
+        ["Scan Date", date],
+        ["Session", f"SL# {sl}"],
+        ["Risk Level", risk],
+        ["Generated", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+    ]
+    mt = Table(meta, colWidths=[35 * mm, 130 * mm])
+    mt.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#2c3e50")),
+                ("TEXTCOLOR", (1, 3), (1, 3), risk_color),
+                ("FONTNAME", (1, 3), (1, 3), "Helvetica-Bold"),
+                (
+                    "ROWBACKGROUNDS",
+                    (0, 0),
+                    (-1, -1),
+                    [colors.HexColor("#f9f9f9"), colors.white],
+                ),
+                ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#dddddd")),
+                ("PADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
     story.append(mt)
     story.append(Spacer(1, 10))
 
     story.append(Paragraph("Vulnerabilities", h1_style))
-    story.append(HRFlowable(width="100%", thickness=0.5,
-                             color=colors.HexColor("#dddddd"), spaceAfter=6))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=6
+        )
+    )
     if data["vulns"]:
         vd = [["#", "Vulnerability", "Severity", "Port", "Service"]]
         for v in data["vulns"]:
-            vd.append([str(v[0]), str(v[2] or "-"),
-                       str(v[3] or "-").upper(), str(v[4] or "-"), str(v[5] or "-")])
-        vt  = Table(vd, colWidths=[10*mm, 72*mm, 24*mm, 18*mm, 28*mm], repeatRows=1)
+            vd.append(
+                [
+                    str(v[0]),
+                    str(v[2] or "-"),
+                    str(v[3] or "-").upper(),
+                    str(v[4] or "-"),
+                    str(v[5] or "-"),
+                ]
+            )
+        vt = Table(
+            vd, colWidths=[10 * mm, 72 * mm, 24 * mm, 18 * mm, 28 * mm], repeatRows=1
+        )
         vts = [
-            ("FONTNAME",       (0,0), (-1,0),  "Helvetica-Bold"),
-            ("FONTSIZE",       (0,0), (-1,-1), 8),
-            ("BACKGROUND",     (0,0), (-1,0),  colors.HexColor("#2c3e50")),
-            ("TEXTCOLOR",      (0,0), (-1,0),  colors.white),
-            ("GRID",           (0,0), (-1,-1), 0.3, colors.HexColor("#dddddd")),
-            ("PADDING",        (0,0), (-1,-1), 5),
-            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.HexColor("#f9f9f9"), colors.white]),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2c3e50")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#dddddd")),
+            ("PADDING", (0, 0), (-1, -1), 5),
+            (
+                "ROWBACKGROUNDS",
+                (0, 1),
+                (-1, -1),
+                [colors.HexColor("#f9f9f9"), colors.white],
+            ),
         ]
         for i, v in enumerate(data["vulns"], 1):
-            sc = colors.HexColor(SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d"))
-            vts.append(("TEXTCOLOR", (2,i), (2,i), sc))
-            vts.append(("FONTNAME",  (2,i), (2,i), "Helvetica-Bold"))
+            sc = colors.HexColor(
+                SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d")
+            )
+            vts.append(("TEXTCOLOR", (2, i), (2, i), sc))
+            vts.append(("FONTNAME", (2, i), (2, i), "Helvetica-Bold"))
         vt.setStyle(TableStyle(vts))
         story.append(vt)
         story.append(Spacer(1, 6))
 
         story.append(Paragraph("Vulnerability Details", h1_style))
-        story.append(HRFlowable(width="100%", thickness=0.5,
-                                 color=colors.HexColor("#dddddd"), spaceAfter=6))
+        story.append(
+            HRFlowable(
+                width="100%",
+                thickness=0.5,
+                color=colors.HexColor("#dddddd"),
+                spaceAfter=6,
+            )
+        )
         for v in data["vulns"]:
-            sc  = colors.HexColor(SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d"))
-            lbl = ParagraphStyle("vl", fontSize=9, fontName="Helvetica-Bold", textColor=sc)
+            sc = colors.HexColor(
+                SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d")
+            )
+            lbl = ParagraphStyle(
+                "vl", fontSize=9, fontName="Helvetica-Bold", textColor=sc
+            )
             story.append(Paragraph(f"[{(v[3] or 'UNKNOWN').upper()}] {v[2]}", lbl))
             if v[6]:
                 story.append(Paragraph(str(v[6]), body_style))
@@ -126,8 +211,11 @@ def export_pdf(data: dict, output_dir: str) -> str:
 
     story.append(Spacer(1, 6))
     story.append(Paragraph("Fixes & Mitigations", h1_style))
-    story.append(HRFlowable(width="100%", thickness=0.5,
-                             color=colors.HexColor("#dddddd"), spaceAfter=6))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=6
+        )
+    )
     if data["fixes"]:
         for f in data["fixes"]:
             story.append(Paragraph(f"Fix for vuln id={f[2]}:", body_style))
@@ -138,31 +226,52 @@ def export_pdf(data: dict, output_dir: str) -> str:
 
     story.append(Spacer(1, 6))
     story.append(Paragraph("Exploits Attempted", h1_style))
-    story.append(HRFlowable(width="100%", thickness=0.5,
-                             color=colors.HexColor("#dddddd"), spaceAfter=6))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=6
+        )
+    )
     if data["exploits"]:
         ed = [["#", "Exploit", "Tool", "Result"]]
         for e in data["exploits"]:
-            ed.append([str(e[0]), str(e[2] or "-")[:60],
-                       str(e[3] or "-")[:30], str(e[5] or "-")[:30]])
-        et = Table(ed, colWidths=[10*mm, 80*mm, 40*mm, 28*mm])
-        et.setStyle(TableStyle([
-            ("FONTNAME",       (0,0), (-1,0),  "Helvetica-Bold"),
-            ("FONTSIZE",       (0,0), (-1,-1), 8),
-            ("BACKGROUND",     (0,0), (-1,0),  colors.HexColor("#2c3e50")),
-            ("TEXTCOLOR",      (0,0), (-1,0),  colors.white),
-            ("GRID",           (0,0), (-1,-1), 0.3, colors.HexColor("#dddddd")),
-            ("PADDING",        (0,0), (-1,-1), 5),
-            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.HexColor("#f9f9f9"), colors.white]),
-        ]))
+            ed.append(
+                [
+                    str(e[0]),
+                    str(e[2] or "-")[:60],
+                    str(e[3] or "-")[:30],
+                    str(e[5] or "-")[:30],
+                ]
+            )
+        et = Table(ed, colWidths=[10 * mm, 80 * mm, 40 * mm, 28 * mm])
+        et.setStyle(
+            TableStyle(
+                [
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2c3e50")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#dddddd")),
+                    ("PADDING", (0, 0), (-1, -1), 5),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.HexColor("#f9f9f9"), colors.white],
+                    ),
+                ]
+            )
+        )
         story.append(et)
     else:
         story.append(Paragraph("No exploits recorded.", body_style))
 
     story.append(Spacer(1, 6))
     story.append(Paragraph("AI Analysis Summary", h1_style))
-    story.append(HRFlowable(width="100%", thickness=0.5,
-                             color=colors.HexColor("#dddddd"), spaceAfter=6))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=6
+        )
+    )
     if ai:
         for line in str(ai).split("\n"):
             line = line.strip()
@@ -173,53 +282,69 @@ def export_pdf(data: dict, output_dir: str) -> str:
         story.append(Paragraph("No AI analysis recorded.", body_style))
 
     story.append(Spacer(1, 10))
-    story.append(HRFlowable(width="100%", thickness=0.5,
-                             color=colors.HexColor("#dddddd"), spaceAfter=4))
-    story.append(Paragraph(
-        "Generated by PENTRON — AI Penetration Testing Assistant | "
-        "github.com/SaiedZ/PenTron | For authorized use only.",
-        footer_style))
+    story.append(
+        HRFlowable(
+            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=4
+        )
+    )
+    story.append(
+        Paragraph(
+            "Generated by PENTRON — AI Penetration Testing Assistant | "
+            "github.com/SaiedZ/PenTron | For authorized use only.",
+            footer_style,
+        )
+    )
 
     doc.build(story)
     return filename
 
 
 def export_html(data: dict, output_dir: str) -> str:
-    h    = data["history"]
-    sl   = h[0]
-    tgt  = h[1]
+    h = data["history"]
+    sl = h[0]
+    tgt = h[1]
     date = str(h[2])
     risk = data["summary"][4] if data["summary"] else "UNKNOWN"
-    ai   = data["summary"][3] if data["summary"] else ""
-    rc   = RISK_COLORS.get(risk.upper(), "#7f8c8d")
+    ai = data["summary"][3] if data["summary"] else ""
+    rc = RISK_COLORS.get(risk.upper(), "#7f8c8d")
 
     os.makedirs(output_dir, exist_ok=True)
-    safe = tgt.replace("https://","").replace("http://","").replace("/","_").replace(".","_")
+    safe = (
+        tgt.replace("https://", "")
+        .replace("http://", "")
+        .replace("/", "_")
+        .replace(".", "_")
+    )
     filename = os.path.join(output_dir, f"pentron_SL{sl}_{safe}.html")
     vuln_rows = ""
     for v in data["vulns"]:
         sc = SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d")
-        vuln_rows += (f"<tr><td>{v[0]}</td>"
-                      f"<td><strong>{v[2]}</strong><br><small>{v[6] or ''}</small></td>"
-                      f"<td><span style='color:{sc};font-weight:bold'>"
-                      f"{(v[3] or 'unknown').upper()}</span></td>"
-                      f"<td>{v[4] or '-'}</td><td>{v[5] or '-'}</td></tr>")
+        vuln_rows += (
+            f"<tr><td>{v[0]}</td>"
+            f"<td><strong>{v[2]}</strong><br><small>{v[6] or ''}</small></td>"
+            f"<td><span style='color:{sc};font-weight:bold'>"
+            f"{(v[3] or 'unknown').upper()}</span></td>"
+            f"<td>{v[4] or '-'}</td><td>{v[5] or '-'}</td></tr>"
+        )
 
     fix_rows = ""
     for f in data["fixes"]:
-        fix_rows += (f"<tr><td>{f[0]}</td><td>vuln #{f[2]}</td>"
-                     f"<td><code>{f[3] or '-'}</code></td>"
-                     f"<td>{f[4] or 'ai'}</td></tr>")
+        fix_rows += (
+            f"<tr><td>{f[0]}</td><td>vuln #{f[2]}</td>"
+            f"<td><code>{f[3] or '-'}</code></td>"
+            f"<td>{f[4] or 'ai'}</td></tr>"
+        )
 
     exp_rows = ""
     for e in data["exploits"]:
-        exp_rows += (f"<tr><td>{e[0]}</td><td>{e[2] or '-'}</td>"
-                     f"<td>{e[3] or '-'}</td>"
-                     f"<td><code>{str(e[4] or '-')[:80]}</code></td>"
-                     f"<td>{e[5] or '-'}</td></tr>")
+        exp_rows += (
+            f"<tr><td>{e[0]}</td><td>{e[2] or '-'}</td>"
+            f"<td>{e[3] or '-'}</td>"
+            f"<td><code>{str(e[4] or '-')[:80]}</code></td>"
+            f"<td>{e[5] or '-'}</td></tr>"
+        )
 
-    ai_html = "".join(f"<p>{line}</p>"
-                      for line in str(ai).split("\n") if line.strip())
+    ai_html = "".join(f"<p>{line}</p>" for line in str(ai).split("\n") if line.strip())
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -285,17 +410,17 @@ a{{color:#555}}
 
 <section>
   <h2>Vulnerabilities</h2>
-  {'<table><thead><tr><th>#</th><th>Vulnerability</th><th>Severity</th><th>Port</th><th>Service</th></tr></thead><tbody>' + vuln_rows + '</tbody></table>' if data["vulns"] else '<p style="color:#888">None recorded.</p>'}
+  {"<table><thead><tr><th>#</th><th>Vulnerability</th><th>Severity</th><th>Port</th><th>Service</th></tr></thead><tbody>" + vuln_rows + "</tbody></table>" if data["vulns"] else '<p style="color:#888">None recorded.</p>'}
 </section>
 
 <section>
   <h2>Fixes &amp; Mitigations</h2>
-  {'<table><thead><tr><th>#</th><th>Vuln</th><th>Fix</th><th>Source</th></tr></thead><tbody>' + fix_rows + '</tbody></table>' if data["fixes"] else '<p style="color:#888">None recorded.</p>'}
+  {"<table><thead><tr><th>#</th><th>Vuln</th><th>Fix</th><th>Source</th></tr></thead><tbody>" + fix_rows + "</tbody></table>" if data["fixes"] else '<p style="color:#888">None recorded.</p>'}
 </section>
 
 <section>
   <h2>Exploits Attempted</h2>
-  {'<table><thead><tr><th>#</th><th>Exploit</th><th>Tool</th><th>Payload</th><th>Result</th></tr></thead><tbody>' + exp_rows + '</tbody></table>' if data["exploits"] else '<p style="color:#888">None recorded.</p>'}
+  {"<table><thead><tr><th>#</th><th>Exploit</th><th>Tool</th><th>Payload</th><th>Result</th></tr></thead><tbody>" + exp_rows + "</tbody></table>" if data["exploits"] else '<p style="color:#888">None recorded.</p>'}
 </section>
 
 <section>
@@ -325,18 +450,18 @@ def export_menu(data: dict):
         print("[!] No session data to export.")
         return
 
-    h   = data["history"]
-    sl  = h[0]
+    h = data["history"]
+    sl = h[0]
     tgt = h[1]
 
-    print(f"\n\033[33m{'─'*20} EXPORT SL#{sl} — {tgt} {'─'*20}\033[0m")
+    print(f"\n\033[33m{'─' * 20} EXPORT SL#{sl} — {tgt} {'─' * 20}\033[0m")
     print("  [1] PDF report")
     print("  [2] HTML report")
     print("  [3] Both")
     print("  [4] Back")
-    print(f"\033[90m{'─'*60}\033[0m")
+    print(f"\033[90m{'─' * 60}\033[0m")
 
-    choice     = input("\033[36mExport format: \033[0m").strip()
+    choice = input("\033[36mExport format: \033[0m").strip()
     output_dir = os.path.expanduser("~/PenTron/reports")
     os.makedirs(output_dir, exist_ok=True)
 

@@ -6,6 +6,7 @@ infrastructure at any time. A literal IP typed directly is always
 allowed — that's an explicit operator choice, not a DNS record someone
 else controls.
 """
+
 import socket
 
 import tools
@@ -79,7 +80,7 @@ def test_partial_dns_poisoning_one_private_ip_among_several_is_blocked(monkeypat
         "getaddrinfo",
         lambda host, *a, **kw: [
             (None, None, None, None, ("93.184.216.34", 0)),  # legitimate public IP
-            (None, None, None, None, ("10.0.0.5", 0)),        # smuggled private IP
+            (None, None, None, None, ("10.0.0.5", 0)),  # smuggled private IP
         ],
     )
     result = tools.check_target_safety("mixed-records.example")

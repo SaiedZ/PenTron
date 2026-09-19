@@ -53,7 +53,9 @@ def session_detail_page(request: Request, sl_no: int):
     if not data["history"]:
         raise HTTPException(status_code=404, detail=f"SL# {sl_no} not found")
     return templates.TemplateResponse(
-        request, "session_detail.html", {"sl_no": sl_no, "session": session_to_dict(data)}
+        request,
+        "session_detail.html",
+        {"sl_no": sl_no, "session": session_to_dict(data)},
     )
 
 

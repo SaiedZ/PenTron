@@ -11,19 +11,30 @@ from api import jobs
 import db
 from llm import analyse_target
 from providers import get_provider
-from tools import run_selected_tools, format_recon_for_llm, resolve_tool_plan, discover_subdomains
+from tools import (
+    run_selected_tools,
+    format_recon_for_llm,
+    resolve_tool_plan,
+    discover_subdomains,
+)
 
 
 def _make_on_progress(sl_no: int):
     def on_progress(event: str, payload) -> None:
         if event == "tool_start":
-            jobs.update_job(sl_no, state="RECON_RUNNING",
-                             current_tool=payload, detail=f"running {payload}")
+            jobs.update_job(
+                sl_no,
+                state="RECON_RUNNING",
+                current_tool=payload,
+                detail=f"running {payload}",
+            )
         elif event == "tool_done":
             job = jobs.get_job(sl_no)
             existing = job.completed_tools if job else []
             completed = existing if payload in existing else existing + [payload]
-            jobs.update_job(sl_no, detail=f"finished {payload}", completed_tools=completed)
+            jobs.update_job(
+                sl_no, detail=f"finished {payload}", completed_tools=completed
+            )
         elif event == "ai_round_start":
             round_num, max_rounds = payload.split("/")
             jobs.update_job(
@@ -47,7 +58,9 @@ def _make_on_progress(sl_no: int):
     return on_progress
 
 
-def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None) -> None:
+def run_scan_job(
+    sl_no: int, target: str, tool_keys, subdomain_level: int = None
+) -> None:
     on_progress = _make_on_progress(sl_no)
     try:
         settings = db.get_settings()
@@ -57,8 +70,11 @@ def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None
         if subdomain_level > 0:
             planned_tools = ["Subdomain discovery"] + planned_tools
         jobs.update_job(
-            sl_no, state="RECON_RUNNING", detail="starting recon",
-            planned_tools=planned_tools, completed_tools=[],
+            sl_no,
+            state="RECON_RUNNING",
+            detail="starting recon",
+            planned_tools=planned_tools,
+            completed_tools=[],
         )
         delay = settings.get("scan_delay_seconds", 0)
         user_agent = settings.get("user_agent") or None
@@ -66,10 +82,18 @@ def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None
         subdomain_text, allowed_subdomains = "", frozenset()
         if subdomain_level > 0:
             on_progress("tool_start", "Subdomain discovery")
-            subdomain_text, allowed_subdomains = discover_subdomains(target, subdomain_level)
+            subdomain_text, allowed_subdomains = discover_subdomains(
+                target, subdomain_level
+            )
             on_progress("tool_done", "Subdomain discovery")
 
-        results = run_selected_tools(target, tool_keys, on_progress=on_progress, delay=delay, user_agent=user_agent)
+        results = run_selected_tools(
+            target,
+            tool_keys,
+            on_progress=on_progress,
+            delay=delay,
+            user_agent=user_agent,
+        )
         raw_scan = subdomain_text + format_recon_for_llm(results)
 
         if not raw_scan.strip():
@@ -78,7 +102,13 @@ def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None
             return
 
         provider = get_provider()
-        result = analyse_target(target, raw_scan, provider=provider, on_progress=on_progress, allowed_subdomains=allowed_subdomains)
+        result = analyse_target(
+            target,
+            raw_scan,
+            provider=provider,
+            on_progress=on_progress,
+            allowed_subdomains=allowed_subdomains,
+        )
 
         jobs.update_job(sl_no, state="SAVING_RESULTS", detail="saving results")
 
@@ -104,9 +134,13 @@ def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None
                 exp["notes"],
             )
 
-        db.save_summary(sl_no, result["raw_scan"], result["full_response"], result["risk_level"])
+        db.save_summary(
+            sl_no, result["raw_scan"], result["full_response"], result["risk_level"]
+        )
 
-        jobs.update_job(sl_no, state="DONE", detail="complete", risk_level=result["risk_level"])
+        jobs.update_job(
+            sl_no, state="DONE", detail="complete", risk_level=result["risk_level"]
+        )
 
     except Exception as e:
         jobs.update_job(sl_no, state="FAILED", error=str(e))
