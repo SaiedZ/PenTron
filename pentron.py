@@ -5,42 +5,40 @@ Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
 Run with: python pentron.py
 """
 
-from export import export_menu
 import os
 import sys
+
 from db import (
-    get_connection,
-    get_settings,
     create_session,
-    save_vulnerability,
-    save_fix,
-    save_exploit,
-    save_summary,
-    get_all_history,
-    get_session,
-    get_vulnerabilities,
-    get_fixes,
-    get_exploits,
-    edit_vulnerability,
-    edit_fix,
-    edit_exploit,
-    edit_summary_risk,
-    delete_vulnerability,
     delete_exploit,
     delete_fix,
     delete_full_session,
+    delete_vulnerability,
+    edit_exploit,
+    edit_fix,
+    edit_summary_risk,
+    edit_vulnerability,
+    get_all_history,
+    get_connection,
+    get_exploits,
+    get_fixes,
+    get_session,
+    get_settings,
+    get_vulnerabilities,
     print_history,
     print_session,
+    save_exploit,
+    save_fix,
+    save_summary,
+    save_vulnerability,
 )
+from export import export_menu
+from llm import analyse_target
 from tools import (
-    interactive_tool_run,
-    format_recon_for_llm,
-    run_default_recon,
     check_target_safety,
     discover_subdomains,
+    interactive_tool_run,
 )
-from llm import analyse_target
-
 
 # ─────────────────────────────────────────────
 # BANNER
@@ -397,7 +395,8 @@ def edit_delete_menu(sl_no: int):
         # ── DELETE FULL SESSION ───────────────
         elif choice == "8":
             if confirm(
-                f"\n\033[91mPermanently delete ENTIRE session SL# {sl_no} from all tables?\033[0m"
+                f"\n\033[91mPermanently delete ENTIRE session SL# {sl_no} "
+                f"from all tables?\033[0m"
             ):
                 delete_full_session(sl_no)
                 success(f"Session SL# {sl_no} wiped.")

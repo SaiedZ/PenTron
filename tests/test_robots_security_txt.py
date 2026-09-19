@@ -34,7 +34,10 @@ def test_https_failure_falls_back_to_http(monkeypatch):
     def _fake_run_tool(command, **kw):
         url = command[-1]
         if url.startswith("https://"):
-            return "curl: (7) Failed to connect to example.com port 443: Connection refused"
+            return (
+                "curl: (7) Failed to connect to example.com "
+                "port 443: Connection refused"
+            )
         if "robots.txt" in url:
             return "User-agent: *\n[HTTP 200]"
         return "[HTTP 404]"
