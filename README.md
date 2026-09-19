@@ -8,7 +8,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python"/>
   <img src="https://img.shields.io/badge/OS-Parrot%20Linux-green?style=for-the-badge&logo=linux"/>
-  <img src="https://img.shields.io/badge/AI-pentron--qwen-red?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/AI-Qwen%203.5-red?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/DB-MariaDB-orange?style=for-the-badge&logo=mariadb"/>
   <img src="https://img.shields.io/badge/Web-FastAPI-teal?style=for-the-badge&logo=fastapi"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"/>
@@ -112,7 +112,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 | Web backend   | FastAPI + Uvicorn                                   |
 | Web frontend  | Jinja2 + HTMX + Tailwind CSS                        |
 | AI Providers  | Ollama (local), OpenAI, Anthropic, Google            |
-| Default model | pentron-qwen (fine-tuned Qwen 3.5) via Ollama       |
+| Default model | huihui_ai/qwen3.5-abliterated:9b via Ollama (optional custom-tuned alias via `Modelfile`) |
 | Database      | MariaDB                                             |
 | Containers    | Docker + Docker Compose (Kali Rolling base image)    |
 | Search        | DuckDuckGo (free, no key)                           |
@@ -145,10 +145,15 @@ docker compose run --rm pentron
 
 ### Loading a model into Ollama
 
-The web UI's Settings screen can list models already pulled into Ollama and let you pick one. To pull the default fine-tuned model:
+The web UI's Settings screen can list models already pulled into Ollama and let you pick one. Pull the default model — this alone is enough to start scanning, no extra step needed:
 
 ```bash
 docker exec -it pentron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
+```
+
+Optionally, build a custom-tuned alias with this repo's `Modelfile` (16k context window, temperature 0.7, etc. — see [Modelfile](Modelfile)) and select it from Settings instead:
+
+```bash
 docker cp Modelfile pentron-ollama:/Modelfile
 docker exec -it pentron-ollama ollama create pentron-qwen -f /Modelfile
 ```
@@ -225,6 +230,8 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ### Step 2 — Download the base model
 
+This matches PenTron's default model setting — nothing else is required to start scanning once this finishes.
+
 ```bash
 ollama pull huihui_ai/qwen3.5-abliterated:9b
 ```
@@ -233,21 +240,17 @@ ollama pull huihui_ai/qwen3.5-abliterated:9b
 > ```bash
 > ollama pull huihui_ai/qwen3.5-abliterated:4b
 > ```
-> Then edit `Modelfile` and change the FROM line to the 4b model.
+> Then set the model to `huihui_ai/qwen3.5-abliterated:4b` from the Settings screen (or `PENTRON_MODEL` env var).
 
-### Step 3 — Build the custom pentron-qwen model
+### Step 3 (optional) — Build a custom-tuned alias
 
-The repo includes a `Modelfile` that fine-tunes the base model with pentest-specific parameters:
+The repo includes a `Modelfile` that applies pentest-tuned parameters (16k context, temperature 0.7, top-k 10, top-p 0.9) to the base model under a friendlier local name. Not required — only do this if you want those specific parameters:
 
 ```bash
 ollama create pentron-qwen -f Modelfile
 ```
 
-This creates your local `pentron-qwen` model with:
-- 16,384 token context window
-- Temperature: 0.7
-- Top-k: 10
-- Top-p: 0.9
+Then select `pentron-qwen` from the Settings screen (it won't be picked up automatically — the default model setting stays `huihui_ai/qwen3.5-abliterated:9b` either way).
 
 ### Step 4 — Verify the model exists
 
@@ -255,7 +258,7 @@ This creates your local `pentron-qwen` model with:
 ollama list
 ```
 
-You should see `pentron-qwen` in the list.
+You should see `huihui_ai/qwen3.5-abliterated:9b` (and `pentron-qwen` too, if you built the optional alias) in the list.
 
 > Prefer a cloud provider instead? Skip this whole section and set `LLM_PROVIDER`/`OPENAI_API_KEY` (or the Anthropic/Google equivalents) via environment variables, or configure it from the web UI's Settings screen.
 
@@ -371,7 +374,7 @@ PenTron/
 │   ├── templates/             ← Jinja2 + HTMX pages
 │   ├── static/                  ← compiled Tailwind CSS + JS
 │   ├── input.css                 ← Tailwind source
-├── Modelfile               ← custom model config for pentron-qwen
+├── Modelfile               ← optional custom-tuned model alias (see AI Model Setup)
 ├── Dockerfile               ← Kali Rolling image (recon tools + Tailwind build)
 ├── docker-compose.yml       ← mariadb + ollama + web + pentron (CLI) services
 ├── docker-compose.gpu.yml   ← GPU overlay for the ollama service

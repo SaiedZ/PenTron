@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
 PENTRON - llm.py
-Ollama interface for pentron-qwen model.
+Ollama interface for the configured model.
 Builds prompts, handles AI responses, runs tool dispatch loop.
-Model: pentron-qwen (fine-tuned from huihui_ai/qwen3.5-abliterated:9b)
+Default model: huihui_ai/qwen3.5-abliterated:9b (see providers.get_provider()
+for how the model name is actually resolved from settings/env at runtime —
+MODEL_NAME below is only used by the direct/test wrapper ask_ollama()).
 """
 
 import os
@@ -15,7 +17,7 @@ from search import handle_search_dispatch
 from providers import get_provider, OllamaProvider
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
-MODEL_NAME  = "pentron-qwen"
+MODEL_NAME  = "huihui_ai/qwen3.5-abliterated:9b"
 MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
 OLLAMA_TIMEOUT = 600
