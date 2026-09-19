@@ -244,7 +244,7 @@ def get_provider(settings: dict = None) -> BaseProvider:
     name = (settings.get("provider") or os.environ.get("LLM_PROVIDER") or "ollama").lower()
     provider_cls = PROVIDERS.get(name, OllamaProvider)
 
-    model = settings.get("model") or os.environ.get("PENTRON_MODEL", "pentron-qwen")
+    model = settings.get("model") or os.environ.get("PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b")
     timeout = int(settings.get("ollama_timeout") or os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600))
 
     kwargs = {}

@@ -290,7 +290,7 @@ def delete_full_session(sl_no: int):
 
 _SETTINGS_DEFAULTS = {
     "provider":          os.environ.get("LLM_PROVIDER", "ollama"),
-    "model":             os.environ.get("PENTRON_MODEL", "pentron-qwen"),
+    "model":             os.environ.get("PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b"),
     "ollama_host":       os.environ.get("OLLAMA_HOST", "localhost:11434"),
     "api_key":           None,
     "ollama_timeout":    int(os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)),
@@ -311,7 +311,7 @@ def _ensure_settings_table(cursor):
         CREATE TABLE IF NOT EXISTS settings (
           id               INT PRIMARY KEY DEFAULT 1,
           provider         VARCHAR(50)  DEFAULT 'ollama',
-          model            VARCHAR(100) DEFAULT 'pentron-qwen',
+          model            VARCHAR(100) DEFAULT 'huihui_ai/qwen3.5-abliterated:9b',
           ollama_host      VARCHAR(255) DEFAULT NULL,
           api_key          VARCHAR(500) DEFAULT NULL,
           ollama_timeout   INT          DEFAULT 600,
