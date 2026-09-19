@@ -29,11 +29,13 @@ from db import (
     print_session,
     save_exploit,
     save_fix,
+    save_settings,
     save_summary,
     save_vulnerability,
 )
 from export import export_menu
 from llm import analyse_target
+from providers import OllamaProvider
 from tools import (
     check_target_safety,
     discover_subdomains,
@@ -245,6 +247,141 @@ def view_history():
 
 
 # ─────────────────────────────────────────────
+# SETTINGS
+# ─────────────────────────────────────────────
+
+_PROVIDERS = ["ollama", "openai", "anthropic", "google"]
+_SUBDOMAIN_LEVEL_LABELS = {
+    0: "0 — disabled (default)",
+    1: "1 — passive (crt.sh)",
+    2: "2 — active (crt.sh + subfinder)",
+}
+
+
+def _mask_api_key(key):
+    if not key:
+        return "not set"
+    if len(key) <= 4:
+        return "*" * len(key)
+    return f"{'*' * (len(key) - 4)}{key[-4:]}"
+
+
+def _print_settings(settings):
+    provider = settings["provider"]
+    print(f"  [1] Provider              : {provider}")
+    if provider == "ollama":
+        host = settings.get("ollama_host") or "localhost:11434"
+        print(f"  [2] Ollama host            : {host}")
+    else:
+        print(
+            f"  [2] API key                : {_mask_api_key(settings.get('api_key'))}"
+        )
+    print(f"  [3] Model                  : {settings['model']}")
+    print(f"  [4] Ollama timeout (s)     : {settings['ollama_timeout']}")
+    print(f"  [5] Summary timeout (s)    : {settings['summary_timeout']}")
+    print(f"  [6] Delay between tools (s): {settings['scan_delay_seconds']}")
+    ua = settings.get("user_agent") or "default (per-tool)"
+    print(f"  [7] User-Agent             : {ua}")
+    level = settings.get("subdomain_discovery_level", 0)
+    print(f"  [8] Subdomain discovery    : {_SUBDOMAIN_LEVEL_LABELS.get(level, level)}")
+
+
+def settings_menu():
+    while True:
+        settings = get_settings()
+        divider("SETTINGS")
+        _print_settings(settings)
+        divider()
+        info("Changes apply to the next scan — no restart needed.")
+
+        choice = prompt("Field to change (or Enter to go back): ")
+        if not choice:
+            return
+
+        if choice == "1":
+            print("  Providers: " + ", ".join(_PROVIDERS))
+            value = prompt("New provider: ").strip().lower()
+            if value not in _PROVIDERS:
+                error("Invalid provider.")
+                continue
+            save_settings(provider=value)
+            success(f"Provider set to {value}.")
+
+        elif choice == "2":
+            if settings["provider"] == "ollama":
+                value = prompt("New Ollama host (e.g. localhost:11434): ").strip()
+                if value:
+                    save_settings(ollama_host=value)
+                    success("Ollama host updated.")
+            else:
+                value = prompt("New API key (leave blank to keep current): ").strip()
+                if value:
+                    save_settings(api_key=value)
+                    success("API key updated.")
+
+        elif choice == "3":
+            if settings["provider"] == "ollama":
+                host = settings.get("ollama_host") or "localhost:11434"
+                models = OllamaProvider(settings["model"], host=host).list_models()
+                if models:
+                    print("  Installed Ollama models:")
+                    for m in models:
+                        print(f"    - {m}")
+                else:
+                    warn("Could not list Ollama models (unreachable, or none pulled).")
+            value = prompt("New model name: ").strip()
+            if value:
+                save_settings(model=value)
+                success("Model updated.")
+
+        elif choice == "4":
+            value = prompt("New Ollama timeout in seconds: ").strip()
+            if value.isdigit():
+                save_settings(ollama_timeout=int(value))
+                success("Ollama timeout updated.")
+            else:
+                error("Must be a number.")
+
+        elif choice == "5":
+            value = prompt("New summary timeout in seconds: ").strip()
+            if value.isdigit():
+                save_settings(summary_timeout=int(value))
+                success("Summary timeout updated.")
+            else:
+                error("Must be a number.")
+
+        elif choice == "6":
+            value = prompt(
+                "New delay between recon tools in seconds (0 = off): "
+            ).strip()
+            if value.isdigit():
+                save_settings(scan_delay_seconds=int(value))
+                success("Delay updated.")
+            else:
+                error("Must be a number.")
+
+        elif choice == "7":
+            print("  Leave blank to reset to the default (each tool's own User-Agent).")
+            value = prompt("New User-Agent: ")
+            save_settings(user_agent=value or None)
+            success("User-Agent updated.")
+
+        elif choice == "8":
+            print(
+                "  0 = disabled, 1 = passive (crt.sh), 2 = active (crt.sh + subfinder)"
+            )
+            value = prompt("New subdomain discovery level: ").strip()
+            if value in ("0", "1", "2"):
+                save_settings(subdomain_discovery_level=int(value))
+                success("Subdomain discovery level updated.")
+            else:
+                error("Must be 0, 1, or 2.")
+
+        else:
+            warn("Invalid choice.")
+
+
+# ─────────────────────────────────────────────
 # EDIT / DELETE MENU
 # ─────────────────────────────────────────────
 
@@ -436,7 +573,8 @@ def main_menu():
         banner()
         print("  \033[92m[1]\033[0m  New Scan")
         print("  \033[92m[2]\033[0m  View History")
-        print("  \033[92m[3]\033[0m  Exit")
+        print("  \033[92m[3]\033[0m  Settings")
+        print("  \033[92m[4]\033[0m  Exit")
         divider()
 
         choice = prompt("pentron> ")
@@ -450,6 +588,9 @@ def main_menu():
             input("\n\033[90mPress Enter to continue...\033[0m")
 
         elif choice == "3":
+            settings_menu()
+
+        elif choice == "4":
             print("\n\033[91m[*] Shutting down Pentron. Stay legal.\033[0m\n")
             sys.exit(0)
 
