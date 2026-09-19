@@ -4,6 +4,7 @@ the existing curl headers fetch with an explicit present/missing check for
 standard security headers (HSTS, CSP, X-Frame-Options, ...). Absence is a
 common misconfiguration signal, not proof of a vulnerability by itself.
 """
+
 import tools
 
 

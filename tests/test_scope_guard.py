@@ -7,6 +7,7 @@ two parsing gaps (whitespace-split breaking quoted flag values, and no
 allowance for the target's own resolved IP) — see tools.py's
 run_tool_by_command / _extract_positional_tokens / _resolved_ips.
 """
+
 import socket
 
 import pytest
@@ -25,7 +26,9 @@ def _capture_execution(monkeypatch):
     """Replace run_tool with a recorder — if the guard should have blocked
     a call, nothing should ever land here."""
     calls = []
-    monkeypatch.setattr(tools, "run_tool", lambda parts, **kw: calls.append(parts) or "OK")
+    monkeypatch.setattr(
+        tools, "run_tool", lambda parts, **kw: calls.append(parts) or "OK"
+    )
     return calls
 
 
@@ -57,7 +60,9 @@ class TestAllowsLegitimateCalls:
 
     def test_nmap_with_output_file_flag_still_matches(self, monkeypatch):
         calls = _capture_execution(monkeypatch)
-        result = tools.run_tool_by_command("nmap -sV clubs.ma -oX /tmp/nmap.xml", "clubs.ma")
+        result = tools.run_tool_by_command(
+            "nmap -sV clubs.ma -oX /tmp/nmap.xml", "clubs.ma"
+        )
         assert calls, f"expected execution, got: {result}"
 
     def test_case_insensitive_target_match(self, monkeypatch):
@@ -112,7 +117,9 @@ class TestBlocksRealViolations:
 
     def test_unbalanced_quotes_fail_closed_not_open(self, monkeypatch):
         calls = _capture_execution(monkeypatch)
-        result = tools.run_tool_by_command('curl -H "Host: clubs.ma clubs.ma', "clubs.ma")
+        result = tools.run_tool_by_command(
+            'curl -H "Host: clubs.ma clubs.ma', "clubs.ma"
+        )
         assert not calls
         assert "Could not parse" in result
 
@@ -131,7 +138,8 @@ class TestBlocksRealViolations:
         # allowed_subdomains threading.
         calls = _capture_execution(monkeypatch)
         result = tools.run_tool_by_command(
-            "curl -I mail.clubs.ma", "clubs.ma",
+            "curl -I mail.clubs.ma",
+            "clubs.ma",
             allowed_subdomains=frozenset({"mail.clubs.ma"}),
         )
         assert calls, f"expected execution, got: {result}"
@@ -141,7 +149,8 @@ class TestBlocksRealViolations:
         # the AI can't name an arbitrary host and have it accepted.
         calls = _capture_execution(monkeypatch)
         result = tools.run_tool_by_command(
-            "curl -I evil.clubs.ma", "clubs.ma",
+            "curl -I evil.clubs.ma",
+            "clubs.ma",
             allowed_subdomains=frozenset({"mail.clubs.ma"}),
         )
         assert not calls

@@ -17,9 +17,9 @@ from search import handle_search_dispatch
 from providers import get_provider, OllamaProvider
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
-MODEL_NAME  = "huihui_ai/qwen3.5-abliterated:9b"
+MODEL_NAME = "huihui_ai/qwen3.5-abliterated:9b"
 MAX_TOKENS = 8192
-MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
+MAX_TOOL_LOOPS = 9  # max times AI can call tools per session
 OLLAMA_TIMEOUT = 600
 
 # ─────────────────────────────────────────────
@@ -72,15 +72,19 @@ IMPORTANT RULES FOR ACCURACY:
 # OLLAMA API CALL
 # ─────────────────────────────────────────────
 
+
 def ask_ollama(messages: list) -> str:
     """Thin wrapper kept for direct/test use — analyse_target uses get_provider() instead."""
     print(f"\n[*] Sending to {MODEL_NAME}...")
-    return OllamaProvider(MODEL_NAME, timeout=OLLAMA_TIMEOUT).send(messages, max_tokens=MAX_TOKENS)
+    return OllamaProvider(MODEL_NAME, timeout=OLLAMA_TIMEOUT).send(
+        messages, max_tokens=MAX_TOKENS
+    )
 
 
 # ─────────────────────────────────────────────
 # TOOL DISPATCH
 # ─────────────────────────────────────────────
+
 
 def extract_tool_calls(response: str) -> list:
     """
@@ -89,8 +93,8 @@ def extract_tool_calls(response: str) -> list:
     """
     calls = []
 
-    tool_matches   = re.findall(r'\[TOOL:\s*(.+?)\]',   response)
-    search_matches = re.findall(r'\[SEARCH:\s*(.+?)\]', response)
+    tool_matches = re.findall(r"\[TOOL:\s*(.+?)\]", response)
+    search_matches = re.findall(r"\[SEARCH:\s*(.+?)\]", response)
 
     for m in tool_matches:
         calls.append(("TOOL", m.strip()))
@@ -98,6 +102,7 @@ def extract_tool_calls(response: str) -> list:
         calls.append(("SEARCH", m.strip()))
 
     return calls
+
 
 def summarize_tool_output(raw_output: str, provider=None) -> str:
     """
@@ -112,8 +117,14 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
         provider = provider or get_provider()
         summary = provider.send(
             [
-                {"role": "system", "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown."},
-                {"role": "user", "content": f"Compress this tool output:\n{raw_output[:6000]}"},
+                {
+                    "role": "system",
+                    "content": "You are a security data compressor. Extract only security-relevant facts. Return maximum 15 bullet points. Plain text only. No markdown.",
+                },
+                {
+                    "role": "user",
+                    "content": f"Compress this tool output:\n{raw_output[:6000]}",
+                },
             ],
             max_tokens=512,
             temperature=0.2,
@@ -123,7 +134,13 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
         return raw_output
 
 
-def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=None, allowed_subdomains: frozenset = frozenset()) -> str:
+def run_tool_calls(
+    calls: list,
+    session_target: str,
+    provider=None,
+    on_progress=None,
+    allowed_subdomains: frozenset = frozenset(),
+) -> str:
     """
     Execute all tool/search calls and return combined results string.
     session_target binds any [TOOL:] call back to the operator-declared
@@ -140,14 +157,18 @@ def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=
         print(f"\n  [DISPATCH] {call_type}: {call_content}")
 
         if call_type == "TOOL":
-            output = run_tool_by_command(call_content, session_target, allowed_subdomains)
+            output = run_tool_by_command(
+                call_content, session_target, allowed_subdomains
+            )
         elif call_type == "SEARCH":
             output = handle_search_dispatch(call_content)
         else:
             output = f"[!] Unknown call type: {call_type}"
 
         if on_progress and output.strip().startswith("[!] BLOCKED:"):
-            on_progress("call_blocked", f"{call_type}: {call_content} -> {output.strip()}")
+            on_progress(
+                "call_blocked", f"{call_type}: {call_content} -> {output.strip()}"
+            )
 
         compressed = summarize_tool_output(output.strip(), provider)
         results += f"\n[{call_type} RESULT: {call_content}]\n"
@@ -161,7 +182,9 @@ def run_tool_calls(calls: list, session_target: str, provider=None, on_progress=
 # PARSER — extract structured data from AI output
 # ─────────────────────────────────────────────
 def _clean(line: str) -> str:
-    return re.sub(r'\*+', '', line).strip()
+    return re.sub(r"\*+", "", line).strip()
+
+
 def parse_vulnerabilities(response: str) -> list:
     """
     Parse VULN: lines from AI response into dicts.
@@ -175,12 +198,12 @@ def parse_vulnerabilities(response: str) -> list:
         line = _clean(lines[i])
         if line.startswith("VULN:"):
             vuln = {
-                "vuln_name":   "",
-                "severity":    "medium",
-                "port":        "",
-                "service":     "",
+                "vuln_name": "",
+                "severity": "medium",
+                "port": "",
+                "service": "",
                 "description": "",
-                "fix":         ""
+                "fix": "",
             }
 
             # parse header line: VULN: name | SEVERITY: x | PORT: x | SERVICE: x
@@ -200,7 +223,9 @@ def parse_vulnerabilities(response: str) -> list:
             j = i + 1
             while j < len(lines) and j <= i + 5:
                 next_line = _clean(lines[j])
-                if next_line.startswith(("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")):
+                if next_line.startswith(
+                    ("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")
+                ):
                     break
                 if next_line.startswith("DESC:"):
                     vuln["description"] = next_line.replace("DESC:", "").strip()
@@ -230,10 +255,10 @@ def parse_exploits(response: str) -> list:
         if line.startswith("EXPLOIT:"):
             exploit = {
                 "exploit_name": "",
-                "tool_used":    "",
-                "payload":      "",
-                "result":       "unknown",
-                "notes":        ""
+                "tool_used": "",
+                "payload": "",
+                "result": "unknown",
+                "notes": "",
             }
 
             parts = line.split("|")
@@ -249,7 +274,9 @@ def parse_exploits(response: str) -> list:
             j = i + 1
             while j < len(lines) and j <= i + 4:
                 next_line = _clean(lines[j])
-                if next_line.startswith(("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")):
+                if next_line.startswith(
+                    ("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")
+                ):
                     break
                 if next_line.startswith("RESULT:"):
                     exploit["result"] = next_line.replace("RESULT:", "").strip()
@@ -267,16 +294,18 @@ def parse_exploits(response: str) -> list:
 
 def parse_risk_level(response: str) -> str:
     """Extract RISK_LEVEL from AI response."""
-    match = re.search(r'RISK_LEVEL:\s*(CRITICAL|HIGH|MEDIUM|LOW)', response, re.IGNORECASE)
+    match = re.search(
+        r"RISK_LEVEL:\s*(CRITICAL|HIGH|MEDIUM|LOW)", response, re.IGNORECASE
+    )
     return match.group(1).upper() if match else "UNKNOWN"
 
 
 def parse_summary(response: str) -> str:
-    match = re.search(r'SUMMARY:\s*(.+)', response, re.IGNORECASE)
+    match = re.search(r"SUMMARY:\s*(.+)", response, re.IGNORECASE)
     return match.group(1).strip() if match else ""
 
 
-CVE_RE = re.compile(r'CVE-\d{4}-\d{4,7}', re.IGNORECASE)
+CVE_RE = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
 
 
 def verify_cve_citations(vulnerabilities: list, raw_scan: str) -> list:
@@ -291,9 +320,13 @@ def verify_cve_citations(vulnerabilities: list, raw_scan: str) -> list:
     for vuln in vulnerabilities:
         text = f"{vuln.get('description', '')} {vuln.get('fix', '')}"
         for cve in CVE_RE.findall(text):
-            if cve.upper() not in raw_upper and "[UNVERIFIED CVE" not in vuln["description"]:
+            if (
+                cve.upper() not in raw_upper
+                and "[UNVERIFIED CVE" not in vuln["description"]
+            ):
                 vuln["description"] = (
-                    vuln["description"] + f" [UNVERIFIED CVE — {cve} not present in scan data]"
+                    vuln["description"]
+                    + f" [UNVERIFIED CVE — {cve} not present in scan data]"
                 ).strip()
     return vulnerabilities
 
@@ -302,13 +335,17 @@ def verify_cve_citations(vulnerabilities: list, raw_scan: str) -> list:
 # MAIN ANALYSIS FUNCTION
 # ─────────────────────────────────────────────
 
-def analyse_target(target: str, raw_scan: str, provider=None, on_progress=None, allowed_subdomains: frozenset = frozenset()) -> dict:
+
+def analyse_target(
+    target: str,
+    raw_scan: str,
+    provider=None,
+    on_progress=None,
+    allowed_subdomains: frozenset = frozenset(),
+) -> dict:
     provider = provider or get_provider()
     messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        },
+        {"role": "system", "content": SYSTEM_PROMPT},
         {
             "role": "user",
             "content": f"""TARGET: {target}
@@ -317,8 +354,8 @@ RECON DATA:
 {raw_scan}
 
 Analyze this target completely. Use [TOOL:] or [SEARCH:] if you need more information.
-List all vulnerabilities, fixes, and suggest exploits where applicable."""
-        }
+List all vulnerabilities, fixes, and suggest exploits where applicable.""",
+        },
     ]
 
     final_response = ""
@@ -329,9 +366,9 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
 
         response = provider.send(messages, max_tokens=MAX_TOKENS)
 
-        print(f"\n{'─'*60}")
+        print(f"\n{'─' * 60}")
         print(f"[PENTRON - Round {loop + 1}]")
-        print(f"{'─'*60}")
+        print(f"{'─' * 60}")
         print(response)
 
         final_response = response
@@ -344,38 +381,43 @@ List all vulnerabilities, fixes, and suggest exploits where applicable."""
         if on_progress:
             on_progress("tool_dispatch", tool_calls)
 
-        tool_results = run_tool_calls(tool_calls, target, provider, on_progress, allowed_subdomains)
+        tool_results = run_tool_calls(
+            tool_calls, target, provider, on_progress, allowed_subdomains
+        )
 
         # add assistant response and tool results as new messages
-        messages.append({
-            "role": "assistant",
-            "content": response
-        })
-        messages.append({
-            "role": "user",
-            "content": f"""[TOOL RESULTS]
+        messages.append({"role": "assistant", "content": response})
+        messages.append(
+            {
+                "role": "user",
+                "content": f"""[TOOL RESULTS]
 {tool_results}
 
 Continue your analysis with this new information.
-If analysis is complete, give the final RISK_LEVEL and SUMMARY."""
-        })
+If analysis is complete, give the final RISK_LEVEL and SUMMARY.""",
+            }
+        )
 
     vulnerabilities = parse_vulnerabilities(final_response)
     vulnerabilities = verify_cve_citations(vulnerabilities, raw_scan)
-    exploits        = parse_exploits(final_response)
-    risk_level      = parse_risk_level(final_response)
-    summary         = parse_summary(final_response)
+    exploits = parse_exploits(final_response)
+    risk_level = parse_risk_level(final_response)
+    summary = parse_summary(final_response)
 
-    print(f"\n[+] Parsed: {len(vulnerabilities)} vulns, {len(exploits)} exploits | Risk: {risk_level}")
+    print(
+        f"\n[+] Parsed: {len(vulnerabilities)} vulns, {len(exploits)} exploits | Risk: {risk_level}"
+    )
 
     return {
-        "full_response":   final_response,
+        "full_response": final_response,
         "vulnerabilities": vulnerabilities,
-        "exploits":        exploits,
-        "risk_level":      risk_level,
-        "summary":         summary,
-        "raw_scan":        raw_scan
+        "exploits": exploits,
+        "risk_level": risk_level,
+        "summary": summary,
+        "raw_scan": raw_scan,
     }
+
+
 # ─────────────────────────────────────────────
 # QUICK TEST
 # ─────────────────────────────────────────────

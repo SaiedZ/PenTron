@@ -13,7 +13,9 @@ from api.schemas import SettingsUpdateRequest
 from api.security import verify_token
 from api.serializers import mask_api_key
 
-router = APIRouter(prefix="/api", tags=["settings"], dependencies=[Depends(verify_token)])
+router = APIRouter(
+    prefix="/api", tags=["settings"], dependencies=[Depends(verify_token)]
+)
 
 
 def _masked(settings: dict) -> dict:
@@ -72,7 +74,11 @@ def ollama_gpu_status():
     return {
         "status": status,
         "models": [
-            {"name": m.get("name"), "size": m.get("size", 0), "size_vram": m.get("size_vram", 0)}
+            {
+                "name": m.get("name"),
+                "size": m.get("size", 0),
+                "size_vram": m.get("size_vram", 0),
+            }
             for m in models
         ],
     }
