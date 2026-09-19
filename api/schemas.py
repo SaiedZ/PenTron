@@ -43,3 +43,4 @@ class SettingsUpdateRequest(BaseModel):
     summary_timeout: Optional[int] = None
     scan_delay_seconds: Optional[int] = None
     user_agent: Optional[str] = None
+    subdomain_discovery_level: Optional[int] = None

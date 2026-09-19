@@ -124,3 +124,25 @@ class TestBlocksRealViolations:
         result = tools.run_tool_by_command("curl -I www.clubs.ma", "clubs.ma")
         assert not calls
         assert "BLOCKED" in result
+
+    def test_subdomain_in_allowed_set_is_permitted(self, monkeypatch):
+        # Discovery level 2 explicitly opts a subdomain into scope for this
+        # scan — see tools.discover_subdomains / run_tool_calls's
+        # allowed_subdomains threading.
+        calls = _capture_execution(monkeypatch)
+        result = tools.run_tool_by_command(
+            "curl -I mail.clubs.ma", "clubs.ma",
+            allowed_subdomains=frozenset({"mail.clubs.ma"}),
+        )
+        assert calls, f"expected execution, got: {result}"
+
+    def test_subdomain_not_in_allowed_set_still_blocked(self, monkeypatch):
+        # Only subdomains discover_subdomains() actually found are permitted —
+        # the AI can't name an arbitrary host and have it accepted.
+        calls = _capture_execution(monkeypatch)
+        result = tools.run_tool_by_command(
+            "curl -I evil.clubs.ma", "clubs.ma",
+            allowed_subdomains=frozenset({"mail.clubs.ma"}),
+        )
+        assert not calls
+        assert "BLOCKED" in result

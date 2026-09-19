@@ -92,6 +92,22 @@
       </p>
     </div>
 
+    <div>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Subdomain discovery</label>
+      <select id="subdomain_discovery_level" data-current="{{ settings.subdomain_discovery_level }}"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+        <option value="0">Disabled (default) — only the declared target is ever in scope</option>
+        <option value="1">Passive — crt.sh lookup, listed in the report, scope unchanged</option>
+        <option value="2">Active — crt.sh + subfinder, discovered subdomains become scannable</option>
+      </select>
+      <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        Passive queries certificate transparency logs (crt.sh) — a single request to a public
+        service, zero traffic to the target. Active adds subfinder (live DNS resolution) and, only
+        at this level, lets the AI dispatch tool calls against what it finds — an explicit, opt-in
+        widening of scope beyond the declared target.
+      </p>
+    </div>
+
     <div class="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <div class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
         <span>GPU acceleration:</span>
@@ -156,6 +172,11 @@
     syncUaCustomField();
   })();
 
+  (function initSubdomainLevel() {
+    const select = document.getElementById('subdomain_discovery_level');
+    select.value = select.dataset.current || '0';
+  })();
+
   async function loadGpuStatus() {
     const badge = document.getElementById('gpu-status-badge');
     try {
@@ -196,6 +217,7 @@
       summary_timeout: parseInt(document.getElementById('summary_timeout').value, 10),
       scan_delay_seconds: parseInt(document.getElementById('scan_delay_seconds').value, 10),
       user_agent: uaPreset.value === '__custom__' ? uaCustom.value.trim() : uaPreset.value,
+      subdomain_discovery_level: parseInt(document.getElementById('subdomain_discovery_level').value, 10),
     };
     if (isOllama) {
       body.ollama_host = document.getElementById('ollama_host').value;

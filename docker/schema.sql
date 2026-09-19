@@ -63,5 +63,6 @@ CREATE TABLE IF NOT EXISTS settings (
   summary_timeout  INT          DEFAULT 120,
   scan_delay_seconds INT        DEFAULT 0,
   user_agent       VARCHAR(500) DEFAULT NULL,
+  subdomain_discovery_level INT DEFAULT 0,
   updated_at       DATETIME     DEFAULT NULL
 );

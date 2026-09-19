@@ -14,22 +14,32 @@ implémenté — c'est une liste de candidats à discuter avant tout développem
 Ces pistes sont cohérentes avec la philosophie "detection only" du projet et
 présentent peu de risque opérationnel.
 
-### Découverte de sous-domaines
-Le trou le plus important identifié à ce jour. Actuellement PenTron ne teste
+### ✅ Découverte de sous-domaines — implémenté
+Le trou le plus important identifié à ce jour. Auparavant PenTron ne testait
 que le domaine exact déclaré (`clubs.ma`), jamais `mail.clubs.ma`,
 `dev.clubs.ma`, `staging.clubs.ma`... Or c'est souvent là que se trouvent les
 vraies failles (environnements de dev oubliés, sous-domaines mal sécurisés).
 
-Deux approches possibles :
-- **Passive** (`crt.sh`, certificate transparency logs) — une requête HTTP
-  vers un service public, zéro trafic vers la cible, très sûr.
-- **Active** (`subfinder`, `amass`) — force un peu plus, mais reste de la
-  reconnaissance pure (pas d'exploitation).
+Implémenté avec 3 niveaux de config (réglage "Subdomain discovery" dans
+Settings, `subdomain_discovery_level` : 0/1/2) :
+- **0 — Désactivé** (par défaut) : comportement inchangé, scope guard strict.
+- **1 — Passif** (`crt.sh`, certificate transparency logs) : une requête HTTP
+  vers un service public, zéro trafic vers la cible. Résultats listés dans le
+  rapport, purement informatifs — le scope guard reste strict.
+- **2 — Actif** (`crt.sh` + `subfinder`) : ajoute la résolution DNS active,
+  trouve aussi les sous-domaines sans certificat public. Les sous-domaines
+  découverts deviennent des cibles valides pour le scope guard (l'IA peut
+  ensuite lancer nmap/whatweb dessus) — extension de scope explicite et
+  opt-in, pas automatique.
 
-**Complication à anticiper** : ça change la nature du scope guard qu'on vient
-de blinder (voir `tests/test_scope_guard.py`). Il faudrait un mode explicite
-"sous-domaines autorisés" plutôt que de casser le exact-match qu'on vient de
-sécuriser.
+`amass` a été écarté après test : son premier lancement télécharge plusieurs
+Go de données géographiques (libpostal, utilisées pour le reverse whois),
+totalement disproportionné pour une simple énumération DNS. `subfinder` seul
+couvre le besoin (léger, rapide, pas de téléchargement de données).
+
+Voir `tools.py::discover_subdomains`, `tests/test_subdomain_discovery.py`,
+`tests/test_scope_guard.py` (tests `test_subdomain_in_allowed_set_is_permitted`
+/ `test_subdomain_not_in_allowed_set_still_blocked`).
 
 ### Détection de WAF (`wafw00f`)
 Savoir si un pare-feu applicatif protège la cible change l'interprétation des
@@ -106,11 +116,12 @@ actée :
 
 ## Priorisation recommandée
 
-Si deux ajouts devaient être retenus en premier, les meilleurs candidats
-valeur/risque sont :
+~~1. Découverte de sous-domaines (crt.sh + subfinder)~~ — **fait**, voir
+ci-dessus.
 
-1. **Découverte de sous-domaines passive (crt.sh)**
-2. **Vérification SPF/DKIM/DMARC via dig**
+Prochain meilleur candidat valeur/risque :
 
-Les deux sont sûrs, cohérents avec l'esprit "recon only" du projet, et
-comblent des angles morts réels d'un audit de sécurité de domaine.
+1. **Vérification SPF/DKIM/DMARC via dig**
+
+Sûr, cohérent avec l'esprit "recon only" du projet, comble un angle mort réel
+d'un audit de sécurité de domaine (risque de spoofing/phishing).
