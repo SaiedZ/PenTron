@@ -103,28 +103,65 @@ Voir `tools.py::run_robots_and_security_txt`, `tests/test_robots_security_txt.py
 
 ## Intérêt réel mais plus intrusif — à discuter avant d'ajouter
 
+Discussion approfondie menée pour chacun des trois candidats (intérêt, risque,
+comment l'encadrer si on l'ajoute) :
+
 ### Découverte de répertoires/fichiers (`gobuster`, `ffuf`)
-Utile pour trouver des chemins exposés (panels admin, backups, `.git/`...),
-mais génère beaucoup de requêtes vers la cible (bruteforce de wordlist =
-potentiellement des milliers de requêtes). C'est plus agressif que tout ce
-qu'on a actuellement, peut ressembler à une attaque DoS légère si mal
-configuré, et pourrait déclencher des alertes/bannissements IP chez la
-cible. À encadrer sérieusement (wordlist courte, délai entre requêtes) si on
-l'ajoute.
+**Intérêt** : trouve des chemins qu'aucun outil actuel ne détecte — panels
+admin oubliés, `.git/` exposé, backups (`.sql`, `.zip`), fichiers de config.
+Un vrai angle mort de PenTron aujourd'hui.
+
+**Risque** : contrairement à tout ce qui a été ajouté jusqu'ici, ça envoie
+potentiellement des milliers de requêtes à la cible — ce n'est plus de la
+recon passive. Risque de rate-limiting/bannissement IP côté cible, d'effet
+DoS involontaire sur un site fragile, et ça sort du cadre "detection only"
+formalisé dans le README.
+
+**Encadrement si ajouté** : wordlist courte et ciblée (quelques centaines
+d'entrées, pas SecLists complet), délai entre requêtes (`-delay` sur
+gobuster), timeout global strict, et un warning explicite dans l'UI avant
+lancement ("génère du trafic significatif vers la cible"). C'est le plus
+facile à rendre raisonnable des trois — risque gérable avec une config
+prudente.
 
 ### `nuclei`
-Puissant, mais c'est un piège pour la philosophie "detection only" qu'on
-vient de formaliser dans le README : ses templates vont du simple
-fingerprinting jusqu'à des tentatives d'exploitation actives (CVE PoC,
-injection...). Si on l'intègre un jour, il faudrait restreindre strictement
-aux catégories `exposure`/`technologies`/`misconfiguration`, jamais
-`vulnerabilities`/`exploits` — sinon on réintroduit par la porte de derrière
-ce qu'on a explicitement exclu.
+**Intérêt** : bibliothèque de templates énorme et à jour, couvre
+fingerprinting/misconfig/exposition de fichiers sensibles.
+
+**Risque** : le plus dangereux pour la philosophie du projet. Les templates
+vont du simple fingerprinting jusqu'à des PoC d'exploitation active
+(injection, CVE avec payload réel). Le filtrage par tags
+(`-tags exposure,tech,misconfig` en excluant `cve,vuln,exploit`) aide, mais
+le tagging communautaire n'est pas parfaitement fiable, et les templates sont
+mis à jour en continu (`nuclei -update-templates`) — le périmètre "safe" peut
+dériver dans le temps sans qu'on s'en aperçoive.
+
+**Encadrement si ajouté** : figer une version de templates (pas
+d'auto-update), probablement une allowlist explicite de templates validés à
+la main plutôt que de faire confiance aux tags seuls. Plus de travail de
+maintenance que gobuster/ffuf pour un gain pas évident vu qu'on a déjà
+whatweb/nikto pour le fingerprinting.
 
 ### `wpscan`
-Pertinent seulement si la cible est WordPress (donc conditionnel à whatweb
-qui le détecte d'abord), et uniquement en mode énumération passive, jamais
-avec bruteforce de comptes.
+**Intérêt** : réel mais niche — seulement si la cible est WordPress.
+
+**Risque** : le mode par défaut peut tenter l'énumération d'utilisateurs et,
+si mal configuré, du bruteforce de comptes — à ne jamais activer.
+
+**Encadrement si ajouté** : conditionnel à whatweb qui détecte WordPress
+d'abord (pas de scan wpscan si la cible n'est pas WP), restreint à
+l'énumération passive (`--enumerate vp,vt` — plugins/thèmes vulnérables via
+la base wpscan, jamais d'énumération d'utilisateurs ni de login bruteforce).
+
+### Priorité recommandée entre les trois
+1. **gobuster/ffuf** (wordlist courte + délai) — le meilleur ratio
+   valeur/risque maîtrisable.
+2. **wpscan conditionnel** — niche mais simple et sûr une fois bien restreint.
+3. **nuclei** — en attente ; ratio valeur/risque de maintenance moins bon, et
+   celui qui menace le plus la philosophie "detection only".
+
+Aucun des trois n'est implémenté — en attente d'un accord explicite avant
+tout développement.
 
 ---
 
