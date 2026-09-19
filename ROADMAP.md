@@ -46,10 +46,19 @@ Savoir si un pare-feu applicatif protège la cible change l'interprétation des
 résultats — un scan "propre" derrière un WAF ne veut pas dire grand-chose.
 Outil léger, une seule requête, faible risque.
 
-### Enregistrements DNS de sécurité email (SPF/DKIM/DMARC)
-Extension quasi gratuite du `dig` existant (ajouter les types TXT ciblés
-`_dmarc.`, `default._domainkey.`). Pertinent car l'absence de DMARC = risque
-de spoofing/phishing sur le domaine, un vrai point d'audit.
+### ✅ Enregistrements DNS de sécurité email (SPF/DKIM/DMARC) — implémenté
+Extension du `dig` existant : en plus des A/MX/NS/TXT habituels, `run_dig`
+interroge maintenant `_dmarc.<domaine>` et `default._domainkey.<domaine>`,
+et signale explicitement si SPF/DMARC/DKIM sont présents ou absents dans le
+rapport lu par l'IA (l'absence de DMARC = risque de spoofing/phishing sur le
+domaine, un vrai point d'audit).
+
+Limite assumée : le check DKIM ne teste que le sélecteur `default` (le plus
+courant) — son absence ne prouve pas l'absence de DKIM sous un autre
+sélecteur (`google._domainkey`, `selector1._domainkey`...), le rapport le
+précise explicitement pour ne pas induire l'IA en erreur.
+
+Voir `tools.py::run_dig`, `tests/test_email_security_dig.py`.
 
 ### Analyse des en-têtes de sécurité HTTP
 CSP, HSTS, X-Frame-Options, X-Content-Type-Options... On a déjà `curl
@@ -118,10 +127,10 @@ actée :
 
 ~~1. Découverte de sous-domaines (crt.sh + subfinder)~~ — **fait**, voir
 ci-dessus.
+~~2. Vérification SPF/DKIM/DMARC via dig~~ — **fait**, voir ci-dessus.
 
-Prochain meilleur candidat valeur/risque :
+Prochains meilleurs candidats valeur/risque, dans l'ordre :
 
-1. **Vérification SPF/DKIM/DMARC via dig**
-
-Sûr, cohérent avec l'esprit "recon only" du projet, comble un angle mort réel
-d'un audit de sécurité de domaine (risque de spoofing/phishing).
+1. **Détection de WAF** (`wafw00f`)
+2. **Analyse des en-têtes de sécurité HTTP** (CSP, HSTS, X-Frame-Options...)
+3. **robots.txt / security.txt**
