@@ -1,4 +1,4 @@
-# 🔱 PenTron
+# 🥷🏼 PenTron
 ### AI-Powered Penetration Testing Assistant
 
 <p align="center">
@@ -16,7 +16,7 @@
 
 ---
 
-> 🔱 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since diverged substantially; see below.
+> 🥷🏼 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since diverged substantially; see below.
 
 ## 🆕 What's different from the original METATRON
 
