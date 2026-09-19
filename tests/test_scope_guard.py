@@ -115,3 +115,12 @@ class TestBlocksRealViolations:
         result = tools.run_tool_by_command('curl -H "Host: clubs.ma clubs.ma', "clubs.ma")
         assert not calls
         assert "Could not parse" in result
+
+    def test_subdomain_is_not_automatically_in_scope(self, monkeypatch):
+        # Intentional: engagement scope is exact-match. A subdomain sharing a
+        # suffix with the target is a different host until the operator
+        # explicitly declares it as the session target.
+        calls = _capture_execution(monkeypatch)
+        result = tools.run_tool_by_command("curl -I www.clubs.ma", "clubs.ma")
+        assert not calls
+        assert "BLOCKED" in result
