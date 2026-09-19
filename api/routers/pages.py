@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/routers/pages.py
+PENTRON - api/routers/pages.py
 Server-rendered HTML pages (Jinja2 + HTMX). Filled in alongside the
 templates under web/templates/.
 """

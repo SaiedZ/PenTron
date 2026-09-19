@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - providers.py
+PENTRON - providers.py
 LLM provider abstraction so the analysis loop isn't hardwired to Ollama.
 Every provider exposes the same send()/list_models() contract; send()
 never raises — it returns a "[!] ..." string on failure, same contract
@@ -244,8 +244,8 @@ def get_provider(settings: dict = None) -> BaseProvider:
     name = (settings.get("provider") or os.environ.get("LLM_PROVIDER") or "ollama").lower()
     provider_cls = PROVIDERS.get(name, OllamaProvider)
 
-    model = settings.get("model") or os.environ.get("METATRON_MODEL", "metatron-qwen")
-    timeout = int(settings.get("ollama_timeout") or os.environ.get("METATRON_OLLAMA_TIMEOUT", 600))
+    model = settings.get("model") or os.environ.get("PENTRON_MODEL", "pentron-qwen")
+    timeout = int(settings.get("ollama_timeout") or os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600))
 
     kwargs = {}
     if name == "ollama":

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/jobs.py
+PENTRON - api/jobs.py
 In-memory scan progress tracking. Single uvicorn worker only (see
 docker-compose.yml comment on the `web` service) — job state is a plain
 process-local dict, not durable storage. The DB rows written by db.py are

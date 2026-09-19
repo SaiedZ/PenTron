@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/schemas.py
+PENTRON - api/schemas.py
 Pydantic request/response models. Field allowlists here mirror db.py's own
 runtime `allowed` sets (edit_vulnerability/edit_exploit) so a malformed
 request is rejected with a clean 422 instead of relying solely on db.py.
