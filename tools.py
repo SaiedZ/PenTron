@@ -216,6 +216,36 @@ def _fetch_headers_guarded(url: str, target: str, user_agent: str = None) -> str
     return f"{first}\n[!] Redirect to different host blocked: {location}"
 
 
+_SECURITY_HEADERS = {
+    "strict-transport-security": "HSTS — enforces HTTPS, protects against protocol downgrade/SSL-stripping",
+    "content-security-policy":   "CSP — restricts what scripts/resources a page can load, mitigates XSS",
+    "x-frame-options":           "mitigates clickjacking (largely superseded by CSP frame-ancestors, but still widely checked)",
+    "x-content-type-options":    "prevents the browser from MIME-sniffing a response away from its declared Content-Type",
+    "referrer-policy":           "controls how much of the URL leaks to other sites via the Referer header",
+    "permissions-policy":        "restricts access to browser features/APIs (camera, geolocation, etc.)",
+}
+
+
+def _analyze_security_headers(headers_text: str) -> str:
+    """
+    Flags standard HTTP security headers as present or missing. Absence is
+    a common, easy-to-fix misconfiguration signal, not proof of a real
+    vulnerability on its own — the AI should weigh it accordingly, not
+    treat every missing header as a finding of equal severity.
+    """
+    if "http/" not in headers_text.lower():
+        return "[Security headers] Could not check — no HTTP response received."
+
+    lower = headers_text.lower()
+    lines = ["[Security headers]"]
+    for header, note in _SECURITY_HEADERS.items():
+        if f"{header}:" in lower:
+            lines.append(f"  present : {header}")
+        else:
+            lines.append(f"  MISSING : {header} — {note}")
+    return "\n".join(lines)
+
+
 def run_curl_headers(target: str, user_agent: str = None) -> str:
     """
     curl -sI — fetch HTTP headers only
@@ -228,7 +258,10 @@ def run_curl_headers(target: str, user_agent: str = None) -> str:
     # also try https
     https_output = _fetch_headers_guarded(f"https://{target}", target, user_agent)
 
-    return f"[HTTP Headers]\n{output}\n\n[HTTPS Headers]\n{https_output}"
+    return (
+        f"[HTTP Headers]\n{output}\n\n{_analyze_security_headers(output)}\n\n"
+        f"[HTTPS Headers]\n{https_output}\n\n{_analyze_security_headers(https_output)}"
+    )
 
 
 def run_dig(target: str, user_agent: str = None) -> str:

@@ -72,10 +72,18 @@ précise explicitement pour ne pas induire l'IA en erreur.
 
 Voir `tools.py::run_dig`, `tests/test_email_security_dig.py`.
 
-### Analyse des en-têtes de sécurité HTTP
-CSP, HSTS, X-Frame-Options, X-Content-Type-Options... On a déjà `curl
-headers` ; il "suffirait" d'ajouter une couche d'analyse (pas un nouvel outil
-externe, juste enrichir ce qu'on fait déjà des en-têtes récupérés).
+### ✅ Analyse des en-têtes de sécurité HTTP — implémenté
+CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+Permissions-Policy. Pas de nouvel outil externe — `run_curl_headers` (http ET
+https) est enrichi d'une couche d'analyse qui signale explicitement chaque
+en-tête comme présent ou absent, avec une courte explication de son rôle.
+
+Un cas d'erreur géré explicitement : si la requête échoue (timeout, connexion
+refusée), le texte n'est pas une vraie réponse HTTP — on ne doit pas
+prétendre que "tous les en-têtes sont absents" alors qu'on n'a en fait rien
+pu vérifier. Le rapport dit "Could not check" dans ce cas.
+
+Voir `tools.py::_analyze_security_headers`, `tests/test_security_headers.py`.
 
 ### Vérification robots.txt / security.txt
 Triviale, un curl de plus, donne des infos utiles (chemins que l'admin ne
@@ -141,8 +149,8 @@ actée :
 ci-dessus.
 ~~2. Vérification SPF/DKIM/DMARC via dig~~ — **fait**, voir ci-dessus.
 ~~3. Détection de WAF (wafw00f)~~ — **fait**, voir ci-dessus.
+~~4. Analyse des en-têtes de sécurité HTTP~~ — **fait**, voir ci-dessus.
 
-Prochains meilleurs candidats valeur/risque, dans l'ordre :
+Prochain meilleur candidat valeur/risque :
 
-1. **Analyse des en-têtes de sécurité HTTP** (CSP, HSTS, X-Frame-Options...)
-2. **robots.txt / security.txt**
+1. **robots.txt / security.txt**
