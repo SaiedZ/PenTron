@@ -18,13 +18,13 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
 MODEL_NAME  = "pentron-qwen"
 MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9   # max times AI can call tools per session
-OLLAMA_TIMEOUT = 600 
+OLLAMA_TIMEOUT = 600
 
 # ─────────────────────────────────────────────
 # SYSTEM PROMPT
 # ─────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are PENTRON, an elite AI penetration testing assistant running on Parrot OS.
+SYSTEM_PROMPT = """You are PENTRON, an elite AI penetration testing assistant running on Kali.
 You are precise, technical, and direct. No fluff.
 
 You have access to real tools. To use them, write tags in your response:
