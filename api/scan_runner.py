@@ -7,15 +7,15 @@ exactly, reusing the same db.py/tools.py/llm.py functions, but reports
 live progress into the api.jobs store instead of print()ing to a terminal.
 """
 
-from api import jobs
 import db
+from api import jobs
 from llm import analyse_target
 from providers import get_provider
 from tools import (
-    run_selected_tools,
+    discover_subdomains,
     format_recon_for_llm,
     resolve_tool_plan,
-    discover_subdomains,
+    run_selected_tools,
 )
 
 

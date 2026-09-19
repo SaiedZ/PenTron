@@ -8,8 +8,7 @@ Used by LLM tool dispatch when AI writes [SEARCH: query]
 
 import requests
 from bs4 import BeautifulSoup
-from ddgs import DDGS  # pip install duckduckgo-search
-
+from ddgs import DDGS
 
 # ─────────────────────────────────────────────
 # DDG SEARCH
@@ -108,7 +107,7 @@ def fetch_page(url: str, max_chars: int = 3000) -> str:
         text = soup.get_text(separator="\n", strip=True)
 
         # collapse blank lines
-        lines = [l for l in text.splitlines() if l.strip()]
+        lines = [line for line in text.splitlines() if line.strip()]
         clean = "\n".join(lines)
 
         if len(clean) > max_chars:

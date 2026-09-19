@@ -6,15 +6,15 @@ runtime `allowed` sets (edit_vulnerability/edit_exploit) so a malformed
 request is rejected with a clean 422 instead of relying solely on db.py.
 """
 
-from typing import List, Literal, Optional, Union
+from typing import Literal
 
 from pydantic import BaseModel
 
 
 class ScanCreateRequest(BaseModel):
     target: str
-    tools: Union[List[str], Literal["a", "n"]] = "a"
-    subdomain_discovery_level: Optional[int] = None
+    tools: list[str] | Literal["a", "n"] = "a"
+    subdomain_discovery_level: int | None = None
 
 
 class VulnEditRequest(BaseModel):
@@ -36,12 +36,12 @@ class RiskEditRequest(BaseModel):
 
 
 class SettingsUpdateRequest(BaseModel):
-    provider: Optional[Literal["ollama", "openai", "anthropic", "google"]] = None
-    model: Optional[str] = None
-    ollama_host: Optional[str] = None
-    api_key: Optional[str] = None
-    ollama_timeout: Optional[int] = None
-    summary_timeout: Optional[int] = None
-    scan_delay_seconds: Optional[int] = None
-    user_agent: Optional[str] = None
-    subdomain_discovery_level: Optional[int] = None
+    provider: Literal["ollama", "openai", "anthropic", "google"] | None = None
+    model: str | None = None
+    ollama_host: str | None = None
+    api_key: str | None = None
+    ollama_timeout: int | None = None
+    summary_timeout: int | None = None
+    scan_delay_seconds: int | None = None
+    user_agent: str | None = None
+    subdomain_discovery_level: int | None = None

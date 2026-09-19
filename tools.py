@@ -13,10 +13,9 @@ import socket
 import subprocess
 import time
 from functools import lru_cache
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
-
 
 # ─────────────────────────────────────────────
 # PRE-FLIGHT TARGET SAFETY CHECK
@@ -62,7 +61,9 @@ def check_target_safety(target: str) -> str:
     try:
         resolved_ips = {info[4][0] for info in socket.getaddrinfo(target, None)}
     except socket.gaierror:
-        return None  # unresolvable — not what this check is about, let the normal tool errors handle it
+        # unresolvable — not what this check is about, let the normal tool
+        # errors handle it
+        return None
 
     unsafe = sorted(ip for ip in resolved_ips if _is_unsafe_ip(ip))
     if unsafe:
@@ -115,14 +116,18 @@ def run_tool(
             if attempt < retries:
                 attempt += 1
                 print(
-                    f"  [!] Timed out after {timeout}s, retrying ({attempt}/{retries})..."
+                    f"  [!] Timed out after {timeout}s, "
+                    f"retrying ({attempt}/{retries})..."
                 )
                 time.sleep(retry_delay)
                 continue
             tried = f" (tried {attempt + 1}x)" if retries else ""
             return f"[!] Timed out after {timeout}s{tried}: {' '.join(command)}"
         except FileNotFoundError:
-            return f"[!] Tool not found: {command[0]} — install it with: sudo apt install {command[0]}"
+            return (
+                f"[!] Tool not found: {command[0]} — install it with: "
+                f"sudo apt install {command[0]}"
+            )
         except Exception as e:
             return f"[!] Unexpected error running {command[0]}: {e}"
 
@@ -225,12 +230,26 @@ def _fetch_headers_guarded(url: str, target: str, user_agent: str = None) -> str
 
 
 _SECURITY_HEADERS = {
-    "strict-transport-security": "HSTS — enforces HTTPS, protects against protocol downgrade/SSL-stripping",
-    "content-security-policy": "CSP — restricts what scripts/resources a page can load, mitigates XSS",
-    "x-frame-options": "mitigates clickjacking (largely superseded by CSP frame-ancestors, but still widely checked)",
-    "x-content-type-options": "prevents the browser from MIME-sniffing a response away from its declared Content-Type",
-    "referrer-policy": "controls how much of the URL leaks to other sites via the Referer header",
-    "permissions-policy": "restricts access to browser features/APIs (camera, geolocation, etc.)",
+    "strict-transport-security": (
+        "HSTS — enforces HTTPS, protects against protocol downgrade/SSL-stripping"
+    ),
+    "content-security-policy": (
+        "CSP — restricts what scripts/resources a page can load, mitigates XSS"
+    ),
+    "x-frame-options": (
+        "mitigates clickjacking (largely superseded by CSP frame-ancestors, "
+        "but still widely checked)"
+    ),
+    "x-content-type-options": (
+        "prevents the browser from MIME-sniffing a response away from its "
+        "declared Content-Type"
+    ),
+    "referrer-policy": (
+        "controls how much of the URL leaks to other sites via the Referer header"
+    ),
+    "permissions-policy": (
+        "restricts access to browser features/APIs (camera, geolocation, etc.)"
+    ),
 }
 
 
@@ -357,7 +376,10 @@ def run_dig(target: str, user_agent: str = None) -> str:
     dkim_status = (
         "found under selector 'default'"
         if dkim_found
-        else "not found under selector 'default' (DKIM may still exist under another selector — this only checks the common default one)"
+        else (
+            "not found under selector 'default' (DKIM may still exist "
+            "under another selector — this only checks the common default one)"
+        )
     )
 
     return (
@@ -408,7 +430,8 @@ def run_testssl(target: str, user_agent: str = None) -> str:
     user_agent is accepted but unused — same reasoning as sslscan.
     """
     print(
-        f"  [*] testssl --quiet --color 0 --warnings batch {target}  (this may take a while...)"
+        f"  [*] testssl --quiet --color 0 --warnings batch {target}  "
+        f"(this may take a while...)"
     )
     return run_tool(
         ["testssl", "--quiet", "--color", "0", "--warnings", "batch", target],
@@ -839,7 +862,8 @@ def interactive_tool_run(target: str, delay: float = 0, user_agent: str = None) 
     for key, (name, _) in TOOLS_MENU.items():
         print(f"  [{key}] {name}")
     print(
-        "  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, robots/security.txt)"
+        "  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, "
+        "robots/security.txt)"
     )
     print("  [n] Run all + nikto (slow)")
 
