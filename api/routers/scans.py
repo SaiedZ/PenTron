@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/routers/scans.py
+PENTRON - api/routers/scans.py
 Start a scan and poll its live progress.
 """
 

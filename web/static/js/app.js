@@ -1,4 +1,4 @@
-/* METATRON web UI — small helpers shared across pages. */
+/* PENTRON web UI — small helpers shared across pages. */
 
 async function apiFetch(method, url, body) {
   const opts = { method, headers: {} };

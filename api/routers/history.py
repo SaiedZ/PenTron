@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/routers/history.py
+PENTRON - api/routers/history.py
 List/view/edit/delete scan sessions and their findings — thin wrappers
 around db.py's existing CRUD functions.
 """

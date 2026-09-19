@@ -1,4 +1,4 @@
--- METATRON database schema
+-- PENTRON database schema
 -- Auto-applied by the MariaDB container on first start
 -- (mounted into /docker-entrypoint-initdb.d/)
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS summary (
 CREATE TABLE IF NOT EXISTS settings (
   id               INT PRIMARY KEY DEFAULT 1,
   provider         VARCHAR(50)  DEFAULT 'ollama',
-  model            VARCHAR(100) DEFAULT 'metatron-qwen',
+  model            VARCHAR(100) DEFAULT 'pentron-qwen',
   ollama_host      VARCHAR(255) DEFAULT NULL,
   api_key          VARCHAR(500) DEFAULT NULL,
   ollama_timeout   INT          DEFAULT 600,

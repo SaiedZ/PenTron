@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-METATRON - db.py
+PENTRON - db.py
 MariaDB connection + all read/write/edit/delete operations
-Database: metatron
+Database: pentron
 """
 
 import os
@@ -18,9 +18,9 @@ def get_connection():
     """Returns a MariaDB connection. Values overridable via env vars for Docker."""
     return mysql.connector.connect(
         host=os.environ.get("DB_HOST", "localhost"),
-        user=os.environ.get("DB_USER", "metatron"),
+        user=os.environ.get("DB_USER", "pentron"),
         password=os.environ.get("DB_PASSWORD", "123"),
-        database=os.environ.get("DB_NAME", "metatron")
+        database=os.environ.get("DB_NAME", "pentron")
     )
 
 
@@ -290,14 +290,14 @@ def delete_full_session(sl_no: int):
 
 _SETTINGS_DEFAULTS = {
     "provider":          os.environ.get("LLM_PROVIDER", "ollama"),
-    "model":             os.environ.get("METATRON_MODEL", "metatron-qwen"),
+    "model":             os.environ.get("PENTRON_MODEL", "pentron-qwen"),
     "ollama_host":       os.environ.get("OLLAMA_HOST", "localhost:11434"),
     "api_key":           None,
-    "ollama_timeout":    int(os.environ.get("METATRON_OLLAMA_TIMEOUT", 600)),
-    "summary_timeout":   int(os.environ.get("METATRON_SUMMARY_TIMEOUT", 120)),
-    "scan_delay_seconds": int(os.environ.get("METATRON_SCAN_DELAY", 0)),
-    "user_agent":        os.environ.get("METATRON_USER_AGENT") or None,
-    "subdomain_discovery_level": int(os.environ.get("METATRON_SUBDOMAIN_DISCOVERY_LEVEL", 0)),
+    "ollama_timeout":    int(os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)),
+    "summary_timeout":   int(os.environ.get("PENTRON_SUMMARY_TIMEOUT", 120)),
+    "scan_delay_seconds": int(os.environ.get("PENTRON_SCAN_DELAY", 0)),
+    "user_agent":        os.environ.get("PENTRON_USER_AGENT") or None,
+    "subdomain_discovery_level": int(os.environ.get("PENTRON_SUBDOMAIN_DISCOVERY_LEVEL", 0)),
 }
 
 
@@ -311,7 +311,7 @@ def _ensure_settings_table(cursor):
         CREATE TABLE IF NOT EXISTS settings (
           id               INT PRIMARY KEY DEFAULT 1,
           provider         VARCHAR(50)  DEFAULT 'ollama',
-          model            VARCHAR(100) DEFAULT 'metatron-qwen',
+          model            VARCHAR(100) DEFAULT 'pentron-qwen',
           ollama_host      VARCHAR(255) DEFAULT NULL,
           api_key          VARCHAR(500) DEFAULT NULL,
           ollama_timeout   INT          DEFAULT 600,
@@ -433,7 +433,7 @@ if __name__ == "__main__":
     try:
         conn = get_connection()
         print("[+] MariaDB connection successful.")
-        print("[+] Database: metatron")
+        print("[+] Database: pentron")
         conn.close()
     except Exception as e:
         print(f"[!] Connection failed: {e}")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-METATRON - api/routers/settings.py
+PENTRON - api/routers/settings.py
 Runtime configuration screen backend: read/update the settings row,
 list installed Ollama models, and a basic reachability health check.
 """

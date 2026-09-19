@@ -2,12 +2,12 @@ services:
 
   mariadb:
     image: mariadb:11
-    container_name: metatron-db
+    container_name: pentron-db
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: rootpass
-      MARIADB_DATABASE: metatron
-      MARIADB_USER: metatron
+      MARIADB_DATABASE: pentron
+      MARIADB_USER: pentron
       MARIADB_PASSWORD: "123"
     volumes:
       - mariadb_data:/var/lib/mysql
@@ -20,7 +20,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: metatron-ollama
+    container_name: pentron-ollama
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -31,18 +31,18 @@ services:
     # passthrough, layer docker-compose.gpu.yml on top instead of editing
     # this file — see the Settings page in the web UI for the exact command.
 
-  metatron:
+  pentron:
     build: .
-    container_name: metatron-app
+    container_name: pentron-app
     depends_on:
       - mariadb
       - ollama
     environment:
       DB_HOST: mariadb
       DB_PORT: "3306"
-      DB_USER: metatron
+      DB_USER: pentron
       DB_PASSWORD: "123"
-      DB_NAME: metatron
+      DB_NAME: pentron
       OLLAMA_HOST: ollama:11434
     # nmap needs raw sockets for SYN/OS-detection scans
     cap_add:
@@ -53,7 +53,7 @@ services:
 
   web:
     build: .
-    container_name: metatron-web
+    container_name: pentron-web
     restart: unless-stopped
     depends_on:
       - mariadb
@@ -61,11 +61,11 @@ services:
     environment:
       DB_HOST: mariadb
       DB_PORT: "3306"
-      DB_USER: metatron
+      DB_USER: pentron
       DB_PASSWORD: "123"
-      DB_NAME: metatron
+      DB_NAME: pentron
       OLLAMA_HOST: ollama:11434
-      # METATRON_API_TOKEN: ""   # optional shared secret; unset = no auth
+      # PENTRON_API_TOKEN: ""   # optional shared secret; unset = no auth
     # web-launched scans run the same nmap calls, so they need the same caps
     cap_add:
       - NET_RAW
