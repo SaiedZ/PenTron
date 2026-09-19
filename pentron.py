@@ -41,7 +41,11 @@ from llm import analyse_target
 
 def banner():
     os.system("clear")
-    print("""
+    try:
+        model = get_settings().get("model") or "unknown"
+    except Exception:
+        model = "unknown"
+    print(f"""
 \033[91m
     ██████╗ ███████╗███╗   ██╗████████╗██████╗  ██████╗ ███╗   ██╗
     ██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔══██╗██╔═══██╗████╗  ██║
@@ -50,7 +54,7 @@ def banner():
     ██║     ███████╗██║ ╚████║   ██║   ██║  ██║╚██████╔╝██║ ╚████║
     ╚═╝     ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 \033[0m
-    \033[90mAI Penetration Testing Assistant  |  Model: pentron-qwen  |  originally forked from METATRON\033[0m
+    \033[90mAI Penetration Testing Assistant  |  Model: {model}\033[0m
     \033[90m─────────────────────────────────────────────────────────────────────\033[0m
 """)
 
