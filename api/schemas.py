@@ -14,6 +14,7 @@ from pydantic import BaseModel
 class ScanCreateRequest(BaseModel):
     target: str
     tools: Union[List[str], Literal["a", "n"]] = "a"
+    subdomain_discovery_level: Optional[int] = None
 
 
 class VulnEditRequest(BaseModel):

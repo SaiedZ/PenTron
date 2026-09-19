@@ -47,12 +47,14 @@ def _make_on_progress(sl_no: int):
     return on_progress
 
 
-def run_scan_job(sl_no: int, target: str, tool_keys) -> None:
+def run_scan_job(sl_no: int, target: str, tool_keys, subdomain_level: int = None) -> None:
     on_progress = _make_on_progress(sl_no)
     try:
         settings = db.get_settings()
+        if subdomain_level is None:
+            subdomain_level = settings.get("subdomain_discovery_level", 0)
         planned_tools = resolve_tool_plan(tool_keys)
-        if settings.get("subdomain_discovery_level", 0) > 0:
+        if subdomain_level > 0:
             planned_tools = ["Subdomain discovery"] + planned_tools
         jobs.update_job(
             sl_no, state="RECON_RUNNING", detail="starting recon",
@@ -60,7 +62,6 @@ def run_scan_job(sl_no: int, target: str, tool_keys) -> None:
         )
         delay = settings.get("scan_delay_seconds", 0)
         user_agent = settings.get("user_agent") or None
-        subdomain_level = settings.get("subdomain_discovery_level", 0)
 
         subdomain_text, allowed_subdomains = "", frozenset()
         if subdomain_level > 0:
