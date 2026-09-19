@@ -82,7 +82,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 ## 🖥️ Screenshots
 
 <p align="center">
-  <img src="screenshots/main_menu.png" alt="Main Menu" width="700"/>
+  <img width="1010" height="322" alt="image" src="https://github.com/user-attachments/assets/1676aa87-6051-4875-9ef6-62c2060da16c" />
   <br><i>Main Menu (CLI)</i>
 </p>
 
