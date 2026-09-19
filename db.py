@@ -5,6 +5,7 @@ MariaDB connection + all read/write/edit/delete operations
 Database: metatron
 """
 
+import os
 import mysql.connector
 from datetime import datetime
 
@@ -14,12 +15,12 @@ from datetime import datetime
 # ─────────────────────────────────────────────
 
 def get_connection():
-    """Returns a MariaDB connection. No password (local setup)."""
+    """Returns a MariaDB connection. Values overridable via env vars for Docker."""
     return mysql.connector.connect(
-        host="localhost",
-        user="metatron",
-        password="123",
-        database="metatron"
+        host=os.environ.get("DB_HOST", "localhost"),
+        user=os.environ.get("DB_USER", "metatron"),
+        password=os.environ.get("DB_PASSWORD", "123"),
+        database=os.environ.get("DB_NAME", "metatron")
     )
 
 
@@ -281,6 +282,90 @@ def delete_full_session(sl_no: int):
     conn.commit()
     conn.close()
     print(f"[+] Full session SL#{sl_no} deleted from all tables.")
+
+
+# ─────────────────────────────────────────────
+# SETTINGS (single-row runtime config)
+# ─────────────────────────────────────────────
+
+_SETTINGS_DEFAULTS = {
+    "provider":          os.environ.get("LLM_PROVIDER", "ollama"),
+    "model":             os.environ.get("METATRON_MODEL", "metatron-qwen"),
+    "ollama_host":       os.environ.get("OLLAMA_HOST", "localhost:11434"),
+    "api_key":           None,
+    "ollama_timeout":    int(os.environ.get("METATRON_OLLAMA_TIMEOUT", 600)),
+    "summary_timeout":   int(os.environ.get("METATRON_SUMMARY_TIMEOUT", 120)),
+    "scan_delay_seconds": int(os.environ.get("METATRON_SCAN_DELAY", 0)),
+    "user_agent":        os.environ.get("METATRON_USER_AGENT") or None,
+}
+
+
+def _ensure_settings_table(cursor):
+    """
+    Idempotent — lets settings work against an existing DB volume created
+    before this table existed, without requiring a fresh `docker compose
+    down -v`. docker/schema.sql covers fresh installs; this covers upgrades.
+    """
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+          id               INT PRIMARY KEY DEFAULT 1,
+          provider         VARCHAR(50)  DEFAULT 'ollama',
+          model            VARCHAR(100) DEFAULT 'metatron-qwen',
+          ollama_host      VARCHAR(255) DEFAULT NULL,
+          api_key          VARCHAR(500) DEFAULT NULL,
+          ollama_timeout   INT          DEFAULT 600,
+          summary_timeout  INT          DEFAULT 120,
+          scan_delay_seconds INT        DEFAULT 0,
+          user_agent       VARCHAR(500) DEFAULT NULL,
+          updated_at       DATETIME     DEFAULT NULL
+        )
+    """)
+    # upgrade path for DB volumes created before these columns existed
+    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS scan_delay_seconds INT DEFAULT 0")
+    cursor.execute("ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500) DEFAULT NULL")
+
+
+def get_settings() -> dict:
+    """Return the persisted settings row, merged over env-var defaults for
+    any column that was never set."""
+    conn = get_connection()
+    c = conn.cursor(dictionary=True)
+    _ensure_settings_table(c)
+    c.execute("SELECT * FROM settings WHERE id = 1")
+    row = c.fetchone()
+    conn.close()
+
+    settings = dict(_SETTINGS_DEFAULTS)
+    if row:
+        for key in _SETTINGS_DEFAULTS:
+            if row.get(key) is not None:
+                settings[key] = row[key]
+    return settings
+
+
+def save_settings(**fields) -> None:
+    """Upsert the single settings row. Unknown keys are ignored."""
+    allowed = set(_SETTINGS_DEFAULTS.keys())
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_connection()
+    c = conn.cursor()
+    _ensure_settings_table(c)
+
+    columns = list(updates.keys()) + ["updated_at"]
+    values = list(updates.values()) + [now]
+    placeholders = ", ".join(["%s"] * len(columns))
+    update_clause = ", ".join(f"{col} = VALUES({col})" for col in columns)
+    c.execute(
+        f"INSERT INTO settings (id, {', '.join(columns)}) VALUES (1, {placeholders}) "
+        f"ON DUPLICATE KEY UPDATE {update_clause}",
+        values
+    )
+    conn.commit()
+    conn.close()
 
 
 # ─────────────────────────────────────────────

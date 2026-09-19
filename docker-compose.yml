@@ -1,0 +1,80 @@
+services:
+
+  mariadb:
+    image: mariadb:11
+    container_name: metatron-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: metatron
+      MARIADB_USER: metatron
+      MARIADB_PASSWORD: "123"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: metatron-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./Modelfile:/Modelfile:ro
+    # CPU-only by default so this runs anywhere out of the box. For GPU
+    # passthrough, layer docker-compose.gpu.yml on top instead of editing
+    # this file — see the Settings page in the web UI for the exact command.
+
+  metatron:
+    build: .
+    container_name: metatron-app
+    depends_on:
+      - mariadb
+      - ollama
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_USER: metatron
+      DB_PASSWORD: "123"
+      DB_NAME: metatron
+      OLLAMA_HOST: ollama:11434
+    # nmap needs raw sockets for SYN/OS-detection scans
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    stdin_open: true   # keep STDIN open so the interactive CLI menu works
+    tty: true           # allocate a pseudo-TTY (colors + input()) — use `docker attach` or `docker compose run`
+
+  web:
+    build: .
+    container_name: metatron-web
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+      - ollama
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_USER: metatron
+      DB_PASSWORD: "123"
+      DB_NAME: metatron
+      OLLAMA_HOST: ollama:11434
+      # METATRON_API_TOKEN: ""   # optional shared secret; unset = no auth
+    # web-launched scans run the same nmap calls, so they need the same caps
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    ports:
+      - "8000:8000"
+    # Single worker: api/jobs.py's live-progress store is an in-process dict.
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+volumes:
+  mariadb_data:
+  ollama_data:

@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import mysql.connector
+from db import get_session as fetch_session, get_all_history as fetch_all_history
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -25,42 +25,6 @@ RISK_COLORS = {
     "LOW":      "#27ae60",
     "UNKNOWN":  "#7f8c8d",
 }
-
-
-def get_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="metatron",
-        password="123",
-        database="metatron"
-    )
-
-
-def fetch_session(sl_no: int) -> dict:
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT * FROM history WHERE sl_no = %s", (sl_no,))
-    history = c.fetchone()
-    c.execute("SELECT * FROM vulnerabilities WHERE sl_no = %s", (sl_no,))
-    vulns = c.fetchall()
-    c.execute("SELECT * FROM fixes WHERE sl_no = %s", (sl_no,))
-    fixes = c.fetchall()
-    c.execute("SELECT * FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
-    exploits = c.fetchall()
-    c.execute("SELECT * FROM summary WHERE sl_no = %s", (sl_no,))
-    summary = c.fetchone()
-    conn.close()
-    return {"history": history, "vulns": vulns, "fixes": fixes,
-            "exploits": exploits, "summary": summary}
-
-
-def fetch_all_history():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT sl_no, target, scan_date, status FROM history ORDER BY sl_no DESC")
-    rows = c.fetchall()
-    conn.close()
-    return rows
 
 
 def export_pdf(data: dict, output_dir: str) -> str:

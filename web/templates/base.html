@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PenTron{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body class="h-full min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <header class="border-b border-slate-200 dark:border-slate-800">
+    <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
+      <a href="/" class="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-100">
+        PenTron
+      </a>
+      <nav class="flex items-center gap-4 text-sm">
+        <a href="/" class="text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400">New Scan</a>
+        <a href="/history" class="text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400">History</a>
+        <a href="/settings" class="text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mx-auto max-w-5xl px-4 py-6 text-xs text-slate-400 dark:text-slate-600 sm:px-6">
+    PenTron — AI penetration testing assistant. For authorized use only.
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
