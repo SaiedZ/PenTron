@@ -30,14 +30,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-# --ignore-installed: wafw00f pulls in python3-urllib3/requests/certifi/idna
-# as Debian-packaged apt dependencies (no RECORD file), which pip can't
-# uninstall to replace with the pinned versions below — shadow them instead
-# of failing the build trying to remove them.
-RUN pip3 install --no-cache-dir --break-system-packages --ignore-installed -r requirements.txt
+# Static, self-contained binary — no separate install step needed.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Two-phase sync, same trick a `COPY requirements.txt .` + `pip install`
+# split was doing: install dependencies from the lockfile first (cached as
+# long as pyproject.toml/uv.lock don't change), then install the project
+# itself once the full source is copied in below. uv installs into its own
+# venv (/app/.venv), fully isolated from apt's system Python packages (e.g.
+# wafw00f's Debian-packaged requests/urllib3) — unlike the old
+# --break-system-packages pip install, there's no risk of collision so no
+# --ignore-installed workaround is needed either.
+# Re-run `uv lock` locally after editing pyproject.toml's dependencies.
+COPY pyproject.toml uv.lock .
+RUN uv sync --frozen --no-install-project
 
 COPY . .
+RUN uv sync --frozen
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN chmod +x /app/docker/entrypoint.sh
 
