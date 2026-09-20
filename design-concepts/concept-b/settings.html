@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<header id="site-nav" class="fixed top-0 inset-x-0 z-50 border-b border-transparent bg-white/90 py-5">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4.5 w-4.5"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9.5 12 2 2 3.5-4"/></svg>
+      </span>
+      <span class="text-[15px] font-bold tracking-tight text-slate-900">PenTron</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm">
+      <a href="index.html" data-nav-link class="nav-link">Overview</a>
+      <a href="new-scan.html" data-nav-link class="nav-link">New Scan</a>
+      <a href="history.html" data-nav-link class="nav-link">History</a>
+      <a href="settings.html" data-nav-link class="nav-link">Settings</a>
+    </nav>
+    <a href="new-scan.html" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>
+      New scan
+    </a>
+  </div>
+</header>
+
+<main class="mx-auto max-w-3xl px-6 pb-24 pt-32">
+
+  <div class="mb-10">
+    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Configuration</p>
+    <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Settings</h1>
+    <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+      Choose which LLM writes the risk analysis for your scans — a local
+      Ollama model, or a hosted provider using your own API key.
+    </p>
+  </div>
+
+  <form class="space-y-8" onsubmit="return false;">
+
+    <!-- Provider -->
+    <section class="card rounded-2xl p-6">
+      <h2 class="text-sm font-semibold text-slate-900">LLM provider</h2>
+      <p class="mt-1 text-sm text-slate-500">Only one provider is active at a time.</p>
+
+      <div class="mt-5 grid gap-3 sm:grid-cols-2">
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-indigo-400 bg-indigo-50 p-4">
+          <input type="radio" name="provider" checked class="mt-0.5 h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+          <span>
+            <span class="block text-sm font-medium text-slate-900">Ollama (local)</span>
+            <span class="block text-xs text-slate-500">Self-hosted, no API key required</span>
+          </span>
+        </label>
+
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/50">
+          <input type="radio" name="provider" class="mt-0.5 h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+          <span>
+            <span class="block text-sm font-medium text-slate-900">OpenAI</span>
+            <span class="block text-xs text-slate-500">GPT-family models</span>
+          </span>
+        </label>
+
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/50">
+          <input type="radio" name="provider" class="mt-0.5 h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+          <span>
+            <span class="block text-sm font-medium text-slate-900">Anthropic</span>
+            <span class="block text-xs text-slate-500">Claude-family models</span>
+          </span>
+        </label>
+
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/50">
+          <input type="radio" name="provider" class="mt-0.5 h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+          <span>
+            <span class="block text-sm font-medium text-slate-900">Google</span>
+            <span class="block text-xs text-slate-500">Gemini-family models</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Model config -->
+    <section class="card rounded-2xl p-6">
+      <h2 class="text-sm font-semibold text-slate-900">Model configuration</h2>
+      <p class="mt-1 text-sm text-slate-500">Applies to the provider selected above.</p>
+
+      <div class="mt-5 space-y-5">
+        <div>
+          <label for="model-name" class="mb-1.5 block text-xs font-medium text-slate-600">Model name</label>
+          <input
+            id="model-name"
+            type="text"
+            value="huihui_ai/qwen3.5-abliterated:9b"
+            class="mono w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+
+        <div>
+          <label for="api-key" class="mb-1.5 block text-xs font-medium text-slate-600">API key</label>
+          <div class="relative">
+            <input
+              id="api-key"
+              type="password"
+              value="sk-not-a-real-key-000000000000"
+              class="mono w-full rounded-lg border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+            />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <p class="mt-1.5 text-xs text-slate-400">Not required for a local Ollama provider.</p>
+        </div>
+
+        <div class="max-w-xs">
+          <label for="timeout" class="mb-1.5 block text-xs font-medium text-slate-600">Request timeout (seconds)</label>
+          <input
+            id="timeout"
+            type="number"
+            value="120"
+            min="10"
+            class="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+          />
+        </div>
+      </div>
+    </section>
+
+    <div class="flex items-center justify-between rounded-2xl border border-indigo-100 bg-indigo-50 px-6 py-4">
+      <p class="text-sm text-indigo-900">Static mockup — the save button doesn't persist anything.</p>
+      <button type="submit" class="btn-primary shrink-0">
+        Save settings
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
+    </div>
+  </form>
+
+</main>
+
+<script src="nav.js"></script>
+</body>
+</html>

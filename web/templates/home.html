@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block page_id %}home{% endblock %}
+{% block title %}PenTron — AI Pentest Ops Console{% endblock %}
+
+{% block content %}
+<section class="pt-12 pb-20 sm:pt-16 sm:pb-24">
+  <div class="max-w-3xl">
+    <p class="mb-5 font-mono text-xs tracking-[0.2em] text-cyan-400">AI PENTEST OPS CONSOLE</p>
+    <h1 class="text-4xl font-semibold leading-[1.1] tracking-tight text-slate-50 sm:text-5xl">
+      Structured recon.<br>AI triage.<br>One console.
+    </h1>
+    <p class="mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
+      Run a focused recon toolkit against an authorized target, turn raw output into structured
+      findings with your chosen LLM, and keep every result attached to a readable session report.
+    </p>
+    <div class="mt-9 flex flex-wrap items-center gap-4">
+      <a href="/new-scan" class="btn-primary">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>
+        Launch a new scan
+      </a>
+      <a href="/history" class="btn-ghost">View scan history <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+
+  <div class="panel mt-16 overflow-hidden rounded-sm">
+    <div class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-panel-raised)] px-4 py-2.5">
+      <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-[#f87171]/70"></span><span class="h-2.5 w-2.5 rounded-full bg-[#facc15]/70"></span><span class="h-2.5 w-2.5 rounded-full bg-[#34d399]/70"></span></div>
+      <p class="font-mono text-[11px] text-slate-500">session — authorized-target.local</p>
+      <span class="badge badge-high">HIGH</span>
+    </div>
+    <pre class="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-slate-400"><span class="text-cyan-400">$</span> pentron scan --target authorized-target.local --tools nmap,whois,dig,nikto
+
+<span class="text-slate-600">[00:00:01]</span> nmap   <span class="text-emerald-400">done</span>       services discovered
+<span class="text-slate-600">[00:00:04]</span> whois  <span class="text-emerald-400">done</span>       registration lookup complete
+<span class="text-slate-600">[00:00:06]</span> dig    <span class="text-emerald-400">done</span>       DNS records resolved
+<span class="text-slate-600">[00:00:11]</span> nikto  <span class="text-emerald-400">done</span>       web checks complete
+<span class="text-slate-600">[00:00:14]</span> llm    <span class="text-cyan-400">analyzing</span>  tool output → findings, exploits, risk level
+<span class="text-slate-600">[00:00:19]</span> report <span class="text-emerald-400">ready</span>      session saved to history</pre>
+  </div>
+</section>
+
+<section class="border-t border-[var(--border-soft)] py-20">
+  <p class="field-label mb-3">What PenTron does</p>
+  <h2 class="mb-12 text-2xl font-semibold text-slate-100">One pipeline, from raw output to a readable verdict.</h2>
+  <div class="grid gap-px bg-[var(--border-soft)] sm:grid-cols-2 lg:grid-cols-4">
+    {% for name, title, copy in [
+      ('tool_registry', 'Recon modules', 'A shared registry keeps CLI and web tool selection aligned.'),
+      ('llm_triage', 'AI analysis', 'Raw output becomes structured vulnerabilities, exploit paths and risk.'),
+      ('providers', 'Provider choice', 'Use local Ollama or a configured cloud model without changing the workflow.'),
+      ('session_report', 'Persistent reports', 'Findings and raw evidence remain attached to every saved session.')
+    ] %}
+    <div class="panel p-6">
+      <div class="mb-4 font-mono text-lg text-cyan-400">&gt;_</div>
+      <p class="mb-1 font-mono text-[11px] text-slate-600">{{ name }}</p>
+      <h3 class="mb-2 text-sm font-semibold text-slate-100">{{ title }}</h3>
+      <p class="text-sm leading-relaxed text-slate-400">{{ copy }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="border-t border-[var(--border-soft)] py-20">
+  <p class="field-label mb-3">Start working</p>
+  <h2 class="mb-12 text-2xl font-semibold text-slate-100">Everything you need, one step away.</h2>
+  <div class="grid gap-4 sm:grid-cols-3">
+    {% for href, title, copy in [
+      ('/new-scan', 'New scan', 'Choose a target, recon tools and subdomain discovery level.'),
+      ('/history', 'Scan history', 'Open previous sessions, findings, reports and raw output.'),
+      ('/settings', 'Settings', 'Configure the active LLM provider, model and scan defaults.')
+    ] %}
+    <a href="{{ href }}" class="panel flex items-start justify-between gap-4 p-6 transition-colors hover:border-cyan-400/40">
+      <div><h3 class="mb-1.5 font-medium text-slate-100">{{ title }}</h3><p class="text-sm text-slate-400">{{ copy }}</p></div>
+      <span class="mt-1 shrink-0 text-slate-500">↗</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

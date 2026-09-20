@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scan History — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="history" class="bg-[#0a0a0a] text-[#f3f1e7] antialiased">
+
+<nav id="site-nav" class="fixed top-0 inset-x-0 z-50">
+  <div class="mx-auto max-w-7xl px-6 flex items-center justify-between">
+    <a href="index.html" class="display text-xl font-semibold tracking-tight">PEN<span class="text-accent">TRON</span></a>
+    <div class="hidden md:flex items-center gap-9">
+      <a href="index.html" data-page="index" class="nav-link">Home</a>
+      <a href="new-scan.html" data-page="new-scan" class="nav-link">New Scan</a>
+      <a href="history.html" data-page="history" class="nav-link">History</a>
+      <a href="session-detail.html" data-page="session-detail" class="nav-link">Session</a>
+      <a href="settings.html" data-page="settings" class="nav-link">Settings</a>
+    </div>
+    <a href="new-scan.html" class="btn-accent hidden md:inline-flex">Launch Scan</a>
+  </div>
+</nav>
+
+<header class="border-b border-hair px-6 pt-36 pb-14 md:pt-44">
+  <div class="mx-auto max-w-7xl">
+    <p class="mb-4 text-xs uppercase tracking-[0.35em] text-accent-2">6 sessions</p>
+    <h1 class="text-5xl font-bold md:text-7xl">Scan <span class="text-accent">History.</span></h1>
+    <p class="mt-5 max-w-xl text-sm leading-relaxed text-muted">Every completed session, most recent first. Open one to read the full AI-generated report.</p>
+  </div>
+</header>
+
+<main class="mx-auto max-w-7xl px-6 py-14">
+  <div class="flex flex-col">
+
+    <a href="session-detail.html" class="group grid gap-4 border-b border-hair py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center">
+      <div class="sm:col-span-2"><span class="badge badge-critical">Critical</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">scan-corp.io</h2>
+        <p class="mt-1 text-xs text-muted">2026-09-18 &middot; nmap, whois, curl, nikto, subfinder</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">Outdated OpenSSH build combined with an exposed admin panel enables direct account takeover.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+    <a href="session-detail.html" class="group grid gap-4 border-b border-hair py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center md:ml-12">
+      <div class="sm:col-span-2"><span class="badge badge-high">High</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">api.northwind-labs.com</h2>
+        <p class="mt-1 text-xs text-muted">2026-09-15 &middot; nmap, curl, dig</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">Verbose error pages leak internal stack traces; one misconfigured CORS policy widens the attack surface.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+    <a href="session-detail.html" class="group grid gap-4 border-b border-hair py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center">
+      <div class="sm:col-span-2"><span class="badge badge-medium">Medium</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">203.0.113.44</h2>
+        <p class="mt-1 text-xs text-muted">2026-09-11 &middot; nmap, whois, curl</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">TLS certificate expired last week; no other exploitable services detected on scanned ports.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+    <a href="session-detail.html" class="group grid gap-4 border-b border-hair py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center md:ml-12">
+      <div class="sm:col-span-2"><span class="badge badge-low">Low</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">dev.vantablack-systems.net</h2>
+        <p class="mt-1 text-xs text-muted">2026-09-08 &middot; nmap, dig, subfinder</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">Standard hardened stack — only informational findings from subdomain enumeration.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+    <a href="session-detail.html" class="group grid gap-4 border-b border-hair py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center">
+      <div class="sm:col-span-2"><span class="badge badge-high">High</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">portal.aegis-fin.co</h2>
+        <p class="mt-1 text-xs text-muted">2026-09-03 &middot; nmap, curl, nikto, whois</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">Outdated CMS plugin flagged by Nikto with a known public exploit; login endpoint lacks rate limiting.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+    <a href="session-detail.html" class="group grid gap-4 py-8 transition hover:bg-white/[0.03] sm:grid-cols-12 sm:items-center md:ml-12">
+      <div class="sm:col-span-2"><span class="badge badge-critical">Critical</span></div>
+      <div class="sm:col-span-4">
+        <h2 class="text-2xl font-semibold group-hover:text-accent">stage.orbital-dev.app</h2>
+        <p class="mt-1 text-xs text-muted">2026-08-29 &middot; nmap, subfinder, curl</p>
+      </div>
+      <p class="text-sm leading-relaxed text-muted sm:col-span-5">Default credentials still active on an exposed database admin interface found via active subdomain sweep.</p>
+      <div class="text-accent-2 sm:col-span-1 sm:text-right">&rarr;</div>
+    </a>
+
+  </div>
+</main>
+
+<script src="nav.js"></script>
+</body>
+</html>

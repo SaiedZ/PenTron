@@ -1,0 +1,235 @@
+/* PenTron — concept B: "Enterprise SaaS"
+   Shared styles for the fixed navbar, cards, badges and the tiny
+   hand-rolled SVG/CSS data-viz touches. Everything else is Tailwind
+   utility classes (loaded via CDN in each page). */
+
+:root {
+  --accent: #4f46e5; /* indigo-600 */
+  --accent-dark: #4338ca; /* indigo-700 */
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Navbar ---------- */
+
+#site-nav {
+  transition: padding 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.shadow-nav {
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03), 0 12px 24px -16px rgba(15, 23, 42, 0.18);
+}
+
+.nav-link {
+  position: relative;
+  padding-bottom: 5px;
+  color: #475569; /* slate-600 */
+  transition: color 0.2s ease;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+}
+
+.nav-link:hover {
+  color: #0f172a; /* slate-900 */
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.nav-link-active {
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.nav-link-active::after {
+  transform: scaleX(1);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.15), 0 8px 16px -8px rgba(79, 70, 229, 0.45);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2), 0 12px 20px -8px rgba(79, 70, 229, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: #fff;
+  color: #334155;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: #c7d2fe;
+  color: var(--accent-dark);
+  background: #eef2ff;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 16px 32px -24px rgba(15, 23, 42, 0.15);
+}
+
+.card-hover {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04), 0 20px 32px -20px rgba(79, 70, 229, 0.25);
+  border-color: #c7d2fe;
+  transform: translateY(-2px);
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+}
+
+.badge-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+}
+
+.badge-critical {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.badge-critical .badge-dot {
+  background: #dc2626;
+}
+
+.badge-high {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+.badge-high .badge-dot {
+  background: #f97316;
+}
+
+.badge-medium {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+.badge-medium .badge-dot {
+  background: #f59e0b;
+}
+
+.badge-low {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+.badge-low .badge-dot {
+  background: #94a3b8;
+}
+
+/* ---------- Donut chart (severity distribution) ---------- */
+
+.donut-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.donut-seg {
+  stroke-linecap: butt;
+}
+
+/* ---------- Misc ---------- */
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+details.raw-output > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+details.raw-output > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.raw-output[open] .chevron {
+  transform: rotate(90deg);
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+}
+
+/* ---------- Session chat widget ---------- */
+
+.chat-fab {
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2), 0 12px 24px -8px rgba(79, 70, 229, 0.45);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.chat-fab:active {
+  transform: translateY(1px);
+}
+
+.chat-panel {
+  box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04), 0 24px 48px -20px rgba(15, 23, 42, 0.25);
+}

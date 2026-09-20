@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PenTron — Ops Console concept</title>
+    <meta
+      name="description"
+      content="Design exploration for PenTron: a dark, information-dense 'ops console' visual direction."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: [
+                '"JetBrains Mono"',
+                "ui-monospace",
+                "SFMono-Regular",
+                "monospace",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-page="index" class="bg-[#05070a] text-slate-200 antialiased">
+    <div class="console-texture"></div>
+    <div class="console-scanlines"></div>
+
+    <header id="site-nav">
+      <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <a
+          href="index.html"
+          class="flex items-center gap-2 font-mono text-sm tracking-[0.22em] text-slate-100"
+        >
+          <svg
+            class="w-5 h-5 text-cyan-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+          >
+            <path
+              d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9 12l2 2 4-4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          PENTRON
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+          <a href="index.html" data-nav="index" class="nav-link hover:text-slate-100">Overview</a>
+          <a href="new-scan.html" data-nav="new-scan" class="nav-link hover:text-slate-100">New Scan</a>
+          <a href="history.html" data-nav="history" class="nav-link hover:text-slate-100">History</a>
+          <a href="session.html" data-nav="session" class="nav-link hover:text-slate-100">Sample Report</a>
+          <a href="settings.html" data-nav="settings" class="nav-link hover:text-slate-100">Settings</a>
+        </nav>
+        <a href="new-scan.html" class="btn-primary hidden sm:inline-flex text-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          New Scan
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section class="max-w-7xl mx-auto px-6 pt-40 pb-24">
+        <div class="max-w-3xl">
+          <p class="font-mono text-xs tracking-[0.2em] text-cyan-400 mb-5">
+            DESIGN CONCEPT · 01 / OPS CONSOLE
+          </p>
+          <h1 class="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-50 leading-[1.1]">
+            Structured recon.<br />
+            AI triage.<br />
+            One console.
+          </h1>
+          <p class="mt-6 text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl">
+            PenTron runs your recon toolkit against an authorized target, hands
+            the output to an LLM, and comes back with a scored, structured
+            report — vulnerabilities, exploit paths and a risk level, next to
+            the raw logs that produced them. This page is a visual exploration
+            of one possible direction for that interface: dense, technical,
+            built for reading logs at 2am.
+          </p>
+          <div class="mt-9 flex flex-wrap items-center gap-4">
+            <a href="new-scan.html" class="btn-primary">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+              </svg>
+              Launch a new scan
+            </a>
+            <a href="history.html" class="btn-ghost">
+              View scan history
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- mock console panel -->
+        <div class="mt-16 panel rounded-sm overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border)] bg-[var(--bg-panel-raised)]">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#f87171]/70"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#facc15]/70"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#34d399]/70"></span>
+            </div>
+            <p class="font-mono text-[11px] text-slate-500">session — 10.10.14.22</p>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <pre class="font-mono text-[12.5px] leading-relaxed text-slate-400 p-5 overflow-x-auto"><span class="text-cyan-400">$</span> pentron scan --target 10.10.14.22 --tools nmap,whois,dig,nikto,subfinder --subdomains passive
+
+<span class="text-slate-600">[00:00:01]</span> nmap      <span class="text-emerald-400">done</span>  22/tcp open ssh, 80/tcp open http, 443/tcp open https
+<span class="text-slate-600">[00:00:04]</span> whois     <span class="text-emerald-400">done</span>  registrar lookup complete
+<span class="text-slate-600">[00:00:06]</span> dig       <span class="text-emerald-400">done</span>  4 A records, 2 MX records resolved
+<span class="text-slate-600">[00:00:11]</span> nikto     <span class="text-emerald-400">done</span>  7 findings, 1 directory listing exposed
+<span class="text-slate-600">[00:00:13]</span> subfinder <span class="text-emerald-400">done</span>  6 subdomains discovered (passive)
+<span class="text-slate-600">[00:00:14]</span> llm       <span class="text-cyan-400">analyzing</span> 5 tool outputs → risk_level, vulnerabilities, exploits
+<span class="text-slate-600">[00:00:19]</span> report    <span class="text-emerald-400">ready</span>  risk_level=HIGH, vulnerabilities=5, exploits=2</pre>
+        </div>
+      </section>
+
+      <!-- Feature grid -->
+      <section class="max-w-7xl mx-auto px-6 py-20 border-t border-[var(--border-soft)]">
+        <p class="field-label mb-3">What PenTron does</p>
+        <h2 class="text-2xl font-semibold text-slate-100 mb-12">
+          One pipeline, from raw tool output to a readable verdict.
+        </h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--border-soft)]">
+          <div class="panel p-6">
+            <svg class="w-5 h-5 text-cyan-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="4" width="18" height="16" rx="1" />
+              <path d="M7 9h10M7 13h6" stroke-linecap="round" />
+            </svg>
+            <h3 class="text-sm font-semibold text-slate-100 mb-2 font-mono">tool_registry</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              nmap, whois, curl, dig, nikto, subfinder and more — every recon
+              module is registered once and picked up everywhere it's needed.
+            </p>
+          </div>
+          <div class="panel p-6">
+            <svg class="w-5 h-5 text-cyan-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3-5.5-3-5.5 3 1-6.3L3 8.9 9 8l3-6z" stroke-linejoin="round" />
+            </svg>
+            <h3 class="text-sm font-semibold text-slate-100 mb-2 font-mono">llm_triage</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Raw output is parsed into VULN / EXPLOIT / RISK_LEVEL blocks and
+              scored — CRITICAL down to LOW — without manual read-through.
+            </p>
+          </div>
+          <div class="panel p-6">
+            <svg class="w-5 h-5 text-cyan-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M4 6h16M4 6l2 13h12l2-13M9 10v6M15 10v6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h3 class="text-sm font-semibold text-slate-100 mb-2 font-mono">providers</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Local Ollama model, or OpenAI / Anthropic / Google — swap the
+              backing provider without changing how a scan is run.
+            </p>
+          </div>
+          <div class="panel p-6">
+            <svg class="w-5 h-5 text-cyan-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M9 12l2 2 4-4M7.8 3.5a8.5 8.5 0 108.4 0" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h3 class="text-sm font-semibold text-slate-100 mb-2 font-mono">session_report</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Target, tools, findings, exploit paths and raw logs stay
+              attached to the session — nothing is summarized away.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Explore pages -->
+      <section class="max-w-7xl mx-auto px-6 py-20 border-t border-[var(--border-soft)]">
+        <p class="field-label mb-3">Explore the concept</p>
+        <h2 class="text-2xl font-semibold text-slate-100 mb-12">
+          Four screens, one visual language.
+        </h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <a href="new-scan.html" class="panel p-6 flex items-start justify-between gap-4 hover:border-cyan-400/40 transition-colors">
+            <div>
+              <h3 class="text-slate-100 font-medium mb-1.5">New scan</h3>
+              <p class="text-sm text-slate-400">Target, tool selection, subdomain discovery level.</p>
+            </div>
+            <svg class="w-4 h-4 text-slate-500 mt-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17L17 7M7 7h10v10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <a href="history.html" class="panel p-6 flex items-start justify-between gap-4 hover:border-cyan-400/40 transition-colors">
+            <div>
+              <h3 class="text-slate-100 font-medium mb-1.5">Scan history</h3>
+              <p class="text-sm text-slate-400">Past sessions with risk level and a one-line summary.</p>
+            </div>
+            <svg class="w-4 h-4 text-slate-500 mt-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17L17 7M7 7h10v10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <a href="session.html" class="panel p-6 flex items-start justify-between gap-4 hover:border-cyan-400/40 transition-colors">
+            <div>
+              <h3 class="text-slate-100 font-medium mb-1.5">Sample report</h3>
+              <p class="text-sm text-slate-400">Full session detail: findings, exploits, raw output.</p>
+            </div>
+            <svg class="w-4 h-4 text-slate-500 mt-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17L17 7M7 7h10v10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <a href="settings.html" class="panel p-6 flex items-start justify-between gap-4 hover:border-cyan-400/40 transition-colors">
+            <div>
+              <h3 class="text-slate-100 font-medium mb-1.5">Settings</h3>
+              <p class="text-sm text-slate-400">LLM provider, model, API key and timeout.</p>
+            </div>
+            <svg class="w-4 h-4 text-slate-500 mt-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17L17 7M7 7h10v10" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-[var(--border)]">
+      <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500">
+        <p class="font-mono">PENTRON // design concept — "ops console" — static mockup, no backend.</p>
+        <div class="flex items-center gap-6">
+          <a href="index.html" class="hover:text-slate-300">Overview</a>
+          <a href="new-scan.html" class="hover:text-slate-300">New Scan</a>
+          <a href="history.html" class="hover:text-slate-300">History</a>
+          <a href="settings.html" class="hover:text-slate-300">Settings</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./nav.js"></script>
+  </body>
+</html>

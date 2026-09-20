@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings — PenTron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: [
+                '"JetBrains Mono"',
+                "ui-monospace",
+                "SFMono-Regular",
+                "monospace",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-page="settings" class="bg-[#05070a] text-slate-200 antialiased">
+    <div class="console-texture"></div>
+    <div class="console-scanlines"></div>
+
+    <header id="site-nav">
+      <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <a
+          href="index.html"
+          class="flex items-center gap-2 font-mono text-sm tracking-[0.22em] text-slate-100"
+        >
+          <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          PENTRON
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+          <a href="index.html" data-nav="index" class="nav-link hover:text-slate-100">Overview</a>
+          <a href="new-scan.html" data-nav="new-scan" class="nav-link hover:text-slate-100">New Scan</a>
+          <a href="history.html" data-nav="history" class="nav-link hover:text-slate-100">History</a>
+          <a href="session.html" data-nav="session" class="nav-link hover:text-slate-100">Sample Report</a>
+          <a href="settings.html" data-nav="settings" class="nav-link hover:text-slate-100">Settings</a>
+        </nav>
+        <a href="new-scan.html" class="btn-primary hidden sm:inline-flex text-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          New Scan
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 pt-32 pb-24">
+      <p class="field-label mb-3">Configuration</p>
+      <h1 class="text-3xl font-semibold text-slate-50 mb-2">Settings</h1>
+      <p class="text-slate-400 mb-10">
+        Choose the LLM provider used to analyze scan output. Fields below are
+        static — nothing is saved from this mockup.
+      </p>
+
+      <div class="panel p-6 sm:p-7 mb-6">
+        <label class="field-label block mb-4">LLM provider</label>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="provider-card rounded-sm p-4 flex items-start gap-3">
+            <input type="radio" name="provider" checked class="mt-1" />
+            <span>
+              <span class="text-slate-100 font-medium block mb-0.5">Ollama</span>
+              <span class="text-xs text-slate-500">Local model, no API key required.</span>
+            </span>
+          </label>
+          <label class="provider-card rounded-sm p-4 flex items-start gap-3">
+            <input type="radio" name="provider" class="mt-1" />
+            <span>
+              <span class="text-slate-100 font-medium block mb-0.5">OpenAI</span>
+              <span class="text-xs text-slate-500">GPT-family models via API key.</span>
+            </span>
+          </label>
+          <label class="provider-card rounded-sm p-4 flex items-start gap-3">
+            <input type="radio" name="provider" class="mt-1" />
+            <span>
+              <span class="text-slate-100 font-medium block mb-0.5">Anthropic</span>
+              <span class="text-xs text-slate-500">Claude-family models via API key.</span>
+            </span>
+          </label>
+          <label class="provider-card rounded-sm p-4 flex items-start gap-3">
+            <input type="radio" name="provider" class="mt-1" />
+            <span>
+              <span class="text-slate-100 font-medium block mb-0.5">Google</span>
+              <span class="text-xs text-slate-500">Gemini-family models via API key.</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel p-6 sm:p-7 space-y-6">
+        <div>
+          <label for="model" class="field-label block mb-2">Model name</label>
+          <input
+            id="model"
+            type="text"
+            value="huihui_ai/qwen3.5-abliterated:9b"
+            class="w-full"
+          />
+          <p class="text-xs text-slate-500 mt-2">
+            Exact tag as the provider expects it — no custom aliases.
+          </p>
+        </div>
+
+        <div>
+          <label for="api-key" class="field-label block mb-2">API key</label>
+          <div class="relative">
+            <input
+              id="api-key"
+              type="password"
+              value="sk-live-8f2c1e9a6d4b7f0031aa"
+              class="w-full pr-11"
+            />
+            <button
+              type="button"
+              id="toggle-api-key"
+              aria-label="Show API key"
+              class="absolute right-0 top-0 bottom-0 px-3 flex items-center text-slate-500 hover:text-slate-300"
+            >
+              <svg id="eye-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            Not required for a local Ollama provider.
+          </p>
+        </div>
+
+        <div>
+          <label for="timeout" class="field-label block mb-2">Request timeout (seconds)</label>
+          <input id="timeout" type="number" value="120" class="w-32" />
+        </div>
+
+        <div class="border-t border-[var(--border-soft)] pt-6 flex items-center gap-4">
+          <button type="button" class="btn-primary" title="Design mockup — not functional">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Save settings
+          </button>
+          <span class="text-xs text-slate-500 font-mono">not wired up — mockup only</span>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-[var(--border)]">
+      <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500">
+        <p class="font-mono">PENTRON // design concept — "ops console" — static mockup, no backend.</p>
+        <div class="flex items-center gap-6">
+          <a href="index.html" class="hover:text-slate-300">Overview</a>
+          <a href="new-scan.html" class="hover:text-slate-300">New Scan</a>
+          <a href="history.html" class="hover:text-slate-300">History</a>
+          <a href="settings.html" class="hover:text-slate-300">Settings</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./nav.js"></script>
+    <script>
+      (function () {
+        var input = document.getElementById("api-key");
+        var toggle = document.getElementById("toggle-api-key");
+        var icon = document.getElementById("eye-icon");
+        var hiddenPath =
+          '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/>';
+        var visiblePath =
+          '<path d="M3 3l18 18M10.6 10.6a3 3 0 004.2 4.2M9.9 5.1A10.6 10.6 0 0112 5c6.4 0 10 7 10 7a17.8 17.8 0 01-3.2 4.1M6.6 6.6C4 8.3 2 12 2 12s3.6 7 10 7c1.4 0 2.7-.3 3.8-.8" stroke-linecap="round" stroke-linejoin="round"/>';
+        toggle.addEventListener("click", function () {
+          var isPassword = input.type === "password";
+          input.type = isPassword ? "text" : "password";
+          icon.innerHTML = isPassword ? visiblePath : hiddenPath;
+          toggle.setAttribute(
+            "aria-label",
+            isPassword ? "Hide API key" : "Show API key",
+          );
+        });
+      })();
+    </script>
+  </body>
+</html>

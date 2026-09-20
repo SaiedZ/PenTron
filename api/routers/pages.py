@@ -21,8 +21,26 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
 
 router = APIRouter(tags=["pages"])
 
+TOOL_DESCRIPTIONS = {
+    "nmap": "Port and service discovery",
+    "whois": "Domain registration lookup",
+    "whatweb": "Web technology fingerprinting",
+    "curl headers": "HTTP headers and banner grab",
+    "dig DNS": "DNS record enumeration",
+    "nikto": "Web server vulnerability scan",
+    "sslscan": "TLS and cipher configuration",
+    "testssl.sh": "Deep TLS security analysis",
+    "wafw00f": "Web application firewall detection",
+    "robots/security.txt": "robots.txt and security.txt discovery",
+}
+
 
 @router.get("/")
+def home(request: Request):
+    return templates.TemplateResponse(request, "home.html")
+
+
+@router.get("/new-scan")
 def dashboard(request: Request):
     settings = db.get_settings()
     default_keys = tool_registry.default_keys()
@@ -34,6 +52,7 @@ def dashboard(request: Request):
         {
             "settings": settings,
             "tools": list(tool_registry.all_tools().values()),
+            "tool_descriptions": TOOL_DESCRIPTIONS,
             "default_keys": default_keys,
             # pre-serialized for the JS PRESETS object — Starlette's
             # Jinja2Templates doesn't register a `tojson` filter
