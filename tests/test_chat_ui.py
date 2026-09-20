@@ -11,6 +11,8 @@ def test_session_page_contains_accessible_chat_widget():
     assert 'id="chat-panel"' in TEMPLATE
     assert 'data-session-id="{{ sl_no }}"' in TEMPLATE
     assert 'src="/static/js/session-chat.js"' in TEMPLATE
+    assert 'd="M4 5h16v11H8l-4 4V5z"' in TEMPLATE
+    assert "🥷🏼" not in TEMPLATE
 
 
 def test_findings_offer_discussion_without_automatic_submission():
@@ -43,3 +45,19 @@ def test_markdown_renderer_does_not_inject_html():
 def test_code_blocks_have_copy_action():
     assert 'copy.textContent = "Copy"' in SCRIPT
     assert "navigator.clipboard.writeText(code)" in SCRIPT
+
+
+def test_markdown_renderer_supports_tables_and_horizontal_rules_safely():
+    assert "function appendTable" in SCRIPT
+    assert 'document.createElement("table")' in SCRIPT
+    assert "isTableSeparator" in SCRIPT
+    assert 'document.createElement("hr")' in SCRIPT
+    assert '.replace(/\\\\\\|/g, "|")' in SCRIPT
+
+
+def test_chat_shows_accessible_thinking_indicator_during_request():
+    assert "function setThinking(visible)" in SCRIPT
+    assert 'indicator.setAttribute("role", "status")' in SCRIPT
+    assert 'indicator.setAttribute("aria-label", "Assistant is thinking")' in SCRIPT
+    assert "setThinking(true);" in SCRIPT
+    assert "setThinking(false);" in SCRIPT
