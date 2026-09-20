@@ -65,21 +65,6 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 
 ## 🖥️ Screenshots
 
-### Terminal CLI
-
-#### Interactive main menu
-
-<p align="center">
-  <img width="736" height="347" alt="image" src="https://github.com/user-attachments/assets/056328f0-49c7-4dd1-9297-daabe3e736ee" />
-  <br><i>Main Menu</i>
-</p>
-
-#### Recon tools running
-
-<p align="center">
-  <img width="748" height="724" alt="image" src="https://github.com/user-attachments/assets/a14c147d-d349-4086-a0ef-81b6c0c68cdb" />
-  <br><i>Recon tools running on target</i>
-</p>
 
 ### Web UI
 
@@ -109,6 +94,22 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 <p align="center">
   <img width="1402" height="689" alt="image" src="https://github.com/user-attachments/assets/c52d3b3b-b814-4f35-8942-5aed6b6e10ed" />
   <br><i>Contextual AI chat — ask follow-up questions about a session's findings, backed by a concise, session-specific security context (not the raw recon output).</i>
+</p>
+
+### Terminal CLI
+
+#### Interactive main menu
+
+<p align="center">
+  <img width="736" height="347" alt="image" src="https://github.com/user-attachments/assets/056328f0-49c7-4dd1-9297-daabe3e736ee" />
+  <br><i>Main Menu</i>
+</p>
+
+#### Recon tools running
+
+<p align="center">
+  <img width="748" height="724" alt="image" src="https://github.com/user-attachments/assets/a14c147d-d349-4086-a0ef-81b6c0c68cdb" />
+  <br><i>Recon tools running on target</i>
 </p>
 
 ---
