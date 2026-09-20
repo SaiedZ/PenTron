@@ -24,7 +24,7 @@
 
 **PenTron** is an AI penetration testing assistant that can run entirely on your own machine with Ollama, without a cloud dependency or subscription. OpenAI, Anthropic, and Google are also supported as optional providers.
 
-You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
+You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f, robots.txt/security.txt, opt-in WPScan) plus optional subdomain discovery (crt.sh, or crt.sh + subfinder), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
 Two ways to drive it:
 - **Web UI** — an ops-console homepage plus dedicated New Scan, live progress, history, report, and provider-settings screens. Also the only interface with the contextual AI chat and JSON export.
@@ -290,7 +290,7 @@ recon tools, Ollama, MariaDB, and the native web UI.
 
 ### Terminal CLI
 
-PenTron's CLI needs the AI model loaded and reachable, and MariaDB running — both handled automatically if you're on Docker (`docker compose run --rm pentron` waits for both).
+PenTron's CLI needs the configured AI provider reachable (the local Ollama model loaded, or a valid API key for OpenAI/Anthropic/Google) and MariaDB running — Ollama and MariaDB are both handled automatically if you're on Docker (`docker compose run --rm pentron` waits for both).
 
 **1. Main menu appears:**
 ```
