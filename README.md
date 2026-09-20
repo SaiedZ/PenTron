@@ -98,7 +98,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 #### Structured scan results
 
 <p align="center">
-  <!-- Add the structured scan results <img> here. -->
+  <img width="1251" height="807" alt="image" src="https://github.com/user-attachments/assets/3e296b39-b335-421f-83c3-aa8b28792a02" />
   <br><i>Structured scan results — validated risk level, severity distribution, findings, remediation guidance, and traceable AI analysis.</i>
 </p>
 
