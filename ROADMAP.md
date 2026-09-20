@@ -1,8 +1,9 @@
 # 🔱 PenTron — Product Roadmap
 
 Ce document liste les pistes d'évolution envisagées pour élargir la couverture
-d'audit de sécurité de domaine, au-delà des 8 outils de recon actuels
-(nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh).
+d'audit de sécurité de domaine, au-delà des 10 outils de recon actuels
+(nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh,
+wafw00f, robots/security.txt).
 
 Classement par intérêt réel / risque / facilité d'intégration. Rien ici n'est
 implémenté — c'est une liste de candidats à discuter avant tout développement.
