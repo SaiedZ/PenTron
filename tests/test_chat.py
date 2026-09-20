@@ -1,5 +1,6 @@
 from pentron.chat import (
     OMITTED_FINDINGS_NOTICE,
+    CHAT_SYSTEM_PROMPT,
     _append_if_value,
     _compact,
     _format_fields,
@@ -319,3 +320,13 @@ def test_build_seed_context_excludes_verbose_session_data():
     assert "SECRET RAW SCAN" not in result
     assert "SECRET FULL ANALYSIS" not in result
     assert "SECRET LONG DESCRIPTION" not in result
+
+
+def test_chat_system_prompt_forbids_tools_and_unsupported_claims():
+    prompt = CHAT_SYSTEM_PROMPT.lower()
+
+    assert "[tool:]" in prompt
+    assert "[search:]" in prompt
+    assert "raw scan" in prompt
+    assert "missing" in prompt
+    assert "language" in prompt
