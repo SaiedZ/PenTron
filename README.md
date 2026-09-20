@@ -84,19 +84,23 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 ## 🖥️ Screenshots
 
+### CLI
+
 <p align="center">
   <img width="736" height="347" alt="image" src="https://github.com/user-attachments/assets/056328f0-49c7-4dd1-9297-daabe3e736ee" />
-  <br><i>Main Menu (CLI)</i>
+  <br><i>Main Menu</i>
 </p>
 
 <p align="center">
   <img width="748" height="724" alt="image" src="https://github.com/user-attachments/assets/a14c147d-d349-4086-a0ef-81b6c0c68cdb" />
-  <br><i>Recon tools running on target (CLI)</i>
+  <br><i>Recon tools running on target</i>
 </p>
 
+### GUI
+
 <p align="center">
-  <img width="731" height="571" alt="image" src="https://github.com/user-attachments/assets/e1f2d2c2-69ed-4065-8665-36b5e751ed61" />
-  <br><i>Settings (CLI)</i>
+  <img width="1269" height="716" alt="image" src="https://github.com/user-attachments/assets/f64b4c42-fa0c-4a01-ae10-2f10dc28600a" />
+  <br><i>Live scan progress — real-time recon tracking, tool-by-tool execution, and automatic transition to AI analysis.</i>
 </p>
 
 ---
