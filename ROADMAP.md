@@ -484,19 +484,47 @@ modèle local abliterated n'a pas de function-calling fiable.
 
 - **Portée** : chat contextuel à une session de scan, pas un assistant
   global. Bouton uniquement sur `session_detail.html`.
-- **Contexte injecté au démarrage** : léger — cible, outils lancés,
-  risk_level, summary courte. Pas le rapport complet ni le détail de
-  chaque vulnérabilité (l'utilisateur copie-colle lui-même ce dont il veut
-  discuter).
+- **Contexte injecté au démarrage** : une fiche de session compacte et
+  bornée — cible, outils lancés, `risk_level`, synthèse courte, puis inventaire
+  minimal des constats (`vuln_name`, sévérité, port, service). Jamais
+  `raw_scan`, l'analyse IA complète, les descriptions longues ni les textes
+  complets des corrections/exploits. Le modèle sait ainsi quels constats
+  existent sans être noyé dans le rapport ; l'utilisateur peut ensuite fournir
+  le détail utile ou utiliser une action « Discuter de ce constat » qui
+  n'ajoute que le constat choisi à la conversation.
 - **Persistance** : aucune en base. Historique tenu côté client
   (`sessionStorage`, perdu à la fermeture de l'onglet) et renvoyé en entier
   à chaque requête ; le serveur reste stateless (pas de dict in-memory à
   gérer/nettoyer comme `api/jobs.py`).
-- **Compression du contexte** : par seuil (~70% du budget de tokens), pas
-  un résumé systématique à chaque message — la majorité des échanges
-  resteront courts, et résumer à chaque tour coûterait un aller-retour LLM
-  pour rien. Comptage de tokens par heuristique (`len(texte)//4`), pas de
-  dépendance type `tiktoken` (ne collerait qu'à l'encodage OpenAI).
+- **Budget de contexte interne** : 16 000 tokens, volontairement non exposé
+  dans Settings en v1. Répartition cible : fiche de session plafonnée à
+  environ 2 000 tokens, environ 2 000 tokens réservés à la réponse, reste pour
+  la conversation. Cette limite conservatrice garantit une expérience
+  compatible avec le modèle Ollama local par défaut ; un provider cloud peut
+  disposer d'une fenêtre plus large, mais la v1 ne dépend pas de métadonnées
+  variables selon chaque modèle.
+- **Compression du contexte** : par seuil (~70–75% du budget), pas un résumé
+  systématique à chaque message — la majorité des échanges resteront courts,
+  et résumer à chaque tour coûterait un aller-retour LLM pour rien. La
+  compression remplace les anciens tours par un résumé de conversation mais
+  conserve intégralement les 4 à 6 derniers messages ; la fiche de session
+  reste séparée et est toujours réinjectée. Comptage de tokens par heuristique
+  (`len(texte)//4`), pas de dépendance type `tiktoken` (ne collerait qu'à
+  l'encodage OpenAI).
+- **Transparence utilisateur** : le premier message du widget explique ce que
+  l'assistant connaît (fiche compacte), ce qu'il ne connaît pas (sorties brutes
+  et détails longs), et la limite d'environ 16 000 tokens du modèle local.
+  L'IHM rappelle aussi le compromis : traitement local et contexte limité avec
+  Ollama ; contexte potentiellement plus large avec un provider cloud, mais
+  transmission des messages et éléments de session à ce provider.
+- **Langue** : répondre dans la langue du premier message utilisateur lorsque
+  le modèle en est capable, avec repli en anglais si la langue ne peut pas être
+  déterminée ou correctement prise en charge.
+- **Format des réponses** : Markdown restreint (paragraphes, listes, titres
+  courts, emphase, code inline et blocs de code). Le HTML brut est désactivé
+  et le rendu est assaini avant insertion dans le DOM. Les blocs de code
+  affichent le langage si fourni, autorisent le défilement horizontal et
+  proposent une action « Copier ».
 - **v1 sans outils** : le chat ne déclenche pas `[TOOL:]/[SEARCH:]`, reste
   conversationnel. Ajout d'outils dans le chat = évolution séparée, à
   discuter après usage réel de la v1 (dupliquerait le dispatch + garde-fous
@@ -504,14 +532,32 @@ modèle local abliterated n'a pas de function-calling fiable.
 
 ### Plan par phases
 
+**Phase 0 — prérequis prioritaire : stocker la synthèse courte**
+- Ajouter une colonne dédiée `short_summary` dans la table `summary`, dans
+  `docker/schema.sql` pour les nouvelles installations et via une migration
+  idempotente (`ADD COLUMN IF NOT EXISTS`) pour les volumes existants.
+- Faire évoluer `db.save_summary()` et ses deux appelants (`pentron/cli.py` et
+  `api/scan_runner.py`) pour enregistrer explicitement `result["summary"]`,
+  déjà produit par `llm.parse_summary()`, en plus de `ai_analysis`.
+- Exposer ce champ dans `api/serializers.py::summary_to_dict()` et adapter tous
+  les consommateurs dont les index de tuples dépendent de l'ordre des colonnes.
+- Prévoir un repli pour les anciennes sessions dont `short_summary` est vide :
+  extraire `SUMMARY:` depuis `ai_analysis` si possible, sans lancer un nouvel
+  appel LLM. Ne jamais utiliser automatiquement toute `ai_analysis` comme
+  contexte de chat.
+- Ajouter les tests de parsing, d'enregistrement/sérialisation et de repli sur
+  une ancienne session. Cette phase doit être terminée avant le cœur du chat.
+
 **Phase 1 — backend, cœur partagé**
 - `pentron/chat.py` : `estimate_tokens()`, `build_seed_context(session_data)`
-  (cible/outils/risk_level/summary), `maybe_compress(history, provider,
-  budget)` (résumé façon `summarize_tool_output` au-delà du seuil),
-  `send_chat_message(history, seed, user_text, provider)`.
-- Nouveau réglage Settings : budget de tokens du contexte chat (défaut
-  16000, ajustable si l'utilisateur passe sur un provider cloud à fenêtre
-  plus large) — même schéma que `ollama_timeout`.
+  (fiche compacte plafonnée : cible/outils/risk_level/short_summary/inventaire
+  minimal des constats), `maybe_compress(history, provider, budget)` (résumé
+  façon `summarize_tool_output` au-delà du seuil, avec conservation des derniers
+  tours), `send_chat_message(history, seed, user_text, provider)`.
+- Budget v1 fixé en interne à 16 000 tokens, sans nouveau réglage Settings.
+- Prompt système dédié au chat : réponses dans la langue de l'utilisateur,
+  Markdown restreint, interdiction de prétendre avoir vu les sorties ou détails
+  qui ne figurent pas dans le contexte, et aucun dispatch `[TOOL:]/[SEARCH:]`.
 
 **Phase 2 — endpoint API**
 - `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
@@ -536,6 +582,14 @@ modèle local abliterated n'a pas de function-calling fiable.
   le widget de zéro, et le brancher sur l'historique client + l'endpoint de
   la Phase 2 au lieu des 3 messages bidons et de l'écho local de la
   maquette.
+- Afficher dès l'ouverture le message de transparence sur le périmètre du
+  contexte, la limite du modèle local et l'envoi à un tiers lorsqu'un provider
+  cloud est actif.
+- Ajouter sur chaque constat une action « Discuter de ce constat » qui ouvre le
+  widget et prépare un message avec le détail de ce seul constat ; l'utilisateur
+  garde le contrôle et doit confirmer l'envoi.
+- Rendre le Markdown avec une liste fermée de constructions autorisées, sans
+  HTML brut, et fournir un bouton « Copier » sur les blocs de code.
 
 **Phase 4 (optionnelle, après usage réel de la v1)**
 - Discussion séparée sur l'ajout d'outils (`[TOOL:]/[SEARCH:]`) dans le
@@ -596,3 +650,12 @@ cette info n'est pas trackée par session dans la base aujourd'hui
 exploits/summary), seulement au niveau global via `settings`. À reconsidérer
 si le besoin se confirme (nécessiterait de stocker provider/modèle utilisés
 au moment du scan, pas seulement le réglage courant).
+
+## Tentatives d'exploitation autorisées — évolution séparée
+
+Le rapport distingue désormais les pistes d'exploitation suggérées des appels
+d'outils réellement dispatchés pendant l'analyse. Une future évolution pourra
+ajouter un type d'appel explicite pour les tentatives d'exploitation, limité à
+une liste fermée d'actions sûres, soumis aux garde-fous de scope existants et à
+une autorisation opérateur claire. Cette capacité offensive n'est pas incluse
+dans le pipeline actuel.
