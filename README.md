@@ -22,6 +22,7 @@
 
 The original METATRON is a single ~2,000-line terminal script with a hardcoded local model, no web UI, no tests, and no target/scope enforcement beyond a tool-name allowlist. PenTron has grown into a packaged Python project (`pentron/`, installable console script) with a FastAPI web backend, a Dockerized stack, and a pytest suite — none of which exist upstream. On top of that foundation, it also adds:
 
+- **Full Dockerization** — `docker compose up -d` brings up MariaDB, Ollama, and the app together, with the schema applied automatically. The original requires manually installing and configuring every dependency (MariaDB, Ollama, system packages) natively.
 - **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Start from an ops-console Overview, launch scans from a dedicated two-column workspace with a live command preview, watch progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports. The terminal CLI still works unchanged, side by side.
 - **Multi-provider AI** — the original is hardwired to one local Ollama model. This fork adds a provider abstraction (`providers.py`) supporting Ollama, OpenAI, Anthropic, and Google, switchable at runtime from the Settings screen — no code edit, no restart.
 - **Runtime, database-backed settings** — provider, model, and timeouts are stored in a `settings` table and read fresh on every scan, instead of hardcoded constants in `llm.py`.
@@ -38,7 +39,7 @@ The original METATRON is a single ~2,000-line terminal script with a hardcoded l
 - **robots.txt / security.txt check** — a 10th, opt-in recon tool. Fetches `robots.txt` (sometimes leaks paths an admin doesn't want indexed) and `security.txt` per RFC 9116 (checked at `/.well-known/security.txt`, falling back to the legacy root path) to see whether the target documents a vulnerability-disclosure process.
 - **HTTP security header analysis** — `curl headers` now flags HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy as present or missing (checked on both http and https), instead of leaving the AI to spot their absence in a raw header dump.
 - **GPU as an explicit, documented choice** — CPU-only by default so the stack runs anywhere out of the box, with a one-line Compose overlay (`docker-compose.gpu.yml`) to opt into GPU passthrough, and a live (read-only, not a toggle) GPU status indicator in the UI.
-- **Full Dockerization** — `docker compose up -d` brings up MariaDB, Ollama, and the app together, with the schema applied automatically. The original requires manually installing and configuring every dependency (MariaDB, Ollama, system packages) natively.
+
 
 ## 📌 What is PenTron?
 
