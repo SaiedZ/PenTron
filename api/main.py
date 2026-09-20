@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from api.routers import exports, history, scans, settings
+from api.routers import chat, exports, history, scans, settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = BASE_DIR / "web"
@@ -23,6 +23,7 @@ templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 
 app.include_router(scans.router)
 app.include_router(history.router)
+app.include_router(chat.router)
 app.include_router(exports.router)
 app.include_router(settings.router)
 
