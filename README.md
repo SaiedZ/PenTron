@@ -295,10 +295,15 @@ PenTron's CLI needs the AI model loaded and reachable, and MariaDB running — b
 ```
   [1]  New Scan
   [2]  View History
-  [3]  Exit
+  [3]  Settings
+  [4]  Exit
 ```
 
-**2. Select [1] New Scan → enter your target:**
+**2. Configure the CLI if needed:**
+
+The **Settings** menu controls the AI provider, Ollama host or provider API key, model, AI timeouts, delay between recon tools, HTTP User-Agent, and subdomain-discovery level. Changes apply to the next scan without a restart; press **Enter** at the field prompt to return to the main menu.
+
+**3. Select [1] New Scan → enter your target:**
 ```
 [?] Enter target IP or domain: 192.168.1.1
 ```
@@ -307,7 +312,7 @@ or
 [?] Enter target IP or domain: example.com
 ```
 
-**3. Select recon tools to run:**
+**4. Select recon tools to run:**
 ```
   [1] nmap
   [2] whois
@@ -324,11 +329,15 @@ or
   [n] Run all + nikto (slow)
 ```
 
-**4. PenTron runs the tools, feeds results to the AI, and prints the analysis.**
+Enter one or more tool numbers separated by spaces (for example, `1 2 4`), or use one of the `a` / `n` presets.
 
-**5. Everything is saved to MariaDB automatically — visible from the web UI too.**
+**5. PenTron runs the tools, feeds results to the AI, and prints the analysis.**
 
-**6. After the scan you can edit or delete any result.**
+**6. Everything is saved to MariaDB automatically — visible from the web UI too.**
+
+**7. Use View History to reopen and manage a session.**
+
+Enter a session's SL# to view it, or press **Enter** to go back. From a session you can export PDF, HTML, or both; edit vulnerabilities, fixes, exploit suggestions, and the risk level; delete individual results; or delete the full session. Destructive actions require confirmation.
 
 ---
 
@@ -336,47 +345,17 @@ or
 
 ```
 PenTron/
-├── pentron/                 ← core package (console script: `pentron`)
-│   ├── cli.py                 ← CLI entry point (pentron.cli:main)
-│   ├── db.py                   ← MariaDB connection and all CRUD operations
-│   ├── tools/                   ← recon tool runners, one file per tool + a
-│   │                                decorator-based registry (nmap, whois, ...)
-│   ├── llm.py                    ← AI provider interface and tool dispatch loop
-│   ├── providers.py               ← LLM provider abstraction (Ollama/OpenAI/Anthropic/Google)
-│   ├── search.py                   ← DuckDuckGo web search and CVE lookup
-│   └── export/                      ← PDF/HTML report generation, CLI export menu
-├── api/                     ← FastAPI web backend
-│   ├── main.py               ← app entry point (uvicorn api.main:app)
-│   ├── jobs.py                ← live scan-progress tracking
-│   ├── scan_runner.py          ← background scan pipeline (web UI's New Scan)
-│   ├── schemas.py               ← request/response models
-│   ├── serializers.py            ← DB row → JSON mapping
-│   ├── security.py                ← optional shared-secret API auth
-│   └── routers/                    ← scans / history / exports / settings / pages
-├── web/                     ← web UI assets
-│   ├── templates/             ← Jinja2 + HTMX pages
-│   │   ├── home.html            ← Overview homepage (/)
-│   │   ├── dashboard.html       ← New Scan form (/new-scan)
-│   │   ├── scan_progress.html   ← live scan progress
-│   │   ├── history_list.html    ← saved sessions
-│   │   ├── session_detail.html  ← findings and report detail
-│   │   └── settings.html        ← provider and scan settings
-│   ├── static/                  ← compiled Tailwind CSS + JS
-│   ├── input.css                 ← Tailwind source
-├── Modelfile               ← optional custom-tuned model alias (see native guide)
-├── Dockerfile               ← Kali Rolling image (recon tools + Tailwind build)
-├── docker-compose.yml       ← mariadb + ollama + web + pentron (CLI) services
-├── docker-compose.gpu.yml   ← GPU overlay for the ollama service
-├── docker/
-│   ├── schema.sql             ← full DB schema, auto-applied on first start
-│   └── entrypoint.sh            ← waits for MariaDB/Ollama before launching
-├── docs/
-│   └── native-installation.md ← native setup without Docker
-├── pyproject.toml           ← Python deps (runtime + optional [dev]/[test]), ruff/mypy config
-├── uv.lock                  ← locked transitive dependency versions (re-run `uv lock` after editing pyproject.toml)
-├── .gitignore                ← excludes venv, pycache, generated CSS, db files
-├── LICENSE                   ← MIT License
-└── README.md                  ← this file
+├── pentron/              # Core scanning, AI analysis, contextual chat, and exports
+│   ├── tools/            # Reconnaissance and security tool integrations
+│   └── export/           # PDF, HTML, and JSON report generation
+├── api/                  # FastAPI backend, routes, and background scan jobs
+├── web/                  # Jinja2/HTMX interface and browser-side assets
+├── tests/                # Automated test suite
+├── docker/               # Database schema and container initialization
+├── docs/                 # Additional installation and technical documentation
+├── docker-compose.yml    # Main Docker deployment
+├── pyproject.toml        # Python dependencies and project configuration
+└── README.md
 ```
 
 ---
