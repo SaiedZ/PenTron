@@ -19,16 +19,17 @@ class ToolSpec:
     name: str  # display name, e.g. "nmap"
     command_name: str  # binary name checked by the AI dispatch allowlist
     runner: ToolRunner
+    default: bool = False  # part of the standard (non-nikto) recon bundle
 
 
 _REGISTRY: dict[str, ToolSpec] = {}
 
 
 def register_tool(
-    key: str, name: str, command_name: str
+    key: str, name: str, command_name: str, *, default: bool = False
 ) -> Callable[[ToolRunner], ToolRunner]:
     def decorator(func: ToolRunner) -> ToolRunner:
-        _REGISTRY[key] = ToolSpec(key, name, command_name, func)
+        _REGISTRY[key] = ToolSpec(key, name, command_name, func, default)
         return func
 
     return decorator
@@ -45,5 +46,22 @@ def allowed_commands() -> frozenset[str]:
     return frozenset(spec.command_name for spec in _REGISTRY.values())
 
 
+def default_tool_names() -> list[str]:
+    """Display names of the standard (non-nikto) recon bundle, in menu order."""
+    return [spec.name for spec in all_tools().values() if spec.default]
+
+
+def default_keys() -> list[str]:
+    """Menu keys of the standard (non-nikto) recon bundle, in menu order."""
+    return [spec.key for spec in all_tools().values() if spec.default]
+
+
 def get(key: str) -> ToolSpec | None:
     return _REGISTRY.get(key)
+
+
+def find_by_name(name: str) -> ToolSpec | None:
+    for spec in _REGISTRY.values():
+        if spec.name == name:
+            return spec
+    return None

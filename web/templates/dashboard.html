@@ -38,19 +38,15 @@
       </div>
 
       <div class="mt-3 grid grid-cols-2 gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
-        <label class="flex items-center gap-2"><input type="checkbox" value="1" class="tool-key" checked> nmap</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="2" class="tool-key" checked> whois</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="3" class="tool-key" checked> whatweb</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="4" class="tool-key" checked> curl headers</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="5" class="tool-key" checked> dig DNS</label>
+        {% for tool in tools %}
         <label class="flex items-center gap-2">
-          <input type="checkbox" value="6" class="tool-key"> nikto
+          <input type="checkbox" value="{{ tool.key }}" class="tool-key"
+            {% if tool.key in default_keys %}checked{% endif %}> {{ tool.name }}
+          {% if tool.name == "nikto" %}
           <span class="text-xs text-slate-400 dark:text-slate-500">(slower, noisier)</span>
+          {% endif %}
         </label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="7" class="tool-key"> sslscan</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="8" class="tool-key"> testssl.sh</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="9" class="tool-key"> wafw00f</label>
-        <label class="flex items-center gap-2"><input type="checkbox" value="10" class="tool-key"> robots/security.txt</label>
+        {% endfor %}
       </div>
     </fieldset>
 
@@ -85,8 +81,8 @@
 <script>
   const toolKeys = Array.from(document.querySelectorAll('.tool-key'));
   const PRESETS = {
-    standard: ['1', '2', '3', '4', '5'],
-    nikto: ['1', '2', '3', '4', '5', '6'],
+    standard: {{ default_keys_json | safe }},
+    nikto: {{ nikto_bundle_keys_json | safe }},
     all: toolKeys.map(cb => cb.value),
     none: [],
   };

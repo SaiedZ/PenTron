@@ -5,6 +5,7 @@ Server-rendered HTML pages (Jinja2 + HTMX). Filled in alongside the
 templates under web/templates/.
 """
 
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -13,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from api import jobs
 from api.serializers import history_to_dict, mask_api_key, session_to_dict
 from pentron import db
+from pentron.tools import registry as tool_registry
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
@@ -23,7 +25,22 @@ router = APIRouter(tags=["pages"])
 @router.get("/")
 def dashboard(request: Request):
     settings = db.get_settings()
-    return templates.TemplateResponse(request, "dashboard.html", {"settings": settings})
+    default_keys = tool_registry.default_keys()
+    nikto = tool_registry.find_by_name("nikto")
+    nikto_bundle_keys = default_keys + ([nikto.key] if nikto else [])
+    return templates.TemplateResponse(
+        request,
+        "dashboard.html",
+        {
+            "settings": settings,
+            "tools": list(tool_registry.all_tools().values()),
+            "default_keys": default_keys,
+            # pre-serialized for the JS PRESETS object — Starlette's
+            # Jinja2Templates doesn't register a `tojson` filter
+            "default_keys_json": json.dumps(default_keys),
+            "nikto_bundle_keys_json": json.dumps(nikto_bundle_keys),
+        },
+    )
 
 
 @router.get("/scans/{sl_no}")

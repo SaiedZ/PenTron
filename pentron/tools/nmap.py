@@ -2,7 +2,7 @@ from . import base
 from .registry import register_tool
 
 
-@register_tool(key="1", name="nmap", command_name="nmap")
+@register_tool(key="1", name="nmap", command_name="nmap", default=True)
 def run_nmap(target: str, user_agent: str = None) -> str:
     """
     nmap -sV -sC -T4 --open
