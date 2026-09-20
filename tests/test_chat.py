@@ -1,6 +1,6 @@
 from pentron.chat import (
-    OMITTED_FINDINGS_NOTICE,
     CHAT_SYSTEM_PROMPT,
+    OMITTED_FINDINGS_NOTICE,
     _append_if_value,
     _compact,
     _format_fields,
