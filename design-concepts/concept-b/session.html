@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>api.northwind-corp.io — Session Report — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<header id="site-nav" class="fixed top-0 inset-x-0 z-50 border-b border-transparent bg-white/90 py-5">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4.5 w-4.5"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9.5 12 2 2 3.5-4"/></svg>
+      </span>
+      <span class="text-[15px] font-bold tracking-tight text-slate-900">PenTron</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm">
+      <a href="index.html" data-nav-link class="nav-link">Overview</a>
+      <a href="new-scan.html" data-nav-link class="nav-link">New Scan</a>
+      <a href="history.html" data-nav-link class="nav-link">History</a>
+      <a href="settings.html" data-nav-link class="nav-link">Settings</a>
+    </nav>
+    <a href="new-scan.html" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>
+      New scan
+    </a>
+  </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 pb-24 pt-32">
+
+  <a href="history.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-indigo-600">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to scan history
+  </a>
+
+  <!-- Header -->
+  <div class="mt-5 flex flex-wrap items-start justify-between gap-6">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Session report</p>
+      <h1 class="mt-2 font-mono text-3xl font-bold tracking-tight text-slate-900">api.northwind-corp.io</h1>
+      <p class="mt-2 text-sm text-slate-500">Completed Sep 18, 2026 at 14:32 UTC · duration 6m 12s</p>
+    </div>
+    <span class="badge badge-critical text-sm"><span class="badge-dot"></span>Critical risk</span>
+  </div>
+
+  <!-- Tools run -->
+  <div class="mt-6 flex flex-wrap gap-2">
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">nmap</span>
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">whois</span>
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">dig</span>
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">curl</span>
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">nikto</span>
+    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">subfinder</span>
+  </div>
+
+  <div class="mt-10 grid gap-8 lg:grid-cols-3">
+    <div class="space-y-8 lg:col-span-2">
+
+      <!-- AI summary -->
+      <section class="card rounded-2xl p-6">
+        <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-indigo-600"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+          AI summary
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-slate-700">
+          This host runs a public-facing API gateway with several soft spots.
+          An unauthenticated Redis instance on port 6379 allows arbitrary key
+          read/write and, combined with its default configuration, a
+          plausible path to remote code execution. The SSH daemon reports an
+          OpenSSH 7.2 banner, which corresponds to a known authentication
+          bypass window. Subdomain enumeration also surfaced
+          <span class="font-mono text-xs">staging.northwind-corp.io</span>,
+          a CNAME still pointing at a deprovisioned cloud load balancer —
+          a classic subdomain takeover setup. TLS termination accepts TLS 1.0
+          alongside modern versions, and the web server discloses its
+          internal framework version in response headers. Recommend
+          prioritizing the Redis exposure and SSH upgrade before anything
+          else on this host.
+        </p>
+      </section>
+
+      <!-- Vulnerabilities -->
+      <section class="card rounded-2xl p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-indigo-600"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+            Vulnerabilities
+          </h2>
+          <span class="text-xs font-medium text-slate-400">5 findings</span>
+        </div>
+
+        <ul class="mt-4 divide-y divide-slate-100">
+          <li class="flex items-start justify-between gap-4 py-3.5">
+            <div>
+              <p class="text-sm font-medium text-slate-900">Unauthenticated Redis instance exposed on port 6379</p>
+              <p class="mt-1 text-sm text-slate-600">Redis accepts connections with no <span class="mono">requirepass</span> set, allowing full read/write access to stored keys and configuration.</p>
+            </div>
+            <span class="badge badge-critical shrink-0"><span class="badge-dot"></span>Critical</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 py-3.5">
+            <div>
+              <p class="text-sm font-medium text-slate-900">Outdated OpenSSH build with known auth-bypass window</p>
+              <p class="mt-1 text-sm text-slate-600">Banner reports OpenSSH 7.2, several major versions behind current hardened releases.</p>
+            </div>
+            <span class="badge badge-high shrink-0"><span class="badge-dot"></span>High</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 py-3.5">
+            <div>
+              <p class="text-sm font-medium text-slate-900">Subdomain takeover risk on legacy staging CNAME</p>
+              <p class="mt-1 text-sm text-slate-600"><span class="mono">staging.northwind-corp.io</span> still resolves to a decommissioned load balancer hostname.</p>
+            </div>
+            <span class="badge badge-high shrink-0"><span class="badge-dot"></span>High</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 py-3.5">
+            <div>
+              <p class="text-sm font-medium text-slate-900">TLS 1.0 still accepted on port 443</p>
+              <p class="mt-1 text-sm text-slate-600">Deprecated protocol version negotiates successfully alongside TLS 1.2/1.3.</p>
+            </div>
+            <span class="badge badge-medium shrink-0"><span class="badge-dot"></span>Medium</span>
+          </li>
+          <li class="flex items-start justify-between gap-4 py-3.5">
+            <div>
+              <p class="text-sm font-medium text-slate-900">Verbose server banner discloses framework version</p>
+              <p class="mt-1 text-sm text-slate-600"><span class="mono">Server</span> response header exposes the internal application framework and its exact version.</p>
+            </div>
+            <span class="badge badge-low shrink-0"><span class="badge-dot"></span>Low</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Exploits -->
+      <section class="card rounded-2xl p-6">
+        <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-indigo-600"><path d="m13 2-9 12h6l-1 8 9-12h-6l1-8Z"/></svg>
+          Suggested exploit paths
+        </h2>
+        <div class="mt-4 space-y-4">
+          <div class="rounded-xl border border-slate-200 p-4">
+            <p class="text-sm font-semibold text-slate-900">Redis unauthenticated write → cron-based RCE</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+              With write access to Redis, an attacker can use
+              <span class="mono">CONFIG SET dir</span> and
+              <span class="mono">CONFIG SET dbfilename</span> to redirect the
+              RDB dump into a cron directory, then plant a scheduled job as
+              the dumped key content — a well-documented technique against
+              exposed, unauthenticated Redis instances.
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-200 p-4">
+            <p class="text-sm font-semibold text-slate-900">SSH banner-matched auth bypass</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+              The reported OpenSSH version lines up with a publicly disclosed
+              authentication bypass affecting builds from that era. Confirm
+              the exact patch level directly before attempting exploitation —
+              banners can be modified independently of the true patch state.
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="space-y-6">
+      <div class="card rounded-2xl p-6">
+        <h3 class="text-sm font-semibold text-slate-900">Severity distribution</h3>
+        <div class="mt-5 flex items-center justify-center">
+          <svg viewBox="0 0 120 120" class="h-32 w-32">
+            <g class="donut-ring">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#f1f5f9" stroke-width="14" />
+              <circle class="donut-seg" cx="60" cy="60" r="48" fill="none" stroke="#dc2626" stroke-width="14" stroke-dasharray="60.3 241.3" stroke-dashoffset="0" />
+              <circle class="donut-seg" cx="60" cy="60" r="48" fill="none" stroke="#f97316" stroke-width="14" stroke-dasharray="120.6 180.9" stroke-dashoffset="-60.3" />
+              <circle class="donut-seg" cx="60" cy="60" r="48" fill="none" stroke="#f59e0b" stroke-width="14" stroke-dasharray="60.3 241.3" stroke-dashoffset="-180.9" />
+              <circle class="donut-seg" cx="60" cy="60" r="48" fill="none" stroke="#94a3b8" stroke-width="14" stroke-dasharray="60.3 241.3" stroke-dashoffset="-241.2" />
+            </g>
+            <text x="60" y="56" text-anchor="middle" class="fill-slate-900" style="font-size:22px;font-weight:700">5</text>
+            <text x="60" y="74" text-anchor="middle" class="fill-slate-500" style="font-size:9px">findings</text>
+          </svg>
+        </div>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex items-center justify-between"><span class="flex items-center gap-2 text-slate-600"><span class="badge-dot" style="background:#dc2626"></span>Critical</span><span class="font-semibold text-slate-900">1</span></li>
+          <li class="flex items-center justify-between"><span class="flex items-center gap-2 text-slate-600"><span class="badge-dot" style="background:#f97316"></span>High</span><span class="font-semibold text-slate-900">2</span></li>
+          <li class="flex items-center justify-between"><span class="flex items-center gap-2 text-slate-600"><span class="badge-dot" style="background:#f59e0b"></span>Medium</span><span class="font-semibold text-slate-900">1</span></li>
+          <li class="flex items-center justify-between"><span class="flex items-center gap-2 text-slate-600"><span class="badge-dot" style="background:#94a3b8"></span>Low</span><span class="font-semibold text-slate-900">1</span></li>
+        </ul>
+      </div>
+
+      <div class="card rounded-2xl p-6">
+        <h3 class="text-sm font-semibold text-slate-900">Session details</h3>
+        <dl class="mt-4 space-y-3 text-sm">
+          <div class="flex justify-between"><dt class="text-slate-500">LLM provider</dt><dd class="font-medium text-slate-900">Ollama (local)</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Model</dt><dd class="font-medium text-slate-900">qwen3.5-abliterated:9b</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Subdomain level</dt><dd class="font-medium text-slate-900">Passive</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">Subdomains found</dt><dd class="font-medium text-slate-900">3</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Raw output -->
+  <section class="card mt-8 rounded-2xl p-6">
+    <h2 class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-indigo-600"><path d="m4 17 6-6-6-6M12 19h8"/></svg>
+      Raw tool output
+    </h2>
+
+    <details class="raw-output mt-4 rounded-xl border border-slate-200">
+      <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700">
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron h-4 w-4 text-slate-400"><path d="m9 18 6-6-6-6"/></svg>
+          nmap — port &amp; service scan
+        </span>
+        <span class="text-xs text-slate-400">42 open ports</span>
+      </summary>
+      <pre class="mono overflow-x-auto border-t border-slate-100 bg-slate-900 px-4 py-4 text-xs leading-relaxed text-slate-200">PORT     STATE SERVICE     VERSION
+22/tcp   open  ssh         OpenSSH 7.2 (protocol 2.0)
+80/tcp   open  http        nginx 1.18.0
+443/tcp  open  ssl/http    nginx 1.18.0
+6379/tcp open  redis       Redis key-value store (no auth)
+8080/tcp open  http-proxy  Northwind API Gateway 2.3.1</pre>
+    </details>
+
+    <details class="raw-output mt-3 rounded-xl border border-slate-200">
+      <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700">
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron h-4 w-4 text-slate-400"><path d="m9 18 6-6-6-6"/></svg>
+          nikto — web server scan
+        </span>
+        <span class="text-xs text-slate-400">6 items</span>
+      </summary>
+      <pre class="mono overflow-x-auto border-t border-slate-100 bg-slate-900 px-4 py-4 text-xs leading-relaxed text-slate-200">+ Server: nginx/1.18.0
++ /: Server leaks inode via ETags.
++ /admin/: Directory indexing found.
++ Uncommon header 'x-powered-by' found: Northwind-Gateway/2.3
++ TLSv1.0 accepted alongside TLSv1.2/1.3.
++ 6544 requests: 0 error(s) and 4 item(s) reported</pre>
+    </details>
+
+    <details class="raw-output mt-3 rounded-xl border border-slate-200">
+      <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700">
+        <span class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron h-4 w-4 text-slate-400"><path d="m9 18 6-6-6-6"/></svg>
+          subfinder — subdomain enumeration
+        </span>
+        <span class="text-xs text-slate-400">3 found</span>
+      </summary>
+      <pre class="mono overflow-x-auto border-t border-slate-100 bg-slate-900 px-4 py-4 text-xs leading-relaxed text-slate-200">api.northwind-corp.io
+staging.northwind-corp.io
+mail.northwind-corp.io</pre>
+    </details>
+  </section>
+
+</main>
+
+<!-- ============ SESSION CHAT WIDGET ============ -->
+<button id="chat-fab" type="button" aria-label="Open session assistant" aria-expanded="false" aria-controls="chat-panel"
+  class="chat-fab fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10Z"/></svg>
+</button>
+
+<div id="chat-panel" class="chat-panel fixed bottom-24 right-6 z-40 hidden w-96 max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
+  <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+    <div class="flex items-center gap-2.5">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      </span>
+      <div>
+        <p class="text-sm font-semibold text-slate-900">Session Assistant</p>
+        <p class="font-mono text-xs text-slate-500">api.northwind-corp.io</p>
+      </div>
+    </div>
+    <button id="chat-close" type="button" aria-label="Close chat" class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div id="chat-messages" class="flex-1 space-y-3 overflow-y-auto px-4 py-4" style="max-height: 22rem;">
+    <div class="flex justify-end">
+      <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-indigo-600 px-3.5 py-2 text-sm leading-relaxed text-white">What does the OpenSSH vulnerability actually mean for us?</div>
+    </div>
+    <div class="flex justify-start">
+      <div class="max-w-[85%] rounded-2xl rounded-bl-sm bg-slate-100 px-3.5 py-2 text-sm leading-relaxed text-slate-700">The OpenSSH 7.2 banner lines up with a known authentication-bypass window, so an attacker on the network path could potentially skip credential checks. It's rated High rather than Critical because exploitation still depends on confirming the exact patch level first.</div>
+    </div>
+    <div class="flex justify-end">
+      <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-indigo-600 px-3.5 py-2 text-sm leading-relaxed text-white">Should we prioritize that over the other findings?</div>
+    </div>
+    <div class="flex justify-start">
+      <div class="max-w-[85%] rounded-2xl rounded-bl-sm bg-slate-100 px-3.5 py-2 text-sm leading-relaxed text-slate-700">No — fix the unauthenticated Redis instance first. It's rated Critical and gives a more direct path to remote code execution than the SSH banner does.</div>
+    </div>
+  </div>
+
+  <form id="chat-form" class="flex items-center gap-2 border-t border-slate-100 p-3">
+    <input id="chat-input" type="text" autocomplete="off" placeholder="Ask about this session…"
+      class="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+    <button type="submit" aria-label="Send message" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition hover:bg-indigo-700">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="m5 12 14-7-7 14-2-5-5-2Z"/></svg>
+    </button>
+  </form>
+</div>
+
+<script src="nav.js"></script>
+<script>
+  // Session Assistant chat widget — local-only demo, scoped to this page
+  // (nav.js is shared across every concept-b page, so this stays here
+  // rather than polluting it with session-report-specific behaviour).
+  (function () {
+    var fab = document.getElementById("chat-fab");
+    var panel = document.getElementById("chat-panel");
+    var closeBtn = document.getElementById("chat-close");
+    var form = document.getElementById("chat-form");
+    var input = document.getElementById("chat-input");
+    var messages = document.getElementById("chat-messages");
+
+    function setOpen(open) {
+      panel.classList.toggle("hidden", !open);
+      panel.classList.toggle("flex", open);
+      fab.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) input.focus();
+    }
+
+    fab.addEventListener("click", function () {
+      setOpen(panel.classList.contains("hidden"));
+    });
+
+    closeBtn.addEventListener("click", function () {
+      setOpen(false);
+    });
+
+    function addBubble(text, from) {
+      var row = document.createElement("div");
+      row.className = "flex " + (from === "user" ? "justify-end" : "justify-start");
+
+      var bubble = document.createElement("div");
+      bubble.className =
+        "max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed " +
+        (from === "user"
+          ? "rounded-br-sm bg-indigo-600 text-white"
+          : "rounded-bl-sm bg-slate-100 text-slate-700");
+      bubble.textContent = text;
+
+      row.appendChild(bubble);
+      messages.appendChild(row);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var text = input.value.trim();
+      if (!text) return;
+
+      addBubble(text, "user");
+      input.value = "";
+
+      window.setTimeout(function () {
+        addBubble("Noted — this is a mockup, no live model is connected yet.", "assistant");
+      }, 700);
+    });
+  })();
+</script>
+</body>
+</html>

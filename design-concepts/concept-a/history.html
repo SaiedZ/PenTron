@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scan history — PenTron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: [
+                '"JetBrains Mono"',
+                "ui-monospace",
+                "SFMono-Regular",
+                "monospace",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-page="history" class="bg-[#05070a] text-slate-200 antialiased">
+    <div class="console-texture"></div>
+    <div class="console-scanlines"></div>
+
+    <header id="site-nav">
+      <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <a
+          href="index.html"
+          class="flex items-center gap-2 font-mono text-sm tracking-[0.22em] text-slate-100"
+        >
+          <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          PENTRON
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+          <a href="index.html" data-nav="index" class="nav-link hover:text-slate-100">Overview</a>
+          <a href="new-scan.html" data-nav="new-scan" class="nav-link hover:text-slate-100">New Scan</a>
+          <a href="history.html" data-nav="history" class="nav-link hover:text-slate-100">History</a>
+          <a href="session.html" data-nav="session" class="nav-link hover:text-slate-100">Sample Report</a>
+          <a href="settings.html" data-nav="settings" class="nav-link hover:text-slate-100">Settings</a>
+        </nav>
+        <a href="new-scan.html" class="btn-primary hidden sm:inline-flex text-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          New Scan
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-24">
+      <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+        <div>
+          <p class="field-label mb-3">Session log</p>
+          <h1 class="text-3xl font-semibold text-slate-50">Scan history</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="filter by target…"
+            class="w-56"
+          />
+          <select class="w-40">
+            <option>All risk levels</option>
+            <option>Critical</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel rounded-sm overflow-hidden overflow-x-auto">
+        <table class="data-table w-full min-w-[840px]">
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>Date</th>
+              <th>Tools</th>
+              <th>Risk</th>
+              <th>Summary</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">10.10.14.22</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-19 22:41</td>
+              <td class="text-slate-400 font-mono text-xs">5</td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Exposed .git directory and directory listing on /backup/ increase source-disclosure risk.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">api.example-corp.test</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-18 09:12</td>
+              <td class="text-slate-400 font-mono text-xs">4</td>
+              <td><span class="badge badge-critical">CRITICAL</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Unauthenticated admin endpoint returns full customer records via /api/v1/debug.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">staging.internal-app.test</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-16 14:03</td>
+              <td class="text-slate-400 font-mono text-xs">6</td>
+              <td><span class="badge badge-medium">MEDIUM</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Outdated TLS cipher suite and verbose error pages, no immediate exploit path found.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">192.168.56.101</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-14 18:27</td>
+              <td class="text-slate-400 font-mono text-xs">3</td>
+              <td><span class="badge badge-low">LOW</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Standard hardened host, only minor information disclosure via server banners.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">vpn.clientco-test.net</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-11 07:55</td>
+              <td class="text-slate-400 font-mono text-xs">5</td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td class="text-slate-400 max-w-xs truncate">VPN portal running an appliance version with a known unauthenticated RCE.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">dev-portal.acme-test.io</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-08 11:30</td>
+              <td class="text-slate-400 font-mono text-xs">4</td>
+              <td><span class="badge badge-medium">MEDIUM</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Missing security headers and a stale WordPress plugin flagged for review.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+            <tr data-href="session.html">
+              <td class="font-mono text-slate-100">mail.northgate-test.org</td>
+              <td class="text-slate-400 font-mono text-xs">2026-09-03 20:16</td>
+              <td class="text-slate-400 font-mono text-xs">3</td>
+              <td><span class="badge badge-low">LOW</span></td>
+              <td class="text-slate-400 max-w-xs truncate">Mail server correctly enforces STARTTLS, no exploitable findings surfaced.</td>
+              <td class="text-right"><a href="session.html" class="text-cyan-400 hover:text-cyan-300 text-xs font-mono">view →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="text-xs text-slate-500 mt-6 font-mono">
+        7 sessions total — all sample rows link to the same demo report below.
+      </p>
+    </main>
+
+    <footer class="border-t border-[var(--border)]">
+      <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500">
+        <p class="font-mono">PENTRON // design concept — "ops console" — static mockup, no backend.</p>
+        <div class="flex items-center gap-6">
+          <a href="index.html" class="hover:text-slate-300">Overview</a>
+          <a href="new-scan.html" class="hover:text-slate-300">New Scan</a>
+          <a href="history.html" class="hover:text-slate-300">History</a>
+          <a href="settings.html" class="hover:text-slate-300">Settings</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./nav.js"></script>
+    <script>
+      // History-page-only: whole-row click navigation (progressive
+      // enhancement). The "view →" anchor in each row stays the
+      // accessible, keyboard-reachable link — this just lets a click
+      // anywhere else on the row follow it too, so the user doesn't
+      // have to aim for the anchor.
+      (function () {
+        document.querySelectorAll("tbody tr[data-href]").forEach(function (row) {
+          row.addEventListener("click", function (event) {
+            if (event.target.closest("a")) return;
+            window.location.href = row.getAttribute("data-href");
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="settings" class="bg-[#0a0a0a] text-[#f3f1e7] antialiased">
+
+<nav id="site-nav" class="fixed top-0 inset-x-0 z-50">
+  <div class="mx-auto max-w-7xl px-6 flex items-center justify-between">
+    <a href="index.html" class="display text-xl font-semibold tracking-tight">PEN<span class="text-accent">TRON</span></a>
+    <div class="hidden md:flex items-center gap-9">
+      <a href="index.html" data-page="index" class="nav-link">Home</a>
+      <a href="new-scan.html" data-page="new-scan" class="nav-link">New Scan</a>
+      <a href="history.html" data-page="history" class="nav-link">History</a>
+      <a href="session-detail.html" data-page="session-detail" class="nav-link">Session</a>
+      <a href="settings.html" data-page="settings" class="nav-link">Settings</a>
+    </div>
+    <a href="new-scan.html" class="btn-accent hidden md:inline-flex">Launch Scan</a>
+  </div>
+</nav>
+
+<header class="border-b border-hair px-6 pt-36 pb-14 md:pt-44">
+  <div class="mx-auto max-w-5xl">
+    <p class="mb-4 text-xs uppercase tracking-[0.35em] text-accent-2">Configuration</p>
+    <h1 class="text-5xl font-bold md:text-7xl">AI <span class="text-accent">Provider.</span></h1>
+    <p class="mt-5 max-w-xl text-sm leading-relaxed text-muted">Choose which model reads your recon output and writes the report. This form is a static mockup — nothing is saved.</p>
+  </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 py-16">
+  <form onsubmit="return false;" class="space-y-16">
+
+    <section>
+      <h2 class="mb-5 text-2xl font-semibold">01 / Provider</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+
+        <div class="relative">
+          <input type="radio" name="provider" id="prov-ollama" class="provider-input" checked />
+          <label for="prov-ollama" class="provider-card flex cursor-pointer items-start gap-4 border border-hair p-5">
+            <svg class="mt-0.5 h-6 w-6 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="1"/><path stroke-linecap="round" d="M7 20h10M9 4V2M15 4V2"/></svg>
+            <span>
+              <span class="flex items-center justify-between gap-3">
+                <span class="font-semibold">Ollama (local)</span>
+                <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+              </span>
+              <span class="mt-1 block text-xs leading-relaxed text-muted">Runs on your own hardware, no API key needed.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="radio" name="provider" id="prov-openai" class="provider-input" />
+          <label for="prov-openai" class="provider-card flex cursor-pointer items-start gap-4 border border-hair p-5">
+            <svg class="mt-0.5 h-6 w-6 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M9 9.5c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5-3 2-3 4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg>
+            <span>
+              <span class="flex items-center justify-between gap-3">
+                <span class="font-semibold">OpenAI</span>
+                <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+              </span>
+              <span class="mt-1 block text-xs leading-relaxed text-muted">GPT-family models via the OpenAI API.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="radio" name="provider" id="prov-anthropic" class="provider-input" />
+          <label for="prov-anthropic" class="provider-card flex cursor-pointer items-start gap-4 border border-hair p-5">
+            <svg class="mt-0.5 h-6 w-6 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M13 3 4 14h6l-1 7 10-13h-6l1-5z"/></svg>
+            <span>
+              <span class="flex items-center justify-between gap-3">
+                <span class="font-semibold">Anthropic</span>
+                <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+              </span>
+              <span class="mt-1 block text-xs leading-relaxed text-muted">Claude-family models via the Anthropic API.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="radio" name="provider" id="prov-google" class="provider-input" />
+          <label for="prov-google" class="provider-card flex cursor-pointer items-start gap-4 border border-hair p-5">
+            <svg class="mt-0.5 h-6 w-6 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg>
+            <span>
+              <span class="flex items-center justify-between gap-3">
+                <span class="font-semibold">Google</span>
+                <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+              </span>
+              <span class="mt-1 block text-xs leading-relaxed text-muted">Gemini-family models via the Google AI API.</span>
+            </span>
+          </label>
+        </div>
+
+      </div>
+    </section>
+
+    <section>
+      <h2 class="mb-5 text-2xl font-semibold">02 / Model &amp; access</h2>
+      <div class="grid gap-8 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="model" class="mb-2 block text-xs uppercase tracking-[0.2em] text-muted">Model name</label>
+          <input id="model" type="text" value="huihui_ai/qwen3.5-abliterated:9b" class="w-full border-2 border-hair bg-transparent px-4 py-4 text-lg outline-none focus:border-accent" />
+        </div>
+        <div>
+          <label for="apikey" class="mb-2 block text-xs uppercase tracking-[0.2em] text-muted">API key</label>
+          <input id="apikey" type="password" value="sk-••••••••••••••••••••3f9a" class="w-full border-2 border-hair bg-transparent px-4 py-4 text-lg outline-none focus:border-accent" />
+          <p class="mt-2 text-xs text-muted">Not required for a local Ollama provider.</p>
+        </div>
+        <div>
+          <label for="timeout" class="mb-2 block text-xs uppercase tracking-[0.2em] text-muted">Timeout (seconds)</label>
+          <input id="timeout" type="number" value="120" min="1" class="w-full border-2 border-hair bg-transparent px-4 py-4 text-lg outline-none focus:border-accent" />
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-wrap items-center gap-5 border-t border-hair pt-10">
+      <button type="submit" class="btn-accent text-base">Save settings</button>
+      <p class="text-xs text-muted">This is a static mockup — nothing is persisted.</p>
+    </section>
+
+  </form>
+</main>
+
+<script src="nav.js"></script>
+</body>
+</html>

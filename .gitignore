@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .claude/
 CLAUDE.md
+AGENTS.md
 # generated at Docker build time
 web/static/css/tailwind.css
 

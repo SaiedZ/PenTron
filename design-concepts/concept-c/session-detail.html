@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>scan-corp.io — Session Report — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="session-detail" class="bg-[#0a0a0a] text-[#f3f1e7] antialiased">
+
+<nav id="site-nav" class="fixed top-0 inset-x-0 z-50">
+  <div class="mx-auto max-w-7xl px-6 flex items-center justify-between">
+    <a href="index.html" class="display text-xl font-semibold tracking-tight">PEN<span class="text-accent">TRON</span></a>
+    <div class="hidden md:flex items-center gap-9">
+      <a href="index.html" data-page="index" class="nav-link">Home</a>
+      <a href="new-scan.html" data-page="new-scan" class="nav-link">New Scan</a>
+      <a href="history.html" data-page="history" class="nav-link">History</a>
+      <a href="session-detail.html" data-page="session-detail" class="nav-link">Session</a>
+      <a href="settings.html" data-page="settings" class="nav-link">Settings</a>
+    </div>
+    <a href="new-scan.html" class="btn-accent hidden md:inline-flex">Launch Scan</a>
+  </div>
+</nav>
+
+<header class="border-b border-hair px-6 pt-36 pb-12 md:pt-44">
+  <div class="mx-auto max-w-6xl">
+    <a href="history.html" class="text-xs uppercase tracking-[0.2em] text-accent-2">&larr; Back to history</a>
+    <div class="mt-6 flex flex-wrap items-end justify-between gap-6">
+      <div>
+        <p class="mb-3 text-xs uppercase tracking-[0.35em] text-muted">Session report</p>
+        <h1 class="text-5xl font-bold md:text-6xl">scan-corp<span class="text-accent">.io</span></h1>
+      </div>
+      <span class="badge badge-critical text-sm">Critical risk</span>
+    </div>
+    <dl class="mt-8 grid grid-cols-2 gap-6 text-sm sm:grid-cols-4">
+      <div>
+        <dt class="text-xs uppercase tracking-[0.2em] text-muted">Started</dt>
+        <dd class="mt-1">2026-09-18 &middot; 02:14 UTC</dd>
+      </div>
+      <div>
+        <dt class="text-xs uppercase tracking-[0.2em] text-muted">Duration</dt>
+        <dd class="mt-1">6m 42s</dd>
+      </div>
+      <div>
+        <dt class="text-xs uppercase tracking-[0.2em] text-muted">Subdomain discovery</dt>
+        <dd class="mt-1">Active</dd>
+      </div>
+      <div>
+        <dt class="text-xs uppercase tracking-[0.2em] text-muted">Tools run</dt>
+        <dd class="mt-1 flex flex-wrap gap-2">
+          <span class="border border-hair px-2 py-0.5 text-xs">nmap</span>
+          <span class="border border-hair px-2 py-0.5 text-xs">whois</span>
+          <span class="border border-hair px-2 py-0.5 text-xs">curl</span>
+          <span class="border border-hair px-2 py-0.5 text-xs">nikto</span>
+          <span class="border border-hair px-2 py-0.5 text-xs">subfinder</span>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</header>
+
+<main class="mx-auto max-w-6xl px-6 py-14">
+
+  <section class="mb-16 border-l-4 border-accent bg-panel p-8">
+    <h2 class="mb-4 text-xs uppercase tracking-[0.3em] text-accent-2">AI summary</h2>
+    <p class="text-lg leading-relaxed">
+      scan-corp.io exposes a legacy administrative panel at <code>/admin-legacy</code> with no
+      authentication in front of it, reachable directly from the public internet. Combined with an
+      end-of-life OpenSSH build on the same host, this is enough for an attacker to move from
+      reconnaissance to full configuration access without needing a single credential. Two lower-severity
+      findings — a cookie missing security flags and a leaked server banner — make follow-on attacks
+      easier but are not the primary concern here. Remediation of the admin panel exposure should be
+      treated as immediate.
+    </p>
+  </section>
+
+  <section class="mb-16">
+    <div class="mb-6 flex items-baseline justify-between">
+      <h2 class="text-3xl font-bold">Vulnerabilities</h2>
+      <span class="text-xs uppercase tracking-[0.2em] text-muted">5 found</span>
+    </div>
+    <div class="divide-y divide-hair border-y border-hair">
+
+      <div class="grid gap-3 py-6 sm:grid-cols-12 sm:gap-6">
+        <div class="sm:col-span-2"><span class="badge badge-critical">Critical</span></div>
+        <div class="sm:col-span-10">
+          <h3 class="font-semibold">Exposed administrative panel without authentication</h3>
+          <p class="mt-1 text-sm leading-relaxed text-muted"><code>/admin-legacy</code> is reachable in cleartext with no login gate and grants full configuration access to the host.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 py-6 sm:grid-cols-12 sm:gap-6">
+        <div class="sm:col-span-2"><span class="badge badge-critical">Critical</span></div>
+        <div class="sm:col-span-10">
+          <h3 class="font-semibold">Outdated OpenSSH 7.2 &mdash; CVE-2016-6210</h3>
+          <p class="mt-1 text-sm leading-relaxed text-muted">Vulnerable to user enumeration via a timing attack; chainable with the admin panel exposure above for credential-based follow-up.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 py-6 sm:grid-cols-12 sm:gap-6">
+        <div class="sm:col-span-2"><span class="badge badge-high">High</span></div>
+        <div class="sm:col-span-10">
+          <h3 class="font-semibold">Missing HttpOnly / Secure flags on session cookie</h3>
+          <p class="mt-1 text-sm leading-relaxed text-muted">The session token is exposed to client-side scripts and interceptable if the user is ever downgraded to a plaintext link.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 py-6 sm:grid-cols-12 sm:gap-6">
+        <div class="sm:col-span-2"><span class="badge badge-medium">Medium</span></div>
+        <div class="sm:col-span-10">
+          <h3 class="font-semibold">Verbose server banner disclosure</h3>
+          <p class="mt-1 text-sm leading-relaxed text-muted">The <code>nginx/1.14.0</code> version string is returned on every response, aiding attacker fingerprinting of known CVEs.</p>
+        </div>
+      </div>
+
+      <div class="grid gap-3 py-6 sm:grid-cols-12 sm:gap-6">
+        <div class="sm:col-span-2"><span class="badge badge-low">Low</span></div>
+        <div class="sm:col-span-10">
+          <h3 class="font-semibold">Missing SPF record on mail subdomain</h3>
+          <p class="mt-1 text-sm leading-relaxed text-muted">Increases the risk of spoofed email appearing to originate from scan-corp.io addresses.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="mb-16">
+    <div class="mb-6 flex items-baseline justify-between">
+      <h2 class="text-3xl font-bold">Suggested exploit paths</h2>
+      <span class="text-xs uppercase tracking-[0.2em] text-muted">AI-generated</span>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="border border-hair p-7">
+        <p class="mb-3 text-xs uppercase tracking-[0.2em] text-accent-2">Path 01</p>
+        <p class="text-sm leading-relaxed">
+          Chain unauthenticated <code>/admin-legacy</code> access with default vendor credentials
+          documented publicly for this panel software, gain full panel control, then pivot to the
+          backend database via the panel's built-in "restore backup" feature.
+        </p>
+      </div>
+      <div class="border border-hair p-7">
+        <p class="mb-3 text-xs uppercase tracking-[0.2em] text-accent-2">Path 02</p>
+        <p class="text-sm leading-relaxed">
+          Use the CVE-2016-6210 timing discrepancy against OpenSSH to enumerate valid system
+          usernames, then attempt credential stuffing against those accounts using previously
+          leaked corporate password lists.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-6 text-3xl font-bold">Raw tool output</h2>
+    <details class="raw-output border border-hair">
+      <summary class="flex items-center justify-between px-6 py-5">
+        <span class="text-sm font-semibold uppercase tracking-[0.15em]">nmap &middot; whois &middot; curl &middot; nikto &middot; subfinder</span>
+        <svg class="chevron h-4 w-4 text-accent-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </summary>
+      <pre class="terminal border-t border-hair bg-black p-6 text-muted">
+$ nmap -sV -p- scan-corp.io
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.2 (protocol 2.0)
+80/tcp   open  http    nginx 1.14.0
+443/tcp  open  https   nginx 1.14.0
+8080/tcp open  http    nginx 1.14.0 (admin-legacy)
+
+$ whois scan-corp.io
+Registrar: NameForge Registrar LLC
+Creation Date: 2019-03-11T00:00:00Z
+Registrant Org: Scan Corp Holdings
+
+$ curl -I https://scan-corp.io/admin-legacy
+HTTP/1.1 200 OK
+Server: nginx/1.14.0
+Set-Cookie: sessionid=8f2c1a...; Path=/
+X-Powered-By: legacy-admin/2.3
+
+$ nikto -h scan-corp.io
++ Server: nginx/1.14.0
++ Cookie sessionid created without the httponly flag
++ /admin-legacy/: Admin login page/section found
++ OSVDB-3268: /admin-legacy/config.bak: Backup file found
+
+$ subfinder -d scan-corp.io -active
+api.scan-corp.io
+staging.scan-corp.io
+mail.scan-corp.io
+admin-legacy.scan-corp.io
+      </pre>
+    </details>
+  </section>
+
+</main>
+
+<button id="chat-toggle" class="chat-toggle" aria-label="Open session assistant chat" aria-expanded="false" aria-controls="chat-panel">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+</button>
+
+<div id="chat-panel" class="chat-panel" role="dialog" aria-label="Session assistant" aria-hidden="true">
+  <div class="chat-panel-header">
+    <h2 class="chat-panel-title">Session Assistant</h2>
+    <button id="chat-close" class="chat-close" aria-label="Close chat">&times;</button>
+  </div>
+  <div id="chat-messages" class="chat-messages">
+    <div class="chat-msg chat-msg-user"><p>What does the OpenSSH vulnerability actually mean for us?</p></div>
+    <div class="chat-msg chat-msg-assistant"><p>CVE-2016-6210 in OpenSSH 7.2 lets an attacker measure response timing to work out which usernames exist on the host. On its own that's just enumeration — but chained with the unauthenticated <code>/admin-legacy</code> panel, it hands an attacker a list of real accounts to target next.</p></div>
+    <div class="chat-msg chat-msg-user"><p>Should we prioritize that over the other findings?</p></div>
+    <div class="chat-msg chat-msg-assistant"><p>Fix the admin panel exposure first — it's the direct path to full config access with zero credentials. Patch OpenSSH alongside it, since it mainly matters as a way to strengthen that same attack chain.</p></div>
+  </div>
+  <form id="chat-form" class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Ask about this session…" autocomplete="off" aria-label="Message the session assistant" />
+    <button type="submit" class="chat-send" aria-label="Send message">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+</div>
+
+<script src="nav.js"></script>
+<script>
+(function () {
+  var toggle = document.getElementById("chat-toggle");
+  var panel = document.getElementById("chat-panel");
+  var closeBtn = document.getElementById("chat-close");
+  var form = document.getElementById("chat-form");
+  var input = document.getElementById("chat-input");
+  var messages = document.getElementById("chat-messages");
+
+  function openPanel() {
+    panel.classList.add("open");
+    panel.setAttribute("aria-hidden", "false");
+    toggle.setAttribute("aria-expanded", "true");
+    input.focus();
+  }
+  function closePanel() {
+    panel.classList.remove("open");
+    panel.setAttribute("aria-hidden", "true");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  toggle.addEventListener("click", function () {
+    if (panel.classList.contains("open")) {
+      closePanel();
+    } else {
+      openPanel();
+    }
+  });
+  closeBtn.addEventListener("click", closePanel);
+
+  function addMessage(role, text) {
+    var el = document.createElement("div");
+    el.className = "chat-msg chat-msg-" + role;
+    var p = document.createElement("p");
+    p.textContent = text;
+    el.appendChild(p);
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    addMessage("user", text);
+    input.value = "";
+    setTimeout(function () {
+      addMessage("assistant", "Noted — this is a mockup, no live model is connected yet.");
+    }, 700);
+  });
+})();
+</script>
+</body>
+</html>

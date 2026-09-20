@@ -1,124 +1,97 @@
 {% extends "base.html" %}
+{% block page_id %}new-scan{% endblock %}
 {% block title %}New Scan — PenTron{% endblock %}
-
 {% block content %}
-<div class="max-w-xl">
-  <h1 class="text-lg font-semibold text-slate-900 dark:text-slate-100">New scan</h1>
-  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-    Only scan targets you are authorized to test.
-  </p>
-
-  <form id="scan-form" class="mt-6 space-y-5">
-    <div>
-      <label for="target" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-        Target IP or domain
-      </label>
-      <input type="text" id="target" name="target" required placeholder="example.com"
-        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm
-               focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/30
-               dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+<p class="field-label mb-3">New session</p>
+<h1 class="mb-2 text-3xl font-semibold text-slate-50">Launch a scan</h1>
+<p class="mb-10 max-w-2xl text-slate-400">Only run this against a target you are authorized to test. Choose the recon modules and scope below; PenTron will preserve their raw output alongside the AI analysis.</p>
+<form id="scan-form" class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+  <div class="space-y-8">
+    <div class="panel p-6">
+      <label for="target" class="field-label mb-2 block">Target</label>
+      <input type="text" id="target" name="target" required placeholder="IP address or domain" class="w-full">
+      <p class="mt-2 text-xs text-slate-500">Accepts a single IP, hostname, or domain. PenTron validates the target before recon starts.</p>
     </div>
-
-    <fieldset>
-      <legend class="block text-sm font-medium text-slate-700 dark:text-slate-300">Recon tools</legend>
-
-      <div class="mt-2 flex flex-wrap gap-2">
-        <button type="button" data-preset="standard"
-          class="preset-btn rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600
-                 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">Standard</button>
-        <button type="button" data-preset="nikto"
-          class="preset-btn rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600
-                 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">+ nikto</button>
-        <button type="button" data-preset="all"
-          class="preset-btn rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600
-                 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">Select all</button>
-        <button type="button" data-preset="none"
-          class="preset-btn rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-600
-                 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900">Clear</button>
+    <fieldset class="panel p-6">
+      <legend class="sr-only">Recon tools</legend>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div><p class="field-label">Recon tools</p><p id="selected-count" class="mt-1 font-mono text-xs text-slate-500"></p></div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-preset="standard" class="preset-btn">Standard</button>
+          <button type="button" data-preset="nikto" class="preset-btn">+ nikto</button>
+          <button type="button" data-preset="all" class="preset-btn">Select all</button>
+          <button type="button" data-preset="none" class="preset-btn">Clear</button>
+        </div>
       </div>
-
-      <div class="mt-3 grid grid-cols-2 gap-2 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
+      <div class="grid gap-3 sm:grid-cols-2">
         {% for tool in tools %}
-        <label class="flex items-center gap-2">
-          <input type="checkbox" value="{{ tool.key }}" class="tool-key"
-            {% if tool.key in default_keys %}checked{% endif %}> {{ tool.name }}
-          {% if tool.name == "nikto" %}
-          <span class="text-xs text-slate-400 dark:text-slate-500">(slower, noisier)</span>
-          {% endif %}
+        <label class="tool-row flex cursor-pointer items-start gap-3 rounded-sm p-3.5">
+          <input type="checkbox" value="{{ tool.key }}" data-name="{{ tool.name }}" class="tool-key mt-1" {% if tool.key in default_keys %}checked{% endif %}>
+          <span><span class="block font-mono text-sm text-slate-100">{{ tool.name }}</span><span class="text-xs text-slate-500">{{ tool_descriptions.get(tool.name, 'Reconnaissance module') }}</span></span>
         </label>
         {% endfor %}
       </div>
     </fieldset>
-
-    <div>
-      <label for="subdomain_discovery_level" class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-        Subdomain discovery
-      </label>
-      <select id="subdomain_discovery_level" data-current="{{ settings.subdomain_discovery_level }}"
-        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm
-               dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-        <option value="0">Disabled — only the declared target is ever in scope</option>
-        <option value="1">Passive — crt.sh lookup, listed in the report, scope unchanged</option>
-        <option value="2">Active — crt.sh + subfinder, discovered subdomains become scannable</option>
-      </select>
-      <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-        Defaults to the value set in Settings — change it here for this scan only.
-      </p>
+    <fieldset class="panel p-6">
+      <legend class="field-label mb-4 block">Subdomain discovery level</legend>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <label class="level-pill cursor-pointer rounded-sm p-4"><input type="radio" name="subdomain-level" value="0" class="sr-only"><span class="mb-1 block font-mono text-sm">disabled</span><span class="text-xs text-slate-500">Only the declared target remains in scope.</span></label>
+        <label class="level-pill cursor-pointer rounded-sm p-4"><input type="radio" name="subdomain-level" value="1" class="sr-only"><span class="mb-1 block font-mono text-sm">passive</span><span class="text-xs text-slate-500">Certificate transparency lookup; scope stays unchanged.</span></label>
+        <label class="level-pill cursor-pointer rounded-sm p-4"><input type="radio" name="subdomain-level" value="2" class="sr-only"><span class="mb-1 block font-mono text-sm">active</span><span class="text-xs text-slate-500">Adds subfinder results as scannable targets.</span></label>
+      </div>
+    </fieldset>
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-primary"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l14 8-14 8V4z" stroke-linejoin="round" /></svg>Start scan</button>
+      <span class="font-mono text-xs text-slate-500">Runtime depends on the selected modules</span>
     </div>
-
-    <button type="submit"
-      class="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700
-             focus:outline-none focus:ring-2 focus:ring-rose-500/40">
-      Start scan
-    </button>
-
-    <p id="scan-error" class="hidden text-sm text-red-600 dark:text-red-400"></p>
-  </form>
-</div>
+    <p id="scan-error" class="hidden text-sm text-red-400"></p>
+  </div>
+  <aside class="panel overflow-hidden rounded-sm lg:sticky lg:top-28">
+    <div class="border-b border-[var(--border)] bg-[var(--bg-panel-raised)] px-4 py-2.5"><p class="font-mono text-[11px] text-slate-500">command preview</p></div>
+    <pre class="whitespace-pre-wrap p-4 font-mono text-[12px] leading-relaxed text-slate-400"><span class="text-cyan-400">$</span> pentron scan \
+  --target <span id="preview-target" class="text-slate-100">target</span> \
+  --tools <span id="preview-tools" class="text-slate-100"></span> \
+  --subdomains <span id="preview-level" class="text-slate-100"></span></pre>
+    <div class="px-4 pb-4"><div class="border-t border-[var(--border-soft)] pt-4"><p class="field-label mb-2">After the scan</p><ul class="space-y-1.5 text-xs leading-relaxed text-slate-500"><li>· Tool output is collected per module</li><li>· The active LLM provider parses findings</li><li>· The report and raw evidence are saved to history</li></ul></div></div>
+  </aside>
+</form>
 {% endblock %}
-
 {% block scripts %}
 <script>
   const toolKeys = Array.from(document.querySelectorAll('.tool-key'));
-  const PRESETS = {
-    standard: {{ default_keys_json | safe }},
-    nikto: {{ nikto_bundle_keys_json | safe }},
-    all: toolKeys.map(cb => cb.value),
-    none: [],
-  };
-  document.querySelectorAll('.preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const selected = new Set(PRESETS[btn.dataset.preset]);
-      toolKeys.forEach(cb => { cb.checked = selected.has(cb.value); });
-    });
-  });
-
-  (function initSubdomainLevel() {
-    const select = document.getElementById('subdomain_discovery_level');
-    select.value = select.dataset.current || '0';
-  })();
-
-  document.getElementById('scan-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  const levelNames = { 0: 'disabled', 1: 'passive', 2: 'active' };
+  const PRESETS = { standard: {{ default_keys_json | safe }}, nikto: {{ nikto_bundle_keys_json | safe }}, all: toolKeys.map(cb => cb.value), none: [] };
+  function updatePreview() {
+    const selected = toolKeys.filter(cb => cb.checked);
+    const level = document.querySelector('input[name="subdomain-level"]:checked');
+    document.getElementById('selected-count').textContent = `${selected.length} selected`;
+    document.getElementById('preview-target').textContent = document.getElementById('target').value.trim() || 'target';
+    document.getElementById('preview-tools').textContent = selected.map(cb => cb.dataset.name).join(',') || 'none';
+    document.getElementById('preview-level').textContent = levelNames[level ? level.value : 0];
+  }
+  document.querySelectorAll('.preset-btn').forEach(btn => btn.addEventListener('click', () => {
+    const selected = new Set(PRESETS[btn.dataset.preset]);
+    toolKeys.forEach(cb => { cb.checked = selected.has(cb.value); });
+    updatePreview();
+  }));
+  toolKeys.forEach(cb => cb.addEventListener('change', updatePreview));
+  document.getElementById('target').addEventListener('input', updatePreview);
+  document.querySelectorAll('input[name="subdomain-level"]').forEach(radio => radio.addEventListener('change', updatePreview));
+  const initialLevel = document.querySelector(`input[name="subdomain-level"][value="{{ settings.subdomain_discovery_level }}"]`) || document.querySelector('input[name="subdomain-level"][value="0"]');
+  initialLevel.checked = true;
+  updatePreview();
+  document.getElementById('scan-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
     const target = document.getElementById('target').value.trim();
     const tools = toolKeys.filter(cb => cb.checked).map(cb => cb.value);
-    const subdomain_discovery_level = parseInt(document.getElementById('subdomain_discovery_level').value, 10);
+    const subdomain_discovery_level = parseInt(document.querySelector('input[name="subdomain-level"]:checked').value, 10);
     const errorEl = document.getElementById('scan-error');
     errorEl.classList.add('hidden');
-
-    if (tools.length === 0) {
-      errorEl.textContent = 'Select at least one tool.';
-      errorEl.classList.remove('hidden');
-      return;
-    }
-
+    if (tools.length === 0) { errorEl.textContent = 'Select at least one tool.'; errorEl.classList.remove('hidden'); return; }
     try {
       const resp = await apiFetch('POST', '/api/scans', { target, tools, subdomain_discovery_level });
       window.location.href = `/scans/${resp.sl_no}`;
-    } catch (err) {
-      errorEl.textContent = err.message || 'Failed to start scan.';
-      errorEl.classList.remove('hidden');
-    }
+    } catch (err) { errorEl.textContent = err.message || 'Failed to start scan.'; errorEl.classList.remove('hidden'); }
   });
 </script>
 {% endblock %}
