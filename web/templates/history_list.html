@@ -3,13 +3,33 @@
 {% block title %}History — PenTron{% endblock %}
 
 {% block content %}
-<h1 class="text-lg font-semibold text-slate-100">Scan history</h1>
+<div class="mb-10 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <p class="field-label mb-3">Session log</p>
+    <h1 class="text-3xl font-semibold text-slate-50">Scan history</h1>
+  </div>
+  {% if rows %}
+  <div class="flex flex-wrap items-center gap-3">
+    <input id="history-target-filter" type="text" placeholder="filter by target…" class="w-56">
+    <select id="history-status-filter" class="w-40">
+      <option value="">All statuses</option>
+      {% for status in rows | map(attribute='status') | unique %}
+      <option value="{{ status|lower }}">{{ status }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+</div>
 
 {% if not rows %}
-<p class="mt-4 text-sm text-slate-500">No scans yet.</p>
+<div class="panel p-8 text-center sm:p-12">
+  <p class="text-slate-300">No scans yet.</p>
+  <p class="mt-2 text-sm text-slate-500">Start a scan to create the first session entry.</p>
+  <a href="/new-scan" class="btn-primary mt-6 text-sm">New Scan</a>
+</div>
 {% else %}
-<div class="mt-6 panel overflow-x-auto">
-  <table class="min-w-full data-table">
+<div class="panel overflow-hidden overflow-x-auto rounded-sm">
+  <table class="data-table w-full min-w-[840px]">
     <thead>
       <tr>
         <th>SL#</th>
@@ -21,15 +41,17 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr data-href="/history/{{ row.sl_no }}">
-        <td>{{ row.sl_no }}</td>
-        <td class="font-mono">{{ row.target }}</td>
-        <td>{{ row.scan_date }}</td>
-        <td>{{ row.status }}</td>
+      <tr data-href="/history/{{ row.sl_no }}" data-target="{{ row.target|lower }}"
+        data-status="{{ row.status|lower }}">
+        <td class="font-mono text-xs text-slate-500">{{ row.sl_no }}</td>
+        <td class="font-mono text-slate-100">{{ row.target }}</td>
+        <td class="font-mono text-xs text-slate-400">{{ row.scan_date }}</td>
+        <td><span class="chip">{{ row.status }}</span></td>
         <td class="text-right">
-          <a href="/history/{{ row.sl_no }}" class="text-cyan-400 hover:text-cyan-300">View</a>
-          <button onclick="confirmAndDelete('/api/history/{{ row.sl_no }}', 'Delete session #{{ row.sl_no }} permanently?')"
-            class="ml-3 text-slate-500 hover:text-red-400">
+          <a href="/history/{{ row.sl_no }}" class="font-mono text-xs text-cyan-400 hover:text-cyan-300">view →</a>
+          <button type="button"
+            onclick="confirmAndDelete('/api/history/{{ row.sl_no }}', 'Delete session #{{ row.sl_no }} permanently?')"
+            class="ml-3 text-xs text-slate-500 hover:text-red-400">
             Delete
           </button>
         </td>
@@ -38,6 +60,9 @@
     </tbody>
   </table>
 </div>
+<p id="history-count" class="mt-6 font-mono text-xs text-slate-500">
+  {{ rows|length }} session{% if rows|length != 1 %}s{% endif %} total
+</p>
 {% endif %}
 {% endblock %}
 
@@ -50,12 +75,36 @@
   // have to aim for the anchor. Clicks on the Delete button (or any
   // link/button in the row) are left alone.
   (function () {
-    document.querySelectorAll("tbody tr[data-href]").forEach(function (row) {
+    const rows = Array.from(document.querySelectorAll("tbody tr[data-href]"));
+    const targetFilter = document.getElementById("history-target-filter");
+    const statusFilter = document.getElementById("history-status-filter");
+    const count = document.getElementById("history-count");
+
+    rows.forEach(function (row) {
       row.addEventListener("click", function (event) {
         if (event.target.closest("a, button")) return;
         window.location.href = row.getAttribute("data-href");
       });
     });
+
+    function applyFilters() {
+      const target = targetFilter.value.trim().toLowerCase();
+      const status = statusFilter.value;
+      let visible = 0;
+
+      rows.forEach(function (row) {
+        const matchesTarget = row.dataset.target.includes(target);
+        const matchesStatus = !status || row.dataset.status === status;
+        const matches = matchesTarget && matchesStatus;
+        row.classList.toggle("hidden", !matches);
+        if (matches) visible += 1;
+      });
+
+      count.textContent = `${visible} of ${rows.length} sessions shown`;
+    }
+
+    targetFilter.addEventListener("input", applyFilters);
+    statusFilter.addEventListener("change", applyFilters);
   })();
 </script>
 {% endblock %}
