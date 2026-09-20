@@ -383,9 +383,30 @@ d'origine (vérifié par introspection), rebuild Docker complet
 `--no-cache` + `pentron.cli`/`api.main` importés avec succès dans le
 conteneur.
 
-**Hors scope, noté pour plus tard** : `web/templates/dashboard.html` a
-toujours la liste des 10 outils codée en dur en checkboxes HTML,
-déconnectée du registre — 4e point de friction déjà identifié plus haut.
-Le résoudre demande de faire passer la liste du registre à travers une
-route `api/` vers le template Jinja, un sujet côté web distinct de ce
-refactor de `tools.py`.
+### ✅ 4e point de friction (`dashboard.html`) — implémenté
+
+`web/templates/dashboard.html` avait les 10 outils codés en dur en
+checkboxes HTML (`value="1"`…`value="10"`, noms en toutes lettres) + une
+liste dupliquée dans l'objet JS `PRESETS` — déconnecté du registre.
+
+Ajout d'un flag `default: bool` sur `ToolSpec` (registry.py) +
+`registry.default_tool_names()` / `default_keys()` / `find_by_name()`.
+La route `api/routers/pages.py::dashboard()` passe maintenant la liste
+des outils et les clés par défaut au template ; les checkboxes sont une
+boucle Jinja, et les presets JS sont du JSON pré-sérialisé côté serveur
+depuis la même donnée (Starlette n'a pas de filtre `tojson`). Au passage,
+`pipeline.py::resolve_tool_plan()` utilise aussi `registry.default_tool_names()`
+au lieu de sa propre liste en dur — plus qu'une seule source de vérité.
+
+Côté CLI, rien à faire : `interactive_tool_run()` bouclait déjà sur
+`registry.all_tools()` depuis l'implémentation de l'Option B.
+
+Vérifié : rendu réel de la page via `TestClient` dans le conteneur
+rebuild (DB réelle) — mêmes 5 outils cochés par défaut, même contenu
+JSON pour les presets qu'avant.
+
+**Refactor d'architecture : tout ce qui était planifié est maintenant fait**
+(Option A, Option B, et le point de friction web qu'elles avaient mis en
+évidence). Points secondaires notés plus haut (`export.py` en
+`export/pdf.py`+`export/html.py`, `providers.py` en package) restent des
+pistes non actées, pas un chantier en cours.
