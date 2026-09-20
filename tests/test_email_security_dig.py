@@ -4,7 +4,7 @@ a real spoofing/phishing risk for a domain, not just a DNS curiosity, so
 run_dig reports their presence/absence alongside the plain A/MX/NS/TXT dump.
 """
 
-import tools
+from pentron import tools
 
 
 def _fake_run_tool(responses):

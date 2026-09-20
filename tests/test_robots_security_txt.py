@@ -6,7 +6,7 @@ disclosure process. Checked at the standard /.well-known/ path first, with
 a fallback to the legacy root path some sites still use instead.
 """
 
-import tools
+from pentron import tools
 
 
 def test_https_success_does_not_fall_back_to_http(monkeypatch):

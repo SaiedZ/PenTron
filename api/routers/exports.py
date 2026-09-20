@@ -10,9 +10,9 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
-import db
 from api.security import verify_token
-from export import export_html, export_pdf
+from pentron import db
+from pentron.export import export_html, export_pdf
 
 router = APIRouter(
     prefix="/api", tags=["exports"], dependencies=[Depends(verify_token)]

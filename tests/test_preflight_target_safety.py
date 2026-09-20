@@ -9,7 +9,7 @@ else controls.
 
 import socket
 
-import tools
+from pentron import tools
 
 
 def _fake_resolve(ip: str):

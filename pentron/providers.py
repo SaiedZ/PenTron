@@ -277,7 +277,7 @@ def get_provider(settings: dict = None) -> BaseProvider:
     """
     if settings is None:
         try:
-            from db import get_settings
+            from .db import get_settings
 
             settings = get_settings()
         except Exception:

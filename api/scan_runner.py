@@ -2,16 +2,16 @@
 """
 PENTRON - api/scan_runner.py
 Background function launched via FastAPI's BackgroundTasks for POST
-/api/scans. Mirrors pentron.py::new_scan()'s recon -> AI -> save pipeline
+/api/scans. Mirrors pentron.cli::new_scan()'s recon -> AI -> save pipeline
 exactly, reusing the same db.py/tools.py/llm.py functions, but reports
 live progress into the api.jobs store instead of print()ing to a terminal.
 """
 
-import db
 from api import jobs
-from llm import analyse_target
-from providers import get_provider
-from tools import (
+from pentron import db
+from pentron.llm import analyse_target
+from pentron.providers import get_provider
+from pentron.tools import (
     discover_subdomains,
     format_recon_for_llm,
     resolve_tool_plan,
