@@ -7,6 +7,7 @@ a fallback to the legacy root path some sites still use instead.
 """
 
 from pentron import tools
+from pentron.tools import robots_security_txt
 
 
 def test_https_success_does_not_fall_back_to_http(monkeypatch):
@@ -21,7 +22,7 @@ def test_https_success_does_not_fall_back_to_http(monkeypatch):
             return "Contact: mailto:security@example.com\n[HTTP 200]"
         return "[HTTP 404]"
 
-    monkeypatch.setattr(tools, "run_tool", _fake_run_tool)
+    monkeypatch.setattr(tools.base, "run_tool", _fake_run_tool)
     result = tools.run_robots_and_security_txt("example.com")
 
     assert all(cmd[-1].startswith("https://") for cmd in calls)
@@ -42,7 +43,7 @@ def test_https_failure_falls_back_to_http(monkeypatch):
             return "User-agent: *\n[HTTP 200]"
         return "[HTTP 404]"
 
-    monkeypatch.setattr(tools, "run_tool", _fake_run_tool)
+    monkeypatch.setattr(tools.base, "run_tool", _fake_run_tool)
     result = tools.run_robots_and_security_txt("example.com")
     assert "http://example.com/robots.txt" in result or "User-agent: *" in result
 
@@ -61,7 +62,7 @@ def test_security_txt_missing_at_wellknown_falls_back_to_legacy_path(monkeypatch
             return "Contact: mailto:security@example.com\n[HTTP 200]"
         return "[HTTP 404]"
 
-    monkeypatch.setattr(tools, "run_tool", _fake_run_tool)
+    monkeypatch.setattr(tools.base, "run_tool", _fake_run_tool)
     result = tools.run_robots_and_security_txt("example.com")
 
     assert any(u.endswith("/.well-known/security.txt") for u in calls)
@@ -76,6 +77,6 @@ def test_output_is_capped_in_length(monkeypatch):
     def _fake_run_tool(command, **kw):
         return huge + "\n[HTTP 200]"
 
-    monkeypatch.setattr(tools, "run_tool", _fake_run_tool)
-    result = tools._fetch_text_file("https://example.com", "/robots.txt")
-    assert len(result) <= tools._MAX_TEXT_FILE_CHARS
+    monkeypatch.setattr(tools.base, "run_tool", _fake_run_tool)
+    result = robots_security_txt._fetch_text_file("https://example.com", "/robots.txt")
+    assert len(result) <= robots_security_txt._MAX_TEXT_FILE_CHARS
