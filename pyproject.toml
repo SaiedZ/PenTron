@@ -32,7 +32,7 @@ dependencies = [
     "MarkupSafe==3.0.3",
     "mdurl==0.1.2",
     "mysql-connector-python==9.6.0",
-    "pillow==12.2.0",
+    "pillow==12.3.0",
     "primp==1.2.1",
     "pydantic==2.13.5",
     "pydantic_core==2.46.5",
