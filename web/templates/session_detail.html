@@ -32,6 +32,14 @@
       <a href="/api/history/{{ sl_no }}/export?format=html" class="btn-ghost">
         Download HTML
       </a>
+      <a href="/api/history/{{ sl_no }}/export?format=json" class="btn-ghost"
+        title="Structured export without raw scan output or full AI analysis">
+        Download JSON
+      </a>
+      <a href="/api/history/{{ sl_no }}/export?format=json&amp;include_raw=true" class="btn-ghost"
+        title="Complete JSON export including sensitive raw scan output and full AI analysis">
+        JSON (full)
+      </a>
       <button onclick="confirmAndDelete('/api/history/{{ sl_no }}', 'Delete this entire session permanently?', '/history')"
         class="rounded-md border border-red-500/30 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
         Delete session
