@@ -1,8 +1,9 @@
 # 🥷🏼 PenTron
-### AI-Powered Penetration Testing Assistant
+## AI-Powered Penetration Testing Assistant
+
 
 <p align="center">
-  <img width="524" height="161" alt="image" src="https://github.com/user-attachments/assets/1d9476ca-1fc8-4eec-940e-7fa41dd08ad3" />
+  <img width="1161" height="620" alt="image" src="https://github.com/user-attachments/assets/58f98405-3cc1-47c3-adef-996717e10819" />
 </p>
 
 <p align="center">
@@ -85,7 +86,7 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 #### New scan configuration
 
 <p align="center">
-  <img width="1147" height="931" alt="image" src="https://github.com/user-attachments/assets/4c0eae8e-ca77-46f1-8575-079379b40a1a" />
+  <img width="995" height="909" alt="image" src="https://github.com/user-attachments/assets/1e98dc9b-2da4-47f9-b525-a5a1a7c97bb5" />
   <br><i>New scan configuration — target definition, recon tool selection, subdomain discovery, and live command preview.</i>
 </p>
 
