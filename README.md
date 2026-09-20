@@ -360,13 +360,14 @@ or
 
 ```
 PenTron/
-├── pentron.py            ← CLI entry point
-├── db.py                 ← MariaDB connection and all CRUD operations
-├── tools.py               ← recon tool runners (nmap, whois, etc.)
-├── llm.py                 ← AI provider interface and tool dispatch loop
-├── providers.py           ← LLM provider abstraction (Ollama/OpenAI/Anthropic/Google)
-├── search.py               ← DuckDuckGo web search and CVE lookup
-├── export.py               ← PDF/HTML report generation
+├── pentron/                 ← core package (console script: `pentron`)
+│   ├── cli.py                 ← CLI entry point (pentron.cli:main)
+│   ├── db.py                   ← MariaDB connection and all CRUD operations
+│   ├── tools.py                 ← recon tool runners (nmap, whois, etc.)
+│   ├── llm.py                    ← AI provider interface and tool dispatch loop
+│   ├── providers.py               ← LLM provider abstraction (Ollama/OpenAI/Anthropic/Google)
+│   ├── search.py                   ← DuckDuckGo web search and CVE lookup
+│   └── export.py                    ← PDF/HTML report generation
 ├── api/                     ← FastAPI web backend
 │   ├── main.py               ← app entry point (uvicorn api.main:app)
 │   ├── jobs.py                ← live scan-progress tracking
