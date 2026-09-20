@@ -567,12 +567,17 @@ modèle local abliterated n'a pas de function-calling fiable.
   converties en `ChatProviderError` sans produire d'historique partiel.
 - Tests actuels : 52 tests dédiés au chat, suite complète à 120 tests réussis.
 
-**Phase 2 — endpoint API**
-- `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
+**🚧 Phase 2 — endpoint API — en cours**
+- ✅ Modèles Pydantic `ChatMessage`, `ChatRequest` et `ChatResponse` ajoutés
+  dans `api/schemas.py`. Les rôles sont limités à `user`/`assistant`, les
+  contenus et le nombre de messages sont bornés, et les chaînes vides sont
+  rejetées (18 tests dédiés).
+- ⏳ Créer `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
   `{history, message}`, réponse `{reply, history}` (historique
   potentiellement compressé renvoyé pour resynchroniser le client).
   Réutilise `get_provider()` existant, sans nouvelle table ni changement dans
-  `db.py`. Ajouter les modèles Pydantic de requête/réponse dans `api/schemas.py`.
+  `db.py`, puis enregistrer le router dans `api/main.py`.
+- Suite complète actuelle : 138 tests réussis.
 
 **Phase 3 — IHM**
 - Bouton flottant + panel ajoutés dans `session_detail.html` uniquement.
