@@ -96,7 +96,12 @@
   }
 
   function renderMarkdown(container, markdown) {
-    var lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+    var normalizedMarkdown = markdown
+      .replace(/\r\n?/g, "\n")
+      .replace(/\\\|/g, "|")
+      .replace(/\|\s+\|(?=\s*[:-])/g, "|\n|")
+      .replace(/\|\s+\|(?=\s*[^\n|])/g, "|\n|");
+    var lines = normalizedMarkdown.split("\n");
     var paragraph = [];
     var list = null;
     var code = null;
@@ -117,20 +122,78 @@
       language = "";
     }
 
-    lines.forEach(function (line) {
+    function tableCells(line) {
+      return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (cell) {
+        return cell.trim();
+      });
+    }
+
+    function isTableSeparator(line) {
+      var cells = tableCells(line);
+      return cells.length > 0 && cells.every(function (cell) {
+        return /^:?-{3,}:?$/.test(cell);
+      });
+    }
+
+    function appendTable(headerLine, bodyLines) {
+      var wrapper = document.createElement("div");
+      wrapper.className = "chat-table-wrap";
+      var table = document.createElement("table");
+      var thead = document.createElement("thead");
+      var headerRow = document.createElement("tr");
+      tableCells(headerLine).forEach(function (content) {
+        var th = document.createElement("th");
+        appendInline(th, content);
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      var tbody = document.createElement("tbody");
+      bodyLines.forEach(function (line) {
+        var row = document.createElement("tr");
+        tableCells(line).forEach(function (content) {
+          var td = document.createElement("td");
+          appendInline(td, content);
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      wrapper.appendChild(table);
+      container.appendChild(wrapper);
+    }
+
+    for (var lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+      var line = lines[lineIndex];
       var fence = line.match(/^```([\w+-]*)\s*$/);
       if (fence) {
         if (code === null) {
           flushParagraph(); flushList(); code = []; language = fence[1];
         } else flushCode();
-        return;
+        continue;
       }
-      if (code !== null) { code.push(line); return; }
+      if (code !== null) { code.push(line); continue; }
+      if (line.includes("|") && lines[lineIndex + 1] && isTableSeparator(lines[lineIndex + 1])) {
+        flushParagraph(); flushList();
+        var bodyLines = [];
+        lineIndex += 2;
+        while (lineIndex < lines.length && lines[lineIndex].includes("|")) {
+          bodyLines.push(lines[lineIndex]);
+          lineIndex += 1;
+        }
+        appendTable(line, bodyLines);
+        lineIndex -= 1;
+        continue;
+      }
+      if (/^\\?---+$/.test(line.trim())) {
+        flushParagraph(); flushList(); container.appendChild(document.createElement("hr"));
+        continue;
+      }
       var heading = line.match(/^(#{1,3})\s+(.+)$/);
       if (heading) {
         flushParagraph(); flushList();
         var h = document.createElement("h" + (heading[1].length + 2));
-        appendInline(h, heading[2]); container.appendChild(h); return;
+        appendInline(h, heading[2]); container.appendChild(h); continue;
       }
       var item = line.match(/^\s*([-*]|\d+\.)\s+(.+)$/);
       if (item) {
@@ -140,12 +203,12 @@
           list = document.createElement(tag); container.appendChild(list);
         }
         var li = document.createElement("li");
-        appendInline(li, item[2]); list.appendChild(li); return;
+        appendInline(li, item[2]); list.appendChild(li); continue;
       }
       flushList();
       if (!line.trim()) flushParagraph();
       else paragraph.push(line.trim());
-    });
+    }
     flushCode(); flushParagraph();
   }
 
@@ -155,6 +218,32 @@
     if (message.role === "assistant") renderMarkdown(bubble, message.content);
     else bubble.textContent = message.content;
     messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function setThinking(visible) {
+    var indicator = document.getElementById("chat-thinking");
+    if (!visible) {
+      if (indicator) indicator.remove();
+      return;
+    }
+    if (indicator) return;
+    indicator = document.createElement("div");
+    indicator.id = "chat-thinking";
+    indicator.className = "chat-thinking";
+    indicator.setAttribute("role", "status");
+    indicator.setAttribute("aria-label", "Assistant is thinking");
+    var label = document.createElement("span");
+    label.className = "sr-only";
+    label.textContent = "Assistant is thinking";
+    indicator.appendChild(label);
+    for (var dotIndex = 0; dotIndex < 3; dotIndex += 1) {
+      var dot = document.createElement("span");
+      dot.className = "chat-thinking-dot";
+      dot.setAttribute("aria-hidden", "true");
+      indicator.appendChild(dot);
+    }
+    messages.appendChild(indicator);
     messages.scrollTop = messages.scrollHeight;
   }
 
@@ -191,6 +280,7 @@
     showError("");
     input.value = "";
     appendMessage({ role: "user", content: text });
+    setThinking(true);
     send.disabled = true;
     input.disabled = true;
     try {
@@ -205,6 +295,7 @@
       showError("Message not sent: " + requestError.message);
       input.value = text;
     } finally {
+      setThinking(false);
       send.disabled = false;
       input.disabled = false;
       input.focus();
