@@ -583,8 +583,8 @@ modèle local abliterated n'a pas de function-calling fiable.
   provider et l'enregistrement de la route.
 - Suite complète actuelle : 142 tests réussis.
 
-**Phase 3 — IHM**
-- Bouton flottant + panel ajoutés dans `session_detail.html` uniquement.
+**✅ Phase 3 — IHM — terminée**
+- ✅ Bouton flottant 🥷🏼 + panel ajoutés dans `session_detail.html` uniquement.
   JS vanilla (`classList.toggle`, `fetch` via `apiFetch` déjà dans
   `app.js`) — pas de librairie de composants (Flowbite/Tailwind UI) : le
   composant est trop simple pour justifier une dépendance, et casserait la
@@ -594,25 +594,27 @@ modèle local abliterated n'a pas de function-calling fiable.
   `design-concepts/concept-a/session.html` (voir section "Migration
   visuelle" plus bas) — accent cyan, classes `.chat-toggle`/`.chat-panel`/
   `.chat-bubble-*` définies dans `design-concepts/concept-a/style.css`.
-  Point de départ pour cette phase : reprendre son markup/CSS (adapté aux
-  classes réelles de `web/input.css`, ex. `.panel`) plutôt que redessiner
-  le widget de zéro, et le brancher sur l'historique client + l'endpoint de
-  la Phase 2 au lieu des 3 messages bidons et de l'écho local de la
-  maquette.
-- Afficher dès l'ouverture le message de transparence sur le périmètre du
+  Le widget réel reprend ce langage visuel et appelle l'endpoint de la Phase
+  2 via `web/static/js/session-chat.js`. L'historique est isolé par session
+  dans `sessionStorage` et remplacé par la version resynchronisée du serveur.
+- ✅ Affichage dès l'ouverture du message de transparence sur le périmètre du
   contexte, la limite du modèle local et l'envoi à un tiers lorsqu'un provider
   cloud est actif.
-- Ajouter sur chaque constat une action « Discuter de ce constat » qui ouvre le
+- ✅ Chaque constat propose une action « Discuss this finding » qui ouvre le
   widget et prépare un message avec le détail de ce seul constat ; l'utilisateur
   garde le contrôle et doit confirmer l'envoi.
-- Rendre le Markdown avec une liste fermée de constructions autorisées, sans
+- ✅ Le Markdown est rendu côté client avec une liste fermée de constructions,
+  uniquement par création de nœuds DOM et `textContent`, sans `innerHTML` ni
   HTML brut, et fournir un bouton « Copier » sur les blocs de code.
+- ✅ 6 tests statiques dédiés couvrent le widget, le stockage par session,
+  l'appel API, la resynchronisation, le rendu sûr et la copie du code.
+- Suite complète actuelle : 148 tests réussis.
 
 **Phase 4 (optionnelle, après usage réel de la v1)**
 - Discussion séparée sur l'ajout d'outils (`[TOOL:]/[SEARCH:]`) dans le
   chat, si le besoin se confirme à l'usage.
 
-Les Phases 0, 1 et 2 sont terminées. Continuer phase par phase
+Les Phases 0, 1, 2 et 3 sont terminées. Continuer phase par phase
 avec les mêmes vérifications que le reste du projet (`ruff format .`,
 `ruff check .`, `pytest tests/ -q`).
 
