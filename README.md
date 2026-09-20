@@ -118,33 +118,91 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 This is the fastest path and the only one that ships the web UI out of the box. It requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose, but no particular host distribution: Linux, macOS, and Windows with Docker Desktop are supported. Kali Rolling is used only inside the application container because it provides the recon-tool packages PenTron needs; the host itself does not need to run Kali or Parrot.
 
+### First installation
+
+Clone the repository and start the application services:
+
 ```bash
 git clone https://github.com/SaiedZ/PenTron.git
 cd PenTron
 docker compose up -d
 ```
 
-This starts three services: `mariadb` (database, schema applied automatically), `ollama` (local AI runtime, CPU by default), and `web` (the browser dashboard). Open:
+This starts three services: `mariadb` (database, schema applied automatically), `ollama` (local AI runtime, CPU by default), and `web` (the browser dashboard).
+
+Docker starts Ollama, but **does not download the AI model automatically**. Before running your first scan, pull the default model (the download is several GB and may take a while):
+
+```bash
+docker exec -it pentron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
+```
+
+When the download is complete, open:
 
 ```
 http://localhost:8000
 ```
 
+The model is stored in the persistent Docker volume `ollama_data`, so this download is only required once. You can confirm that it is installed with:
+
+```bash
+docker exec pentron-ollama ollama list
+```
+
 > **Windows:** this whole stack runs fine on Windows too — install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (WSL2 backend) and run the same `docker compose up -d` from PowerShell or a WSL shell. The recon tools (nmap, nikto, etc.) run inside the Linux container regardless of host OS, so there's nothing extra to install natively. This is also the easiest way to run PenTron if your machine doesn't have the RAM/disk for a local Ollama model — point `OLLAMA_HOST` at a remote Ollama instance, or use a hosted provider (OpenAI/Anthropic/Google) from the Settings screen instead.
 
-If you'd rather use the terminal menu instead of (or alongside) the web UI, it's still there as a fourth service:
+> PenTron works on CPU by default. If you have a compatible NVIDIA GPU, see [Optional NVIDIA GPU acceleration](#optional-nvidia-gpu-acceleration) before running your first scan.
+
+### Starting and stopping PenTron later
+
+For subsequent starts, the model is already available, so only run:
+
+```bash
+docker compose up -d
+```
+
+To stop the application:
+
+```bash
+docker compose down
+```
+
+> Do not add `-v` unless you intentionally want to delete PenTron's persistent data, including the downloaded Ollama model and the database volume.
+
+If you'd rather use the terminal menu instead of (or alongside) the web UI, start it after the services are running:
 
 ```bash
 docker compose run --rm pentron
 ```
 
-### Loading a model into Ollama
+### Development with automatic reload
 
-The web UI's Settings screen can list models already pulled into Ollama and let you pick one. Pull the default model — this alone is enough to start scanning, no extra step needed:
+The production image contains a copy of the source code, so ordinary local changes are not visible inside the container. During development, layer the development Compose file on top of the standard configuration:
 
 ```bash
-docker exec -it pentron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
+
+This mounts `api/`, `pentron/`, the web templates, and JavaScript files into the `web` container. Uvicorn automatically reloads after Python changes; template and JavaScript changes are available after refreshing the browser. MariaDB and Ollama keep running normally.
+
+For development with NVIDIA GPU acceleration, include both optional overlays:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml -f docker-compose.dev.yml up
+```
+
+Changes to dependencies (`pyproject.toml` or `uv.lock`), the `Dockerfile`, or installed system tools still require an image rebuild. Rebuild only the web service without restarting MariaDB or Ollama:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build web
+```
+
+The generated Tailwind stylesheet is still a build artifact. Changes to `web/input.css`, or template changes that introduce Tailwind classes not already present in the compiled stylesheet, also require rebuilding the CSS/image.
+
+> An automatic Uvicorn reload restarts the web process. Do not edit reload-watched Python files while a scan is running, because its in-memory background job will be interrupted.
+
+### Choosing another AI model or provider
+
+The web UI's Settings screen lists models already pulled into Ollama and lets you select one. To use another Ollama model, pull it first with `docker exec -it pentron-ollama ollama pull <model-name>`, then select it in Settings.
 
 Optionally, build a custom-tuned alias with this repo's `Modelfile` (16k context window, temperature 0.7, etc. — see [Modelfile](Modelfile)) and select it from Settings instead:
 
@@ -155,7 +213,7 @@ docker exec -it pentron-ollama ollama create pentron-qwen -f /Modelfile
 
 Or skip Ollama entirely and pick OpenAI / Anthropic / Google from Settings instead — paste an API key and you're set, no local model or GPU needed.
 
-### GPU acceleration for Ollama
+### Optional NVIDIA GPU acceleration
 
 Ollama runs on CPU by default so the stack works out of the box on any machine. To pass an NVIDIA GPU through to it, layer the GPU overlay on top of the base Compose file instead of editing it:
 
@@ -174,6 +232,26 @@ Requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud
 > (use `:` instead of `;` as the separator on Linux/macOS). Docker Compose reads this automatically, so a plain `docker compose up -d` will always include the GPU overlay.
 >
 > The Settings screen shows a **live, read-only** GPU status badge (queried from Ollama, not a toggle) — it can only report "unknown" if no model is currently loaded into Ollama to check.
+
+### Troubleshooting Ollama
+
+If a scan reports `Ollama HTTP error: 404 ... /api/chat`, Docker and Ollama may both be running correctly while the selected model is missing. Check the installed models:
+
+```bash
+docker exec pentron-ollama ollama list
+```
+
+If the list is empty, install the default model:
+
+```bash
+docker exec -it pentron-ollama ollama pull huihui_ai/qwen3.5-abliterated:9b
+```
+
+To check whether all application containers are running:
+
+```bash
+docker compose ps
+```
 
 ### Restarting a service while a scan is running
 
