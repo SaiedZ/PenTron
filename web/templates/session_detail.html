@@ -25,7 +25,7 @@
       <a href="/api/history/{{ sl_no }}/export?format=html" class="btn-ghost">
         Download HTML
       </a>
-      <button onclick="confirmAndDelete('/api/history/{{ sl_no }}', 'Delete this entire session permanently?')"
+      <button onclick="confirmAndDelete('/api/history/{{ sl_no }}', 'Delete this entire session permanently?', '/history')"
         class="rounded-md border border-red-500/30 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
         Delete session
       </button>

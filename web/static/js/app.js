@@ -19,11 +19,12 @@ async function apiFetch(method, url, body) {
   return resp.json();
 }
 
-async function confirmAndDelete(url, message) {
+async function confirmAndDelete(url, message, redirectUrl) {
   if (!confirm(message || "Delete this permanently?")) return;
   try {
     await apiFetch("DELETE", url);
-    window.location.reload();
+    if (redirectUrl) window.location.assign(redirectUrl);
+    else window.location.reload();
   } catch (err) {
     alert(`Delete failed: ${err.message}`);
   }
