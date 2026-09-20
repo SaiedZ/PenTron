@@ -3,8 +3,9 @@
 {% block title %}PenTron — AI Pentest Ops Console{% endblock %}
 
 {% block content %}
-<section class="pt-12 pb-20 sm:pt-16 sm:pb-24">
-  <div class="max-w-3xl">
+<section class="pt-12 pb-20 sm:pt-14 sm:pb-24">
+  <div class="home-hero-grid">
+  <div class="max-w-2xl">
     <p class="mb-5 font-mono text-xs tracking-[0.2em] text-cyan-400">AI PENTEST OPS CONSOLE</p>
     <h1 class="text-4xl font-semibold leading-[1.1] tracking-tight text-slate-50 sm:text-5xl">
       Structured recon.<br>AI triage.<br>One console.
@@ -13,7 +14,7 @@
       Run a focused recon toolkit against an authorized target, turn raw output into structured
       findings with your chosen LLM, and keep every result attached to a readable session report.
     </p>
-    <div class="mt-9 flex flex-wrap items-center gap-4">
+    <div class="mt-8 flex flex-wrap items-center gap-4">
       <a href="/new-scan" class="btn-primary">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round" /></svg>
         Launch a new scan
@@ -22,7 +23,59 @@
     </div>
   </div>
 
-  <div class="panel mt-16 overflow-hidden rounded-sm">
+  <div class="hero-pipeline panel relative overflow-hidden rounded-sm p-5 sm:p-6" aria-label="Live scan pipeline preview">
+    <div class="hero-pipeline-glow"></div>
+    <div class="relative flex items-center justify-between border-b border-[var(--border)] pb-4">
+      <div>
+        <p class="field-label">Live pipeline</p>
+        <p class="mt-1 font-mono text-xs text-slate-400">session_042 / authorized-target.local</p>
+      </div>
+      <span class="hero-live-indicator font-mono text-[10px] tracking-[0.14em] text-emerald-400">ACTIVE</span>
+    </div>
+    <div class="relative mt-6 space-y-3 font-mono">
+      <div class="pipeline-step pipeline-step-done">
+        <span class="pipeline-index">01</span>
+        <span class="pipeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a13 13 0 010 16M12 4a13 13 0 000 16"/></svg></span>
+        <span class="min-w-0 flex-1"><b>Target scoped</b><small>1 host · authorization confirmed</small></span>
+        <span class="pipeline-state pipeline-state-done">DONE</span>
+      </div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-step pipeline-step-done">
+        <span class="pipeline-index">02</span>
+        <span class="pipeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M7 4v6M17 4v6M5 14h4M5 18h7M15 14h4M16 18h3" stroke-linecap="round"/></svg></span>
+        <span class="min-w-0 flex-1"><b>Recon complete</b><small>11 tools · 38 signals collected</small></span>
+        <span class="pipeline-state pipeline-state-done">DONE</span>
+      </div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-step pipeline-step-active">
+        <span class="pipeline-index">03</span>
+        <span class="pipeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke-linecap="round"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="min-w-0 flex-1"><b>AI triage</b><small>Correlating evidence and severity</small></span>
+        <span class="pipeline-state pipeline-state-active">RUNNING</span>
+      </div>
+      <div class="pipeline-connector pipeline-connector-muted"></div>
+      <div class="pipeline-step pipeline-step-pending">
+        <span class="pipeline-index">04</span>
+        <span class="pipeline-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 13h5M10 17h5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="min-w-0 flex-1"><b>Structured report</b><small>Findings · evidence · remediation</small></span>
+        <span class="pipeline-state">QUEUED</span>
+      </div>
+    </div>
+    <div class="relative mt-6 grid grid-cols-3 gap-px border border-[var(--border)] bg-[var(--border)]">
+      <div class="pipeline-stat"><span>11</span><small>tools</small></div>
+      <div class="pipeline-stat"><span>38</span><small>signals</small></div>
+      <div class="pipeline-stat"><span class="text-cyan-400">72%</span><small>analysis</small></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="home-cli-section">
+    <div class="mb-6 max-w-2xl">
+      <p class="field-label mb-2">Terminal CLI</p>
+      <h2 class="text-xl font-semibold text-slate-100">Follow every tool, signal and decision.</h2>
+      <p class="mt-2 text-sm leading-relaxed text-slate-500">The same scan pipeline remains available from the terminal, with live tool output and a traceable handoff to AI analysis.</p>
+    </div>
+  <div class="panel overflow-hidden rounded-sm">
     <div class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-panel-raised)] px-4 py-2.5">
       <div class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-[#f87171]/70"></span><span class="h-2.5 w-2.5 rounded-full bg-[#facc15]/70"></span><span class="h-2.5 w-2.5 rounded-full bg-[#34d399]/70"></span></div>
       <p class="font-mono text-[11px] text-slate-500">session — authorized-target.local</p>
@@ -36,6 +89,7 @@
 <span class="text-slate-600">[00:00:11]</span> nikto  <span class="text-emerald-400">done</span>       web checks complete
 <span class="text-slate-600">[00:00:14]</span> llm    <span class="text-cyan-400">analyzing</span>  tool output → findings, exploits, risk level
 <span class="text-slate-600">[00:00:19]</span> report <span class="text-emerald-400">ready</span>      session saved to history</pre>
+  </div>
   </div>
 </section>
 
