@@ -202,3 +202,133 @@ ci-dessus.
 Toute la catégorie "fort intérêt, faible risque, facile à ajouter" est
 maintenant implémentée. Prochaine étape : discuter des candidats "plus
 intrusifs" (gobuster/ffuf, nuclei, wpscan) ci-dessus avant d'aller plus loin.
+
+---
+
+## 🏗️ Refactor d'architecture envisagé
+
+Analyse demandée pour tendre vers une racine de repo plus simple et une
+architecture Python modulaire, notamment pour faciliter l'ajout d'outils.
+Rien n'est implémenté — analyse seule, en attente de décision.
+
+### État actuel
+
+Racine du repo : 21 fichiers à plat, dont 7 fichiers Python métier mélangés
+aux fichiers de config (`pyproject.toml`, `Dockerfile`,
+`docker-compose*.yml`, `.env`, `README.md`, `ROADMAP.md`, `Modelfile`,
+`LICENSE`...) :
+
+| Fichier | Lignes | Responsabilité(s) |
+|---|---|---|
+| `tools.py` | 906 | recon runners + garde-fous + orchestration + menu CLI (7 concerns différents, détail ci-dessous) |
+| `export.py` | 539 | génération PDF + génération HTML (2 concerns, gros blocs de template inline) |
+| `db.py` | 476 | connexion + CRUD × 5 tables + settings (bien découpé en sections, mais un seul fichier) |
+| `pentron.py` | 467 | banner + menu CLI + tout le pipeline scan (dupliqué avec `api/scan_runner.py`) |
+| `llm.py` | 453 | prompt système + dispatch IA + parsing réponse |
+| `providers.py` | 306 | 4 providers IA (Ollama/OpenAI/Anthropic/Google) dans un seul fichier |
+| `search.py` | 187 | correct, taille raisonnable |
+
+`api/` (805 lignes, déjà en package avec sous-dossier `routers/`) et
+`tests/` (826 lignes, déjà un fichier par sujet) sont, eux, déjà dans une
+structure propre. Le problème est concentré sur les 7 fichiers racine.
+
+### Le vrai point de friction : `tools.py`
+
+C'est le fichier le plus touché à chaque ajout d'outil, et le plus
+monolithique. Il mélange, dans un seul fichier de 906 lignes :
+
+1. Garde-fou cible privée/loopback (`_is_unsafe_ip`, `check_target_safety`)
+2. Primitive générique d'exécution (`run_tool`)
+3. 9 runners d'outils individuels (`run_nmap`, `run_whois`,
+   `run_curl_headers`, `run_dig`, `run_nikto`, `run_sslscan`, `run_testssl`,
+   `run_waf_detect`, `run_robots_and_security_txt`) + leurs helpers privés
+   (`_analyze_security_headers`, `_fetch_headers_guarded`,
+   `_SECURITY_HEADERS`...)
+4. Découverte de sous-domaines (`_discover_subdomains_passive/active`,
+   `discover_subdomains`)
+5. Orchestration/planification (`TOOLS_MENU`, `resolve_tool_plan`,
+   `run_default_recon`, `run_selected_tools`, `format_recon_for_llm`)
+6. Scope guard pour les commandes `[TOOL:]` que l'IA émet en texte libre
+   (`_resolve_host`, `_extract_positional_tokens`, `ALLOWED_TOOLS`,
+   `run_tool_by_command`)
+7. Menu interactif spécifique à la CLI (`interactive_tool_run`)
+
+Aujourd'hui, ajouter un outil touche au minimum 3 endroits : une fonction
+`run_xxx()` dans `tools.py`, une entrée dans `TOOLS_MENU` (même fichier),
+une entrée dans `ALLOWED_TOOLS` si l'IA doit pouvoir l'invoquer — et un 4e
+endroit si l'outil doit apparaître côté web, parce que
+`web/templates/dashboard.html` a la liste des 10 outils codée en dur dans
+des checkboxes HTML (`value="1"` … `value="10"`, noms en toutes lettres),
+complètement déconnectée de `TOOLS_MENU`. C'est le symptôme concret du
+souci de synchro CLI/web déjà noté dans `CLAUDE.md`.
+
+### Autres points secondaires
+
+- `export.py` : `export_pdf()` et `export_html()` sont deux générateurs
+  indépendants avec du HTML/CSS inline conséquent — candidats à un
+  découpage `export/pdf.py` + `export/html.py` (+ template HTML
+  externalisé plutôt qu'en f-string géante).
+- `providers.py` : 4 classes de provider dans un fichier — pas urgent
+  (chacune est courte et le pattern `BaseProvider` est déjà propre), mais
+  un `providers/` avec un fichier par provider serait cohérent avec le
+  reste.
+- `pentron.py` vs `api/scan_runner.py` : déjà documenté dans `CLAUDE.md`,
+  pas un problème de fichiers mais de logique dupliquée entre les deux
+  interfaces.
+
+### Pistes envisagées
+
+**Option A — package `pentron/` classique** : déplacer les 7 fichiers
+racine dans `pentron/` (`pentron/db.py`, `pentron/llm.py`, `pentron/tools/`,
+etc.), avec `pentron/cli.py` comme point d'entrée CLI. Layout Python
+standard, mais casse tous les imports actuels (`from db import ...` partout
+dans `api/`, les tests, entre modules eux-mêmes) et demande d'adapter
+`pyproject.toml` (`py-modules` → `packages`) ainsi que de revalider la
+résolution de `web/` par `api/main.py` (`Path(__file__).resolve()...`, à
+revérifier si `api/` change de profondeur).
+
+**Option B — éclater seulement `tools.py` en sous-package**, sans toucher
+au reste : `tools/base.py` (le `run_tool` générique + garde-fous),
+`tools/registry.py` (`TOOLS_MENU`/`ALLOWED_TOOLS` construits à partir des
+modules d'outils plutôt qu'écrits à la main), un fichier par outil ou par
+petit groupe cohérent (`tools/nmap.py`, `tools/web_headers.py` regroupant
+curl headers + robots/security.txt + WAF puisqu'ils partagent des helpers
+HTTP, `tools/dns.py` pour dig + subdomains). Effort plus faible, résout
+directement le "ajouter un outil = 3-4 endroits" en un seul point
+d'enregistrement. `db.py`, `llm.py`... restent à plat pour l'instant.
+
+**Option C — A puis B, en deux passes séparées** : d'abord B (le gain le
+plus concret pour la modularité de l'ajout d'outils), puis A plus tard si
+le nombre de fichiers racine reste gênant une fois `tools.py` éclaté.
+
+**Décision** : Option C, mais en commençant par **A** (pas B comme
+recommandé initialement) — pour pouvoir ensuite regarder le pattern
+d'extensibilité de `tools.py` (B) comme un sujet dédié à part entière,
+plutôt que de le faire dans la foulée de la réorganisation générale.
+
+### ✅ Option A — implémenté
+
+Les 7 fichiers racine déplacés dans un package `pentron/` :
+`pentron/db.py`, `pentron/llm.py`, `pentron/providers.py`,
+`pentron/tools.py`, `pentron/search.py`, `pentron/export.py`, et
+`pentron.py` renommé `pentron/cli.py`. Imports internes au package passés
+en relatif (`from .db import ...`) ; `api/` et `tests/` importent depuis
+l'extérieur (`from pentron import db`, `from pentron.tools import ...`).
+
+Point d'entrée CLI exposé comme script console via `[project.scripts]`
+dans `pyproject.toml` (`pentron = "pentron.cli:main"`) — `uv sync`/
+`pip install -e .` installe la commande `pentron` directement. Le
+Dockerfile en profite : `CMD ["pentron"]` au lieu de
+`CMD ["python3", "pentron.py"]`.
+
+`api/main.py` n'a pas bougé (reste hors du package `pentron/`), donc sa
+résolution de `web/` via `Path(__file__).resolve().parent.parent` reste
+valide sans changement.
+
+Vérifié : `ruff format .` / `ruff check .` propres, tous les modules
+s'importent correctement (`pentron.cli`, `api.main`), `pytest tests/ -q`
+toujours 63/63, script console `pentron` confirmé généré dans `.venv`.
+
+**Option B (éclater `tools.py`) reste à faire** — sujet dédié à venir,
+pour discuter spécifiquement du pattern à utiliser (registre de plugins,
+un fichier par outil ou par groupe cohérent, etc.) avant de l'implémenter.
