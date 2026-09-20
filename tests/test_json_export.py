@@ -18,7 +18,6 @@ def _serialized_session():
         },
         "vulnerabilities": [{"vuln_name": "Missing header"}],
         "fixes": [],
-        "exploits": [],
         "suggestions": [],
         "tool_calls": [],
     }
@@ -29,7 +28,6 @@ def _database_session():
         "history": (7, "https://example.com", None, "done"),
         "vulns": [],
         "fixes": [],
-        "exploits": [],
         "summary": (
             1,
             7,

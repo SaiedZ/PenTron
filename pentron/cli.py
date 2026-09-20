@@ -11,17 +11,14 @@ import sys
 from .analysis_pipeline import analyse_and_save
 from .db import (
     create_session,
-    delete_exploit,
     delete_fix,
     delete_full_session,
     delete_vulnerability,
-    edit_exploit,
     edit_fix,
     edit_summary_risk,
     edit_vulnerability,
     get_all_history,
     get_connection,
-    get_exploits,
     get_fixes,
     get_session,
     get_settings,
@@ -363,13 +360,11 @@ def edit_delete_menu(sl_no: int):
         divider(f"EDIT / DELETE — SL# {sl_no}")
         print("  [1] Edit a vulnerability")
         print("  [2] Edit a fix")
-        print("  [3] Edit an exploit")
-        print("  [4] Edit risk level")
-        print("  [5] Delete a vulnerability")
-        print("  [6] Delete a fix")
-        print("  [7] Delete an exploit")
-        print("  [8] Delete FULL session (all tables)")
-        print("  [9] Back")
+        print("  [3] Edit risk level")
+        print("  [4] Delete a vulnerability")
+        print("  [5] Delete a fix")
+        print("  [6] Delete FULL session (all tables)")
+        print("  [7] Back")
         divider()
 
         choice = prompt("Choice: ")
@@ -414,29 +409,8 @@ def edit_delete_menu(sl_no: int):
             new_text = prompt("New fix text: ")
             edit_fix(int(fid), new_text)
 
-        # ── EDIT EXPLOIT ──────────────────────
-        elif choice == "3":
-            exploits = get_exploits(sl_no)
-            if not exploits:
-                warn("No exploits recorded for this session.")
-                continue
-
-            print("\n[ EXPLOITS ]")
-            for e in exploits:
-                print(f"  id={e[0]} | {e[2]} | tool: {e[3]} | result: {e[5]}")
-
-            eid = prompt("Enter exploit id to edit: ")
-            if not eid.isdigit():
-                error("Invalid id.")
-                continue
-
-            print("  Fields: exploit_name / tool_used / payload / result / notes")
-            field = prompt("Field to edit: ").strip()
-            value = prompt(f"New value for '{field}': ")
-            edit_exploit(int(eid), field, value)
-
         # ── EDIT RISK LEVEL ───────────────────
-        elif choice == "4":
+        elif choice == "3":
             print("  Options: CRITICAL / HIGH / MEDIUM / LOW")
             risk = prompt("New risk level: ").upper()
             if risk not in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
@@ -445,7 +419,7 @@ def edit_delete_menu(sl_no: int):
             edit_summary_risk(sl_no, risk)
 
         # ── DELETE VULNERABILITY ──────────────
-        elif choice == "5":
+        elif choice == "4":
             vulns = get_vulnerabilities(sl_no)
             if not vulns:
                 warn("No vulnerabilities to delete.")
@@ -464,7 +438,7 @@ def edit_delete_menu(sl_no: int):
                 delete_vulnerability(int(vid))
 
         # ── DELETE FIX ────────────────────────
-        elif choice == "6":
+        elif choice == "5":
             fixes = get_fixes(sl_no)
             if not fixes:
                 warn("No fixes to delete.")
@@ -482,27 +456,8 @@ def edit_delete_menu(sl_no: int):
             if confirm(f"Delete fix id={fid}?"):
                 delete_fix(int(fid))
 
-        # ── DELETE EXPLOIT ────────────────────
-        elif choice == "7":
-            exploits = get_exploits(sl_no)
-            if not exploits:
-                warn("No exploits to delete.")
-                continue
-
-            print("\n[ EXPLOITS ]")
-            for e in exploits:
-                print(f"  id={e[0]} | {e[2]} | result: {e[5]}")
-
-            eid = prompt("Enter exploit id to delete: ")
-            if not eid.isdigit():
-                error("Invalid id.")
-                continue
-
-            if confirm(f"Delete exploit id={eid}?"):
-                delete_exploit(int(eid))
-
         # ── DELETE FULL SESSION ───────────────
-        elif choice == "8":
+        elif choice == "6":
             if confirm(
                 f"\n\033[91mPermanently delete ENTIRE session SL# {sl_no} "
                 f"from all tables?\033[0m"
@@ -512,7 +467,7 @@ def edit_delete_menu(sl_no: int):
                 return  # go back to main menu
 
         # ── BACK ──────────────────────────────
-        elif choice == "9":
+        elif choice == "7":
             break
 
         else:

@@ -200,20 +200,6 @@
   {% endif %}
 </section>
 
-{% if session.exploits %}
-<section class="mt-8">
-  <p class="field-label mb-3">Legacy exploit records</p>
-  <div class="panel divide-y divide-[var(--border-soft)]">
-    {% for e in session.exploits %}
-    <div class="p-5">
-      <p class="font-medium text-slate-100">{{ e.exploit_name }}</p>
-      <p class="mt-1 text-sm text-slate-500">{{ e.notes or e.result }}</p>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
 </div>
 
 <aside>

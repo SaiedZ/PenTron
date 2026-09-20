@@ -199,47 +199,6 @@ def export_pdf(data: dict, output_dir: str) -> str:
         story.append(Paragraph("No fixes recorded.", body_style))
 
     story.append(Spacer(1, 6))
-    story.append(Paragraph("Exploits Attempted", h1_style))
-    story.append(
-        HRFlowable(
-            width="100%", thickness=0.5, color=colors.HexColor("#dddddd"), spaceAfter=6
-        )
-    )
-    if data["exploits"]:
-        ed = [["#", "Exploit", "Tool", "Result"]]
-        for e in data["exploits"]:
-            ed.append(
-                [
-                    str(e[0]),
-                    str(e[2] or "-")[:60],
-                    str(e[3] or "-")[:30],
-                    str(e[5] or "-")[:30],
-                ]
-            )
-        et = Table(ed, colWidths=[10 * mm, 80 * mm, 40 * mm, 28 * mm])
-        et.setStyle(
-            TableStyle(
-                [
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8),
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2c3e50")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                    ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#dddddd")),
-                    ("PADDING", (0, 0), (-1, -1), 5),
-                    (
-                        "ROWBACKGROUNDS",
-                        (0, 1),
-                        (-1, -1),
-                        [colors.HexColor("#f9f9f9"), colors.white],
-                    ),
-                ]
-            )
-        )
-        story.append(et)
-    else:
-        story.append(Paragraph("No exploits recorded.", body_style))
-
-    story.append(Spacer(1, 6))
     story.append(Paragraph("Suggested Exploit Paths", h1_style))
     if data.get("suggestions"):
         for suggestion in data["suggestions"]:

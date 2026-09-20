@@ -13,7 +13,6 @@ def _session_data():
         "history": (7, "example.com", None, "completed"),
         "vulns": [],
         "fixes": [],
-        "exploits": [],
         "summary": None,
         "suggestions": [],
         "tool_calls": [],
