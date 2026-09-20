@@ -9,8 +9,19 @@ llm.py already relies on for ask_ollama().
 
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import requests
+
+
+@dataclass(frozen=True)
+class ProviderResponse:
+    text: str
+    finish_reason: str = "unknown"
+    truncated: bool = False
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class BaseProvider(ABC):
@@ -21,8 +32,8 @@ class BaseProvider(ABC):
     @abstractmethod
     def send(
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> str:
-        """Return the assistant's text reply, or a '[!] ...' string on failure."""
+    ) -> ProviderResponse:
+        """Return text plus the provider's completion metadata."""
 
     @abstractmethod
     def list_models(self) -> list:
@@ -36,7 +47,7 @@ class OllamaProvider(BaseProvider):
 
     def send(
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> str:
+    ) -> ProviderResponse:
         try:
             payload = {
                 "model": self.model,
@@ -44,6 +55,7 @@ class OllamaProvider(BaseProvider):
                 "stream": False,
                 "options": {
                     "num_predict": max_tokens,
+                    "num_ctx": 16384,
                     "temperature": temperature,
                     "top_p": 0.9,
                 },
@@ -54,15 +66,20 @@ class OllamaProvider(BaseProvider):
             resp.raise_for_status()
             data = resp.json()
             response = data.get("message", {}).get("content", "").strip()
-            return response if response else "[!] Model returned empty response."
+            reason = data.get("done_reason", "unknown")
+            return ProviderResponse(
+                response or "[!] Model returned empty response.",
+                reason,
+                reason == "length",
+            )
         except requests.exceptions.ConnectionError:
-            return "[!] Cannot connect to Ollama. Is it running? Try: ollama serve"
+            return ProviderResponse("[!] Cannot connect to Ollama. Is it running?")
         except requests.exceptions.Timeout:
-            return "[!] Ollama timed out. Model may be loading, try again."
+            return ProviderResponse("[!] Ollama timed out.", "timeout", True)
         except requests.exceptions.HTTPError as e:
-            return f"[!] Ollama HTTP error: {e}"
+            return ProviderResponse(f"[!] Ollama HTTP error: {e}", "error")
         except Exception as e:
-            return f"[!] Unexpected error: {e}"
+            return ProviderResponse(f"[!] Unexpected error: {e}", "error")
 
     def list_models(self) -> list:
         try:
@@ -94,7 +111,7 @@ class OpenAIProvider(BaseProvider):
 
     def send(
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> str:
+    ) -> ProviderResponse:
         try:
             payload = {
                 "model": self.model,
@@ -110,14 +127,20 @@ class OpenAIProvider(BaseProvider):
             )
             resp.raise_for_status()
             data = resp.json()
-            content = data["choices"][0]["message"]["content"].strip()
-            return content if content else "[!] Model returned empty response."
+            choice = data["choices"][0]
+            content = choice["message"]["content"].strip()
+            reason = choice.get("finish_reason", "unknown")
+            return ProviderResponse(
+                content or "[!] Model returned empty response.",
+                reason,
+                reason == "length",
+            )
         except requests.exceptions.Timeout:
-            return "[!] OpenAI request timed out."
+            return ProviderResponse("[!] OpenAI request timed out.", "timeout", True)
         except requests.exceptions.HTTPError as e:
-            return f"[!] OpenAI HTTP error: {e}"
+            return ProviderResponse(f"[!] OpenAI HTTP error: {e}", "error")
         except Exception as e:
-            return f"[!] Unexpected error: {e}"
+            return ProviderResponse(f"[!] Unexpected error: {e}", "error")
 
     def list_models(self) -> list:
         try:
@@ -157,7 +180,7 @@ class AnthropicProvider(BaseProvider):
 
     def send(
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> str:
+    ) -> ProviderResponse:
         try:
             system_text, rest = self._split_system(messages)
             payload = {
@@ -178,13 +201,18 @@ class AnthropicProvider(BaseProvider):
             data = resp.json()
             blocks = data.get("content", [])
             text = "".join(b.get("text", "") for b in blocks).strip()
-            return text if text else "[!] Model returned empty response."
+            reason = data.get("stop_reason", "unknown")
+            return ProviderResponse(
+                text or "[!] Model returned empty response.",
+                reason,
+                reason == "max_tokens",
+            )
         except requests.exceptions.Timeout:
-            return "[!] Anthropic request timed out."
+            return ProviderResponse("[!] Anthropic request timed out.", "timeout", True)
         except requests.exceptions.HTTPError as e:
-            return f"[!] Anthropic HTTP error: {e}"
+            return ProviderResponse(f"[!] Anthropic HTTP error: {e}", "error")
         except Exception as e:
-            return f"[!] Unexpected error: {e}"
+            return ProviderResponse(f"[!] Unexpected error: {e}", "error")
 
     def list_models(self) -> list:
         try:
@@ -220,7 +248,7 @@ class GoogleProvider(BaseProvider):
 
     def send(
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> str:
+    ) -> ProviderResponse:
         try:
             system_text, contents = self._to_gemini_contents(messages)
             payload = {
@@ -239,15 +267,21 @@ class GoogleProvider(BaseProvider):
             resp = requests.post(url, json=payload, timeout=self.timeout)
             resp.raise_for_status()
             data = resp.json()
-            parts = data["candidates"][0]["content"]["parts"]
+            candidate = data["candidates"][0]
+            parts = candidate["content"]["parts"]
             text = "".join(p.get("text", "") for p in parts).strip()
-            return text if text else "[!] Model returned empty response."
+            reason = candidate.get("finishReason", "unknown")
+            return ProviderResponse(
+                text or "[!] Model returned empty response.",
+                reason,
+                reason == "MAX_TOKENS",
+            )
         except requests.exceptions.Timeout:
-            return "[!] Google request timed out."
+            return ProviderResponse("[!] Google request timed out.", "timeout", True)
         except requests.exceptions.HTTPError as e:
-            return f"[!] Google HTTP error: {e}"
+            return ProviderResponse(f"[!] Google HTTP error: {e}", "error")
         except Exception as e:
-            return f"[!] Unexpected error: {e}"
+            return ProviderResponse(f"[!] Unexpected error: {e}", "error")
 
     def list_models(self) -> list:
         try:

@@ -9,7 +9,7 @@ live progress into the api.jobs store instead of print()ing to a terminal.
 
 from api import jobs
 from pentron import db
-from pentron.llm import analyse_target
+from pentron.analysis_pipeline import analyse_and_save
 from pentron.providers import get_provider
 from pentron.tools import (
     discover_subdomains,
@@ -54,6 +54,13 @@ def _make_on_progress(sl_no: int):
             job = jobs.get_job(sl_no)
             existing = job.blocked_calls if job else []
             jobs.update_job(sl_no, blocked_calls=existing + [payload])
+        elif event == "saving_results":
+            jobs.update_job(
+                sl_no,
+                state="SAVING_RESULTS",
+                detail="saving results",
+                current_tool=None,
+            )
 
     return on_progress
 
@@ -98,11 +105,12 @@ def run_scan_job(
 
         if not raw_scan.strip():
             jobs.update_job(sl_no, state="FAILED", error="No scan data collected.")
-            db.delete_full_session(sl_no)
+            db.update_session_status(sl_no, "failed")
             return
 
         provider = get_provider()
-        result = analyse_target(
+        status, result, error = analyse_and_save(
+            sl_no,
             target,
             raw_scan,
             provider=provider,
@@ -110,37 +118,31 @@ def run_scan_job(
             allowed_subdomains=allowed_subdomains,
         )
 
-        jobs.update_job(sl_no, state="SAVING_RESULTS", detail="saving results")
-
-        for vuln in result["vulnerabilities"]:
-            vuln_id = db.save_vulnerability(
+        if status == "partial":
+            jobs.update_job(
                 sl_no,
-                vuln["vuln_name"],
-                vuln["severity"],
-                vuln["port"],
-                vuln["service"],
-                vuln["description"],
+                state="PARTIAL",
+                detail="AI analysis incomplete",
+                error=error,
+                current_tool=None,
+                round_num=None,
+                max_rounds=None,
             )
-            if vuln.get("fix"):
-                db.save_fix(sl_no, vuln_id, vuln["fix"], source="ai")
-
-        for exp in result["exploits"]:
-            db.save_exploit(
+        else:
+            assert result is not None
+            jobs.update_job(
                 sl_no,
-                exp["exploit_name"],
-                exp["tool_used"],
-                exp["payload"],
-                exp["result"],
-                exp["notes"],
+                state="DONE",
+                detail="complete",
+                risk_level=result["risk_level"],
+                current_tool=None,
+                round_num=None,
+                max_rounds=None,
             )
-
-        db.save_summary(
-            sl_no, result["raw_scan"], result["full_response"], result["risk_level"]
-        )
-
-        jobs.update_job(
-            sl_no, state="DONE", detail="complete", risk_level=result["risk_level"]
-        )
 
     except Exception as e:
+        try:
+            db.update_session_status(sl_no, "failed")
+        except Exception:
+            pass
         jobs.update_job(sl_no, state="FAILED", error=str(e))

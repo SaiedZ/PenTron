@@ -17,6 +17,7 @@ VALID_STATES = (
     "AI_ANALYSIS_ROUND",
     "SAVING_RESULTS",
     "DONE",
+    "PARTIAL",
     "FAILED",
 )
 
@@ -101,10 +102,12 @@ def resolve_status(sl_no: int):
     if not data["history"]:
         return None
     if data["summary"]:
+        persisted = (data["history"][3] or "").upper()
+        state = "PARTIAL" if persisted == "PARTIAL" else "DONE"
         return {
             "sl_no": sl_no,
-            "state": "DONE",
-            "detail": "",
+            "state": state,
+            "detail": data["summary"][8] or "",
             "current_tool": None,
             "planned_tools": [],
             "completed_tools": [],

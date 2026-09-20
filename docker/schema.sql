@@ -48,6 +48,29 @@ CREATE TABLE IF NOT EXISTS summary (
   ai_analysis  LONGTEXT,
   risk_level   VARCHAR(50),
   generated_at DATETIME,
+  short_summary TEXT,
+  analysis_status VARCHAR(50) DEFAULT 'complete',
+  analysis_error TEXT,
+  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+);
+
+CREATE TABLE IF NOT EXISTS exploit_suggestions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no INT,
+  name TEXT,
+  rationale TEXT,
+  tool TEXT,
+  safe_validation TEXT,
+  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+);
+
+CREATE TABLE IF NOT EXISTS ai_tool_calls (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sl_no INT,
+  call_type VARCHAR(20),
+  command TEXT,
+  result LONGTEXT,
+  blocked BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 

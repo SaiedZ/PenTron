@@ -1,6 +1,7 @@
 """PDF report generation (ReportLab)."""
 
 import datetime
+from html import escape
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -174,9 +175,10 @@ def export_pdf(data: dict, output_dir: str) -> str:
             lbl = ParagraphStyle(
                 "vl", fontSize=9, fontName="Helvetica-Bold", textColor=sc
             )
-            story.append(Paragraph(f"[{(v[3] or 'UNKNOWN').upper()}] {v[2]}", lbl))
+            label = escape(f"[{(v[3] or 'UNKNOWN').upper()}] {v[2]}")
+            story.append(Paragraph(label, lbl))
             if v[6]:
-                story.append(Paragraph(str(v[6]), body_style))
+                story.append(Paragraph(escape(str(v[6])), body_style))
             story.append(Spacer(1, 4))
     else:
         story.append(Paragraph("No vulnerabilities recorded.", body_style))
@@ -191,7 +193,7 @@ def export_pdf(data: dict, output_dir: str) -> str:
     if data["fixes"]:
         for f in data["fixes"]:
             story.append(Paragraph(f"Fix for vuln id={f[2]}:", body_style))
-            story.append(Paragraph(str(f[3] or "-"), code_style))
+            story.append(Paragraph(escape(str(f[3] or "-")), code_style))
             story.append(Spacer(1, 3))
     else:
         story.append(Paragraph("No fixes recorded.", body_style))
@@ -238,6 +240,25 @@ def export_pdf(data: dict, output_dir: str) -> str:
         story.append(Paragraph("No exploits recorded.", body_style))
 
     story.append(Spacer(1, 6))
+    story.append(Paragraph("Suggested Exploit Paths", h1_style))
+    if data.get("suggestions"):
+        for suggestion in data["suggestions"]:
+            story.append(Paragraph(escape(str(suggestion[2] or "-")), body_style))
+            story.append(Paragraph(escape(str(suggestion[3] or "")), body_style))
+    else:
+        story.append(Paragraph("None recorded.", body_style))
+
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("AI-dispatched Tool Calls", h1_style))
+    if data.get("tool_calls"):
+        for call in data["tool_calls"]:
+            state = "blocked" if call[5] else "executed"
+            text = escape(f"{call[2]}: {call[3]} ({state})")
+            story.append(Paragraph(text, code_style))
+    else:
+        story.append(Paragraph("None executed.", body_style))
+
+    story.append(Spacer(1, 6))
     story.append(Paragraph("AI Analysis Summary", h1_style))
     story.append(
         HRFlowable(
@@ -248,7 +269,7 @@ def export_pdf(data: dict, output_dir: str) -> str:
         for line in str(ai).split("\n"):
             line = line.strip()
             if line:
-                story.append(Paragraph(line, body_style))
+                story.append(Paragraph(escape(line), body_style))
                 story.append(Spacer(1, 2))
     else:
         story.append(Paragraph("No AI analysis recorded.", body_style))

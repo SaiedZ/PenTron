@@ -10,6 +10,8 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.templating import Jinja2Templates
+from markdown_it import MarkdownIt
+from markupsafe import Markup
 
 from api import jobs
 from api.serializers import history_to_dict, mask_api_key, session_to_dict
@@ -18,6 +20,14 @@ from pentron.tools import registry as tool_registry
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
+markdown = MarkdownIt("commonmark", {"html": False, "linkify": False})
+
+
+def render_safe_markdown(value: str) -> Markup:
+    return Markup(markdown.render(value or ""))
+
+
+templates.env.filters["safe_markdown"] = render_safe_markdown
 
 router = APIRouter(tags=["pages"])
 

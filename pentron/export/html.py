@@ -1,5 +1,9 @@
 """HTML report generation (standalone dark-themed single-file report)."""
 
+from html import escape
+
+from markdown_it import MarkdownIt
+
 from . import common
 
 
@@ -7,36 +11,72 @@ def export_html(data: dict, output_dir: str) -> str:
     sl, tgt, date, risk, ai = common.session_summary(data)
     rc = common.RISK_COLORS.get(risk.upper(), "#7f8c8d")
     filename = common.safe_filename(output_dir, sl, tgt, "html")
+    tgt, date, risk = escape(str(tgt)), escape(str(date)), escape(str(risk))
 
     vuln_rows = ""
     for v in data["vulns"]:
         sc = common.SEVERITY_COLORS.get((v[3] or "unknown").lower(), "#7f8c8d")
+        name, description = escape(str(v[2] or "")), escape(str(v[6] or ""))
+        severity = escape(str((v[3] or "unknown").upper()))
+        port, service = escape(str(v[4] or "-")), escape(str(v[5] or "-"))
         vuln_rows += (
             f"<tr><td>{v[0]}</td>"
-            f"<td><strong>{v[2]}</strong><br><small>{v[6] or ''}</small></td>"
+            f"<td><strong>{name}</strong><br><small>{description}</small></td>"
             f"<td><span style='color:{sc};font-weight:bold'>"
-            f"{(v[3] or 'unknown').upper()}</span></td>"
-            f"<td>{v[4] or '-'}</td><td>{v[5] or '-'}</td></tr>"
+            f"{severity}</span></td><td>{port}</td><td>{service}</td></tr>"
         )
 
     fix_rows = ""
     for f in data["fixes"]:
+        fix_text, source = escape(str(f[3] or "-")), escape(str(f[4] or "ai"))
         fix_rows += (
             f"<tr><td>{f[0]}</td><td>vuln #{f[2]}</td>"
-            f"<td><code>{f[3] or '-'}</code></td>"
-            f"<td>{f[4] or 'ai'}</td></tr>"
+            f"<td><code>{fix_text}</code></td><td>{source}</td></tr>"
         )
 
     exp_rows = ""
     for e in data["exploits"]:
+        name, tool = escape(str(e[2] or "-")), escape(str(e[3] or "-"))
+        payload = escape(str(e[4] or "-")[:80])
+        result = escape(str(e[5] or "-"))
         exp_rows += (
-            f"<tr><td>{e[0]}</td><td>{e[2] or '-'}</td>"
-            f"<td>{e[3] or '-'}</td>"
-            f"<td><code>{str(e[4] or '-')[:80]}</code></td>"
-            f"<td>{e[5] or '-'}</td></tr>"
+            f"<tr><td>{e[0]}</td><td>{name}</td><td>{tool}</td>"
+            f"<td><code>{payload}</code></td><td>{result}</td></tr>"
         )
 
-    ai_html = "".join(f"<p>{line}</p>" for line in str(ai).split("\n") if line.strip())
+    ai_html = MarkdownIt("commonmark", {"html": False, "linkify": False}).render(
+        str(ai)
+    )
+    suggestion_rows = "".join(
+        "<tr><td>"
+        + escape(str(row[2] or ""))
+        + "</td><td>"
+        + escape(str(row[3] or ""))
+        + "</td><td>"
+        + escape(str(row[4] or "-"))
+        + "</td></tr>"
+        for row in data.get("suggestions", [])
+    )
+    call_rows = "".join(
+        "<tr><td>"
+        + escape(str(row[2] or ""))
+        + "</td><td><code>"
+        + escape(str(row[3] or ""))
+        + "</code></td><td>"
+        + ("blocked" if row[5] else "executed")
+        + "</td></tr>"
+        for row in data.get("tool_calls", [])
+    )
+    suggestions_html = (
+        f"<table><tbody>{suggestion_rows}</tbody></table>"
+        if suggestion_rows
+        else '<p style="color:#888">None recorded.</p>'
+    )
+    calls_html = (
+        f"<table><tbody>{call_rows}</tbody></table>"
+        if call_rows
+        else '<p style="color:#888">None executed.</p>'
+    )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -146,6 +186,16 @@ a{{color:#555}}
   <div class="ai-box">
     {ai_html if ai_html else '<p style="color:#888">None recorded.</p>'}
   </div>
+</section>
+
+<section>
+  <h2>Suggested Exploit Paths</h2>
+  {suggestions_html}
+</section>
+
+<section>
+  <h2>AI-dispatched Tool Calls</h2>
+  {calls_html}
 </section>
 
 <div class="footer">

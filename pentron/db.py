@@ -45,6 +45,151 @@ def create_session(target: str) -> int:
     return sl_no
 
 
+def _ensure_analysis_schema(cursor) -> None:
+    """Idempotent upgrade path for analysis data added after initial release."""
+    cursor.execute(
+        "ALTER TABLE summary ADD COLUMN IF NOT EXISTS short_summary TEXT NULL"
+    )
+    cursor.execute(
+        "ALTER TABLE summary ADD COLUMN IF NOT EXISTS "
+        "analysis_status VARCHAR(50) DEFAULT 'complete'"
+    )
+    cursor.execute(
+        "ALTER TABLE summary ADD COLUMN IF NOT EXISTS analysis_error TEXT NULL"
+    )
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS exploit_suggestions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          sl_no INT, name TEXT, rationale TEXT, tool TEXT, safe_validation TEXT,
+          FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ai_tool_calls (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          sl_no INT, call_type VARCHAR(20), command TEXT, result LONGTEXT,
+          blocked BOOLEAN DEFAULT FALSE,
+          FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+        )
+    """)
+
+
+def update_session_status(sl_no: int, status: str) -> None:
+    if status not in {"active", "done", "partial", "failed"}:
+        raise ValueError(f"Invalid session status: {status}")
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("UPDATE history SET status = %s WHERE sl_no = %s", (status, sl_no))
+    conn.commit()
+    conn.close()
+
+
+def save_analysis_result(sl_no: int, result: dict) -> None:
+    """Persist one validated analysis and mark the session done atomically."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        _ensure_analysis_schema(c)
+        for vuln in result["vulnerabilities"]:
+            c.execute(
+                """INSERT INTO vulnerabilities
+                   (sl_no, vuln_name, severity, port, service, description)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (
+                    sl_no,
+                    vuln["vuln_name"],
+                    vuln["severity"],
+                    vuln["port"],
+                    vuln["service"],
+                    vuln["description"],
+                ),
+            )
+            if vuln.get("fix"):
+                c.execute(
+                    "INSERT INTO fixes (sl_no, vuln_id, fix_text, source) "
+                    "VALUES (%s, %s, %s, 'ai')",
+                    (sl_no, c.lastrowid, vuln["fix"]),
+                )
+        for suggestion in result["exploit_suggestions"]:
+            c.execute(
+                """INSERT INTO exploit_suggestions
+                   (sl_no, name, rationale, tool, safe_validation)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (
+                    sl_no,
+                    suggestion["name"],
+                    suggestion["rationale"],
+                    suggestion.get("tool", ""),
+                    suggestion.get("safe_validation", ""),
+                ),
+            )
+        _save_tool_calls(c, sl_no, result.get("tool_calls", []))
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            """INSERT INTO summary
+               (sl_no, raw_scan, ai_analysis, risk_level, generated_at,
+                short_summary, analysis_status, analysis_error)
+               VALUES (%s, %s, %s, %s, %s, %s, 'complete', NULL)""",
+            (
+                sl_no,
+                result["raw_scan"],
+                result["full_response"],
+                result["risk_level"],
+                now,
+                result["summary"],
+            ),
+        )
+        c.execute("UPDATE history SET status = 'done' WHERE sl_no = %s", (sl_no,))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _save_tool_calls(cursor, sl_no: int, calls: list) -> None:
+    for call in calls:
+        cursor.execute(
+            """INSERT INTO ai_tool_calls
+               (sl_no, call_type, command, result, blocked)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (
+                sl_no,
+                call["call_type"],
+                call["command"],
+                call["result"],
+                bool(call["blocked"]),
+            ),
+        )
+
+
+def save_partial_analysis(
+    sl_no: int, raw_scan: str, raw_response: str, error: str, tool_calls: list
+) -> None:
+    """Keep recon and diagnostics when the AI contract cannot be validated."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        _ensure_analysis_schema(c)
+        _save_tool_calls(c, sl_no, tool_calls)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute(
+            """INSERT INTO summary
+               (sl_no, raw_scan, ai_analysis, risk_level, generated_at,
+                short_summary, analysis_status, analysis_error)
+               VALUES (%s, %s, %s, 'UNKNOWN', %s, '', 'partial', %s)""",
+            (sl_no, raw_scan, raw_response, now, error),
+        )
+        c.execute("UPDATE history SET status = 'partial' WHERE sl_no = %s", (sl_no,))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def save_vulnerability(
     sl_no: int, vuln_name: str, severity: str, port: str, service: str, description: str
 ) -> int:
@@ -140,6 +285,7 @@ def get_session(sl_no: int) -> dict:
     conn = get_connection()
     c = conn.cursor()
 
+    _ensure_analysis_schema(c)
     c.execute("SELECT * FROM history WHERE sl_no = %s", (sl_no,))
     history = c.fetchone()
 
@@ -152,8 +298,18 @@ def get_session(sl_no: int) -> dict:
     c.execute("SELECT * FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
     exploits = c.fetchall()
 
-    c.execute("SELECT * FROM summary WHERE sl_no = %s", (sl_no,))
+    c.execute(
+        """SELECT id, sl_no, raw_scan, ai_analysis, risk_level, generated_at,
+                  short_summary, analysis_status, analysis_error
+           FROM summary WHERE sl_no = %s""",
+        (sl_no,),
+    )
     summary = c.fetchone()
+
+    c.execute("SELECT * FROM exploit_suggestions WHERE sl_no = %s", (sl_no,))
+    suggestions = c.fetchall()
+    c.execute("SELECT * FROM ai_tool_calls WHERE sl_no = %s", (sl_no,))
+    tool_calls = c.fetchall()
 
     conn.close()
 
@@ -163,6 +319,8 @@ def get_session(sl_no: int) -> dict:
         "fixes": fixes,
         "exploits": exploits,
         "summary": summary,
+        "suggestions": suggestions,
+        "tool_calls": tool_calls,
     }
 
 
@@ -295,7 +453,10 @@ def delete_full_session(sl_no: int):
     """
     conn = get_connection()
     c = conn.cursor()
+    _ensure_analysis_schema(c)
     c.execute("DELETE FROM fixes             WHERE sl_no = %s", (sl_no,))
+    c.execute("DELETE FROM ai_tool_calls      WHERE sl_no = %s", (sl_no,))
+    c.execute("DELETE FROM exploit_suggestions WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM vulnerabilities   WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM summary           WHERE sl_no = %s", (sl_no,))
@@ -449,11 +610,30 @@ def print_session(data: dict):
     else:
         print("  None recorded.")
 
+    print("\n[ SUGGESTED EXPLOIT PATHS ]")
+    if data.get("suggestions"):
+        for suggestion in data["suggestions"]:
+            print(f"  {suggestion[2]} | Tool: {suggestion[4] or '-'}")
+            print(f"           {suggestion[3]}")
+    else:
+        print("  None recorded.")
+
+    print("\n[ AI-DISPATCHED TOOL CALLS ]")
+    if data.get("tool_calls"):
+        for call in data["tool_calls"]:
+            state = "BLOCKED" if call[5] else "EXECUTED"
+            print(f"  [{state}] {call[2]}: {call[3]}")
+    else:
+        print("  None executed.")
+
     print("\n[ SUMMARY ]")
     if data["summary"]:
         s = data["summary"]
         print(f"  Risk Level : {s[4]}")
+        print(f"  Status     : {s[7] or 'complete'}")
         print(f"  Generated  : {s[5]}")
+        if s[6]:
+            print(f"  Summary    : {s[6]}")
         print(
             f"\n  AI Analysis:\n  {s[3][:500]}{'...' if len(str(s[3])) > 500 else ''}"
         )
