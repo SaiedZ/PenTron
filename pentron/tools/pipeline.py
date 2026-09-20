@@ -10,6 +10,7 @@ from .nikto import run_nikto
 from .nmap import run_nmap
 from .whatweb import run_whatweb
 from .whois import run_whois
+from .wpscan import run_wpscan, wordpress_detected
 
 
 def resolve_tool_plan(tool_keys) -> list:
@@ -116,9 +117,15 @@ def run_selected_tools(
 
     results = {}
     first_call = True
+    run_conditional_wpscan = False
     for key in tool_keys:
         spec = registry.get(key)
         if not spec:
+            continue
+        if spec.name == "wpscan":
+            # WPScan must run after the other selected tools, regardless of
+            # request order, because their output is its detection gate.
+            run_conditional_wpscan = True
             continue
         if not first_call and delay > 0:
             time.sleep(delay)
@@ -128,6 +135,19 @@ def run_selected_tools(
         results[spec.name] = spec.runner(target, user_agent)
         if on_progress:
             on_progress("tool_done", spec.name)
+
+    if run_conditional_wpscan:
+        if not first_call and delay > 0:
+            time.sleep(delay)
+        if on_progress:
+            on_progress("tool_start", "wpscan")
+        results["wpscan"] = run_wpscan(
+            target,
+            user_agent,
+            wordpress_is_detected=wordpress_detected(results),
+        )
+        if on_progress:
+            on_progress("tool_done", "wpscan")
     return results
 
 
