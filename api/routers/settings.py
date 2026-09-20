@@ -8,10 +8,10 @@ list installed Ollama models, and a basic reachability health check.
 import requests
 from fastapi import APIRouter, Depends
 
-import db
 from api.schemas import SettingsUpdateRequest
 from api.security import verify_token
 from api.serializers import mask_api_key
+from pentron import db
 
 router = APIRouter(
     prefix="/api", tags=["settings"], dependencies=[Depends(verify_token)]

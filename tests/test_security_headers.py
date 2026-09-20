@@ -5,7 +5,7 @@ standard security headers (HSTS, CSP, X-Frame-Options, ...). Absence is a
 common misconfiguration signal, not proof of a vulnerability by itself.
 """
 
-import tools
+from pentron import tools
 
 
 def test_all_headers_present_are_reported_present():

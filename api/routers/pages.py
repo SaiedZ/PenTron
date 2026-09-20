@@ -10,9 +10,9 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 
-import db
 from api import jobs
 from api.serializers import history_to_dict, mask_api_key, session_to_dict
+from pentron import db
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))

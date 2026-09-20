@@ -61,11 +61,11 @@ dev = [
     "mypy>=1.13",
 ]
 
-[tool.setuptools]
-py-modules = ["db", "llm", "pentron", "tools", "search", "export", "providers"]
+[project.scripts]
+pentron = "pentron.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["api", "api.*"]
+include = ["pentron", "pentron.*", "api", "api.*"]
 
 [tool.ruff]
 line-length = 88

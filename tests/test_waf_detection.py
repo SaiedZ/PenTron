@@ -4,7 +4,7 @@ color codes it always emits (even without a tty) so the report stays clean
 for both the terminal and the AI's context.
 """
 
-import tools
+from pentron import tools
 
 
 def test_ansi_color_codes_are_stripped(monkeypatch):

@@ -5,7 +5,7 @@ can't bounce recon requests onto localhost/cloud metadata/internal
 services and leak their headers into the AI's context.
 """
 
-import tools
+from pentron import tools
 
 
 def test_same_host_standard_port_redirect_is_followed(monkeypatch):
