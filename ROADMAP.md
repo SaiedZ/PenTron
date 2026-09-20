@@ -532,39 +532,43 @@ modèle local abliterated n'a pas de function-calling fiable.
 
 ### Plan par phases
 
-**Phase 0 — prérequis prioritaire : stocker la synthèse courte**
-- Ajouter une colonne dédiée `short_summary` dans la table `summary`, dans
-  `docker/schema.sql` pour les nouvelles installations et via une migration
-  idempotente (`ADD COLUMN IF NOT EXISTS`) pour les volumes existants.
-- Faire évoluer `db.save_summary()` et ses deux appelants (`pentron/cli.py` et
-  `api/scan_runner.py`) pour enregistrer explicitement `result["summary"]`,
-  déjà produit par `llm.parse_summary()`, en plus de `ai_analysis`.
-- Exposer ce champ dans `api/serializers.py::summary_to_dict()` et adapter tous
-  les consommateurs dont les index de tuples dépendent de l'ordre des colonnes.
-- Prévoir un repli pour les anciennes sessions dont `short_summary` est vide :
-  extraire `SUMMARY:` depuis `ai_analysis` si possible, sans lancer un nouvel
-  appel LLM. Ne jamais utiliser automatiquement toute `ai_analysis` comme
-  contexte de chat.
-- Ajouter les tests de parsing, d'enregistrement/sérialisation et de repli sur
-  une ancienne session. Cette phase doit être terminée avant le cœur du chat.
+**✅ Phase 0 — prérequis : stocker la synthèse courte — terminée**
+- La refonte du pipeline d'analyse structuré a ajouté `short_summary` au schéma
+  initial et à la migration idempotente des volumes existants.
+- `pentron/analysis_pipeline.py` et `db.save_analysis_result()` ont remplacé le
+  plan initial fondé sur `db.save_summary()` : CLI et Web partagent désormais
+  la même validation et la même sauvegarde transactionnelle.
+- Le champ est sérialisé par `api/serializers.py::summary_to_dict()` et affiché
+  sur la page de session.
+- Le développement du chat part d'une base neuve, sans anciennes sessions à
+  migrer : le fallback historique depuis une ligne `SUMMARY:` est donc hors
+  périmètre et ne sera pas implémenté en v1.
 
-**Phase 1 — backend, cœur partagé**
-- `pentron/chat.py` : `estimate_tokens()`, `build_seed_context(session_data)`
-  (fiche compacte plafonnée : cible/outils/risk_level/short_summary/inventaire
-  minimal des constats), `maybe_compress(history, provider, budget)` (résumé
-  façon `summarize_tool_output` au-delà du seuil, avec conservation des derniers
-  tours), `send_chat_message(history, seed, user_text, provider)`.
-- Budget v1 fixé en interne à 16 000 tokens, sans nouveau réglage Settings.
-- Prompt système dédié au chat : réponses dans la langue de l'utilisateur,
-  Markdown restreint, interdiction de prétendre avoir vu les sorties ou détails
-  qui ne figurent pas dans le contexte, et aucun dispatch `[TOOL:]/[SEARCH:]`.
+**🚧 Phase 1 — backend, cœur partagé — en cours**
+- ✅ `pentron/chat.py` créé avec budget interne de 16 000 tokens, réserve de
+  réponse de 2 000 tokens et estimation heuristique sans tokenizer externe.
+- ✅ `build_seed_context(session_data)` construit une fiche bornée à environ
+  2 000 tokens à partir de la cible, du niveau de risque, de `short_summary` et
+  de l'inventaire minimal des constats. `raw_scan`, `ai_analysis` et les
+  descriptions longues en sont explicitement exclus et couverts par les tests.
+- ✅ Prompt système dédié : langue de l'utilisateur, Markdown restreint,
+  transparence sur les informations absentes et interdiction de produire ou
+  déclencher `[TOOL:]` / `[SEARCH:]`.
+- ✅ Historique client normalisé : seuls les rôles `user` et `assistant` sont
+  conservés, les contenus sont nettoyés et plafonnés, les champs inattendus et
+  rôles privilégiés sont rejetés. Son coût est estimé avec un overhead par
+  message (`estimate_history_tokens()`).
+- ⏳ Restent `maybe_compress(history, provider, budget)` — résumé au-delà du
+  seuil avec conservation des derniers tours — puis
+  `send_chat_message(history, seed, user_text, provider)`.
+- Tests actuels : 32 tests dédiés au chat, suite complète à 100 tests réussis.
 
 **Phase 2 — endpoint API**
 - `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
   `{history, message}`, réponse `{reply, history}` (historique
   potentiellement compressé renvoyé pour resynchroniser le client).
-  Réutilise `get_provider()` existant, pas de nouvelle table ni de
-  changement dans `db.py`/`schemas.py`.
+  Réutilise `get_provider()` existant, sans nouvelle table ni changement dans
+  `db.py`. Ajouter les modèles Pydantic de requête/réponse dans `api/schemas.py`.
 
 **Phase 3 — IHM**
 - Bouton flottant + panel ajoutés dans `session_detail.html` uniquement.
@@ -595,9 +599,9 @@ modèle local abliterated n'a pas de function-calling fiable.
 - Discussion séparée sur l'ajout d'outils (`[TOOL:]/[SEARCH:]`) dans le
   chat, si le besoin se confirme à l'usage.
 
-Rien de tout cela n'est implémenté — développement à faire phase par
-phase, avec les mêmes vérifications que le reste du projet
-(`ruff format .`, `ruff check .`, `pytest tests/ -q`).
+La Phase 0 est terminée et la Phase 1 est en cours. Continuer phase par phase
+avec les mêmes vérifications que le reste du projet (`ruff format .`,
+`ruff check .`, `pytest tests/ -q`).
 
 ---
 

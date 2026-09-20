@@ -16,10 +16,11 @@ MAX_FINDING_NAME_CHARS = 200
 MAX_SEVERITY_CHARS = 50
 MAX_PORT_CHARS = 20
 MAX_SERVICE_CHARS = 100
-
 OMITTED_FINDINGS_NOTICE = "[Additional findings omitted due to context limit]"
-
 _TRUNCATION_SUFFIX = "…"
+ALLOWED_CHAT_ROLES = frozenset({"user", "assistant"})
+MAX_CHAT_MESSAGE_CHARS = 8_000
+CHAT_MESSAGE_OVERHEAD = 4
 
 CHAT_SYSTEM_PROMPT = """
 You are PenTron's session assistant.
@@ -180,3 +181,38 @@ def build_seed_context(
         seed_context = candidate
 
     return seed_context.rstrip()
+
+
+def normalize_history(history) -> list[dict[str, str]]:
+    """Return a safe copy of a client-provided conversation history."""
+    if not isinstance(history, list):
+        return []
+
+    normalized_history = []
+    for entry in history:
+        if not isinstance(entry, dict):
+            continue
+
+        role = entry.get("role")
+        content = entry.get("content")
+
+        if role not in ALLOWED_CHAT_ROLES or not isinstance(content, str):
+            continue
+
+        content = content.strip()
+        if not content:
+            continue
+
+        normalized_history.append(
+            {"role": role, "content": content[:MAX_CHAT_MESSAGE_CHARS]}
+        )
+
+    return normalized_history
+
+
+def estimate_history_tokens(history: list[dict[str, str]]) -> int:
+    """Estimate conversation tokens, including per-message structure."""
+    return sum(
+        estimate_tokens(message["content"]) + CHAT_MESSAGE_OVERHEAD
+        for message in normalize_history(history)
+    )
