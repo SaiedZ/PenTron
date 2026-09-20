@@ -40,7 +40,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 - 🤖 **Multi-provider AI** — Ollama (local, offline, default), OpenAI, Anthropic, or Google, switchable from the Settings screen with no restart
 - ✅ **Validated AI reports** — large recon outputs are condensed per tool and final assessments are validated as structured data; malformed or truncated responses are preserved as partial scans instead of false successes
 - 📊 **Readable, traceable results** — short summary, safely rendered Markdown report, severity distribution, structured findings and fixes, suggested exploit paths, and separately logged AI-dispatched tool calls
-- 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection)
+- 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection), and opt-in conditional WPScan
 - 🌐 **Web Search** — DuckDuckGo search + CVE lookup (no API key needed)
 - 🗄️ **MariaDB Backend** — full scan history with linked tables, shared between the web UI and the CLI
 - ✏️ **Edit / Delete** — modify any saved result from either interface
@@ -319,7 +319,8 @@ or
   [8] testssl.sh
   [9] wafw00f
   [10] robots/security.txt
-  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, robots/security.txt)
+  [11] wpscan (only after another selected tool detects WordPress)
+  [a] Run all (except nikto, sslscan, testssl.sh, wafw00f, robots/security.txt, wpscan)
   [n] Run all + nikto (slow)
 ```
 
@@ -409,7 +410,7 @@ This tool is intended for **educational purposes and authorized penetration test
 - Unauthorized scanning or exploitation of systems is **illegal**.
 - The author is not responsible for any misuse of this tool.
 - A domain that resolves to a private/loopback/internal address is refused automatically (see Features) — if you're intentionally testing your own local network, enter the IP address directly rather than a hostname.
-- **Detection only, by design — there is no "safe mode" toggle because there is no unsafe mode to disable.** `ALLOWED_TOOLS` contains only recon/fingerprinting tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl, wafw00f) — no exploitation framework (no Metasploit, sqlmap, hydra, etc.) is ever invoked. The `EXPLOIT:` entries you see in a session's results are the AI's own text suggestions parsed from its analysis — proposed exploit ideas for a human to review, never executed against the target.
+- **Detection only, by design — there is no "safe mode" toggle because there is no unsafe mode to disable.** `ALLOWED_TOOLS` contains only recon/fingerprinting tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl, wafw00f) — no exploitation framework (no Metasploit, sqlmap, hydra, etc.) is ever invoked. WPScan is never AI-dispatchable: its opt-in command is fixed to passive enumeration of vulnerable plugins and themes (`vp,vt`), runs only after WordPress evidence, and includes no user or credential options. The `EXPLOIT:` entries you see in a session's results are the AI's own text suggestions parsed from its analysis — proposed exploit ideas for a human to review, never executed against the target.
 
 ---
 

@@ -62,15 +62,6 @@ Statut : à décider après retour d'usage de la v1.
 
 La v1 du chat reste volontairement conversationnelle et sans outils.
 
-### WPScan conditionnel
-
-Statut : à discuter avant implémentation.
-
-- Ne l'activer que si WordPress a été détecté.
-- Limiter l'analyse aux plugins et thèmes vulnérables.
-- Interdire l'énumération d'utilisateurs et toute tentative de connexion ou de
-  bruteforce.
-
 ### Nuclei avec templates figés
 
 Statut : faible priorité.

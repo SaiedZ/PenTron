@@ -31,6 +31,7 @@ from . import (  # noqa: F401
     waf,
     whatweb,
     whois,
+    wpscan,
 )
 from .dig import run_dig  # noqa: F401
 from .dispatch import run_tool_by_command
@@ -47,6 +48,7 @@ from .robots_security_txt import run_robots_and_security_txt  # noqa: F401
 from .safety import check_target_safety
 from .subdomains import discover_subdomains
 from .waf import run_waf_detect  # noqa: F401
+from .wpscan import run_wpscan, wordpress_detected  # noqa: F401
 
 TOOLS_MENU = {spec.key: (spec.name, spec.runner) for spec in all_tools().values()}
 ALLOWED_TOOLS = allowed_commands()
@@ -66,4 +68,6 @@ __all__ = [
     "run_single_tool",
     "run_tool_by_command",
     "run_waf_detect",
+    "run_wpscan",
+    "wordpress_detected",
 ]
