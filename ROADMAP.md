@@ -567,17 +567,21 @@ modèle local abliterated n'a pas de function-calling fiable.
   converties en `ChatProviderError` sans produire d'historique partiel.
 - Tests actuels : 52 tests dédiés au chat, suite complète à 120 tests réussis.
 
-**🚧 Phase 2 — endpoint API — en cours**
+**✅ Phase 2 — endpoint API — terminée**
 - ✅ Modèles Pydantic `ChatMessage`, `ChatRequest` et `ChatResponse` ajoutés
   dans `api/schemas.py`. Les rôles sont limités à `user`/`assistant`, les
   contenus et le nombre de messages sont bornés, et les chaînes vides sont
   rejetées (18 tests dédiés).
-- ⏳ Créer `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
+- ✅ `api/routers/chat.py` expose `POST /api/scans/{sl_no}/chat`, body
   `{history, message}`, réponse `{reply, history}` (historique
   potentiellement compressé renvoyé pour resynchroniser le client).
-  Réutilise `get_provider()` existant, sans nouvelle table ni changement dans
-  `db.py`, puis enregistrer le router dans `api/main.py`.
-- Suite complète actuelle : 138 tests réussis.
+  L'endpoint charge et sérialise la session, construit son contexte borné,
+  réutilise `get_provider()` et traduit les erreurs du provider en HTTP 502.
+  Une session inconnue renvoie HTTP 404. Le router est enregistré dans
+  `api/main.py`, sans nouvelle table ni changement dans `db.py`.
+- ✅ 4 tests dédiés couvrent le chemin nominal, la session absente, l'erreur
+  provider et l'enregistrement de la route.
+- Suite complète actuelle : 142 tests réussis.
 
 **Phase 3 — IHM**
 - Bouton flottant + panel ajoutés dans `session_detail.html` uniquement.
@@ -608,7 +612,7 @@ modèle local abliterated n'a pas de function-calling fiable.
 - Discussion séparée sur l'ajout d'outils (`[TOOL:]/[SEARCH:]`) dans le
   chat, si le besoin se confirme à l'usage.
 
-Les Phases 0 et 1 sont terminées. Continuer phase par phase
+Les Phases 0, 1 et 2 sont terminées. Continuer phase par phase
 avec les mêmes vérifications que le reste du projet (`ruff format .`,
 `ruff check .`, `pytest tests/ -q`).
 

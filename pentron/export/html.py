@@ -120,7 +120,7 @@ a{{color:#555}}
 <div class="container">
 
 <div class="header">
-  <h1>🔱 PENTRON</h1>
+  <h1>🥷🏼 PENTRON</h1>
   <p>AI Penetration Testing Report</p>
 </div>
 
