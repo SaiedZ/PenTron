@@ -32,17 +32,17 @@ templates.env.filters["safe_markdown"] = render_safe_markdown
 router = APIRouter(tags=["pages"])
 
 TOOL_DESCRIPTIONS = {
-    "nmap": "Port and service discovery",
-    "whois": "Domain registration lookup",
-    "whatweb": "Web technology fingerprinting",
-    "curl headers": "HTTP headers and banner grab",
-    "dig DNS": "DNS record enumeration",
-    "nikto": "Web server vulnerability scan",
-    "sslscan": "TLS and cipher configuration",
-    "testssl.sh": "Deep TLS security analysis",
-    "wafw00f": "Web application firewall detection",
-    "robots/security.txt": "robots.txt and security.txt discovery",
-    "wpscan": "Conditional vulnerable WordPress plugins/themes only",
+    "nmap": "Scans the target for open ports and running services",
+    "whois": "Looks up who owns the domain and when it was registered",
+    "whatweb": "Identifies the CMS, frameworks and technologies powering the site",
+    "curl headers": "Reads HTTP response headers for server/version clues",
+    "dig DNS": "Lists the domain's DNS records (mail servers, subdomains, etc.)",
+    "nikto": "Scans the web server for known vulnerabilities and misconfigurations",
+    "sslscan": "Checks which HTTPS/TLS versions and ciphers the server accepts",
+    "testssl.sh": "In-depth HTTPS/TLS audit: certificates, ciphers, known weaknesses",
+    "wafw00f": "Detects whether a web application firewall is protecting the site",
+    "robots/security.txt": "Checks robots.txt/security.txt for hidden paths, contacts",
+    "wpscan": "Checks WordPress plugins/themes for known flaws (if WordPress detected)",
 }
 
 
