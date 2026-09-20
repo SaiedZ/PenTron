@@ -37,29 +37,34 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 
 ## ✨ Features
 
+- 🔒 **Detection only, no exploitation** — allowed tools are limited to reconnaissance and fingerprinting; suggested exploit paths remain proposals for human review and are never executed automatically
 - 🖥️ **Web ops console** — Overview homepage, dedicated New Scan workspace, live progress, history management, and report downloads
 - 🤖 **Multi-provider AI** — Ollama (local, offline, default), OpenAI, Anthropic, or Google, switchable from the Settings screen with no restart
-- ✅ **Validated AI reports** — large recon outputs are condensed per tool and final assessments are validated as structured data; malformed or truncated responses are preserved as partial scans instead of false successes
-- 📊 **Readable, traceable results** — short summary, safely rendered Markdown report, severity distribution, structured findings and fixes, suggested exploit paths, and separately logged AI-dispatched tool calls
 - 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection), and opt-in conditional WPScan
 - 🌐 **Web Search** — DuckDuckGo search + CVE lookup (no API key needed)
 - 🗄️ **MariaDB Backend** — full scan history with linked tables, shared between the web UI and the CLI
+- ✅ **Validated AI reports** — large recon outputs are condensed per tool and final assessments are validated as structured data; malformed or truncated responses are preserved as partial scans instead of false successes
+- 📊 **Readable, traceable results** — short summary, safely rendered Markdown report, severity distribution, structured findings and fixes, suggested exploit paths, and separately logged AI-dispatched tool calls
 - ✏️ **Edit / Delete** — modify saved vulnerabilities, fixes, and the risk level from either interface
 - 💬 **Contextual AI chat (web only)** — ask follow-up questions about a specific scan session; the AI answers from that session's findings and summary only (not the raw recon output), with older turns automatically summarized once the conversation grows long
 - 🔁 **Agentic Loop** — AI can request more tool runs mid-analysis
 - 📤 **Export Reports** — PDF and HTML from either interface; the web UI also offers JSON (optionally including raw scan data)
-- 🛡️ **Scoped tool dispatch** — every `[TOOL:]` call the AI issues must have *every* positional argument match the operator-declared target; anything else (a pivot to another host, or a second target smuggled alongside the real one) is blocked and reported, not silently run
-- ⏱️ **Rate limiting + retries** — optional delay between recon tools (Settings screen, default off) plus a single automatic retry on timeout for network-flaky tools (whois, curl headers, dig)
-- 🪪 **Configurable User-Agent** — override the HTTP User-Agent for curl/whatweb/nikto from the Settings screen; a fixed value applied to every scan, not randomized
 - 🌐 **Subdomain discovery (3 levels)** — disabled (default) / passive (crt.sh, informative only) / active (crt.sh + subfinder, discovered subdomains become scannable) — set from the Settings screen
 - 📧 **SPF/DMARC/DKIM checks** — dig now flags missing email-security DNS records (spoofing/phishing risk), not just the raw A/MX/NS/TXT dump
 - 🧱 **WAF detection (wafw00f)** — checks both http and https for a Web Application Firewall in front of the target, opt-in (custom tool selection)
 - 📄 **robots.txt / security.txt check** — fetches both files (RFC 9116 path + legacy fallback) to spot leaked paths and check for a documented vulnerability-disclosure process
 - 🔐 **HTTP security header analysis** — flags HSTS/CSP/X-Frame-Options/X-Content-Type-Options/Referrer-Policy/Permissions-Policy as present or missing on both http and https
-- 🔒 **Detection only, no exploitation** — allowed tools are limited to reconnaissance and fingerprinting; suggested exploit paths remain proposals for human review and are never executed automatically
+- 🪪 **Configurable User-Agent** — override the HTTP User-Agent for curl/whatweb/nikto from the Settings screen; a fixed value applied to every scan, not randomized
+
+---
+
+## 🛡️ Security & safeguards
+
+- 🛡️ **Scoped tool dispatch** — every `[TOOL:]` call the AI issues must have *every* positional argument match the operator-declared target; anything else (a pivot to another host, or a second target smuggled alongside the real one) is blocked and reported, not silently run
 - 🔒 **SSRF-guarded recon** — header fetches don't blindly follow redirects onto localhost/internal services/cloud metadata, including same-host redirects to a different, non-standard port
 - 🧭 **Pre-flight target check** — before any recon runs, a domain that resolves to a private/loopback/internal address is refused outright (its DNS could have been changed to redirect scans onto your own infrastructure); a literal IP typed directly by the operator is always allowed
 - ✅ **CVE citation check** — a CVE the AI cites but that never appeared in the actual scan data is flagged `[UNVERIFIED CVE]` instead of trusted at face value
+- ⏱️ **Rate limiting + retries** — optional delay between recon tools (Settings screen, default off) plus a single automatic retry on timeout for network-flaky tools (whois, curl headers, dig)
 
 ---
 
@@ -165,7 +170,7 @@ docker exec pentron-ollama ollama list
 
 > **Windows:** this whole stack runs fine on Windows too — install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (WSL2 backend) and run the same `docker compose up -d` from PowerShell or a WSL shell. The recon tools (nmap, nikto, etc.) run inside the Linux container regardless of host OS, so there's nothing extra to install natively. This is also the easiest way to run PenTron if your machine doesn't have the RAM/disk for a local Ollama model — point `OLLAMA_HOST` at a remote Ollama instance, or use a hosted provider (OpenAI/Anthropic/Google) from the Settings screen instead.
 
-> PenTron works on CPU by default. If you have a compatible NVIDIA GPU, see [Optional NVIDIA GPU acceleration](#optional-nvidia-gpu-acceleration) before running your first scan.
+> PenTron works on CPU by default. If you have a compatible NVIDIA GPU, see [Optional NVIDIA GPU acceleration](docs/gpu.md) before running your first scan.
 
 ### Starting and stopping PenTron later
 
@@ -236,17 +241,7 @@ Ollama runs on CPU by default so the stack works out of the box on any machine. 
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d ollama
 ```
 
-Requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed on the host.
-
-> ⚠️ **Include `-f docker-compose.gpu.yml` on every `docker compose up` after this**, not just the first time — Compose reconciles services from whatever files you pass *that invocation*, so a plain `docker compose up -d` (without the GPU file) will silently recreate `ollama` back to CPU-only, even if GPU was active before. Rebuilding or restarting the `web` service specifically does not affect `ollama`, so it's safe on its own — it's a bare `docker compose up`/`up web`/etc. *without* `-f docker-compose.gpu.yml` that resets it.
->
-> To avoid typing both `-f` flags every time, drop a `.env` file in the project root with:
-> ```
-> COMPOSE_FILE=docker-compose.yml;docker-compose.gpu.yml
-> ```
-> (use `:` instead of `;` as the separator on Linux/macOS). Docker Compose reads this automatically, so a plain `docker compose up -d` will always include the GPU overlay.
->
-> The Settings screen shows a **live, read-only** GPU status badge (queried from Ollama, not a toggle) — it can only report "unknown" if no model is currently loaded into Ollama to check.
+Requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed on the host. See the [GPU setup guide](docs/gpu.md) for keeping the overlay active across restarts and checking GPU status.
 
 ### Troubleshooting Ollama
 
@@ -365,24 +360,7 @@ PenTron/
 
 ## 🗃️ Database Schema
 
-Seven tables, six of them linked by `sl_no` (session number) from the `history` table; `settings` is a standalone single-row table for runtime configuration. Source of truth: [`docker/schema.sql`](docker/schema.sql) — update this diagram if it drifts.
-
-```
-history              ← one row per scan session (sl_no is the spine)
-    │
-    ├── vulnerabilities   ← vulns found, linked by sl_no
-    │       │
-    │       └── fixes     ← fixes per vuln, linked by vuln_id + sl_no
-    │
-    ├── exploit_suggestions ← AI-proposed exploit ideas (name/rationale/tool/safe validation), linked by sl_no
-    │
-    ├── ai_tool_calls      ← every AI-dispatched [TOOL:]/[SEARCH:] call, blocked or not, linked by sl_no
-    │
-    └── summary           ← full AI analysis dump, linked by sl_no
-
-settings              ← single row: active provider, model, timeouts, API key
-                         (read/written from both the web UI and the CLI Settings screen)
-```
+Seven tables, six of them linked by `sl_no` (session number) from the `history` table; `settings` is a standalone single-row table for runtime configuration. See the [architecture guide](docs/architecture.md) for the full table diagram (source of truth: [`docker/schema.sql`](docker/schema.sql)).
 
 ---
 
