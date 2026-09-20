@@ -544,7 +544,7 @@ modèle local abliterated n'a pas de function-calling fiable.
   migrer : le fallback historique depuis une ligne `SUMMARY:` est donc hors
   périmètre et ne sera pas implémenté en v1.
 
-**🚧 Phase 1 — backend, cœur partagé — en cours**
+**✅ Phase 1 — backend, cœur partagé — terminée**
 - ✅ `pentron/chat.py` créé avec budget interne de 16 000 tokens, réserve de
   réponse de 2 000 tokens et estimation heuristique sans tokenizer externe.
 - ✅ `build_seed_context(session_data)` construit une fiche bornée à environ
@@ -561,8 +561,11 @@ modèle local abliterated n'a pas de function-calling fiable.
 - ✅ `maybe_compress()` résume les anciens messages au-delà du seuil de 75 %,
   tient compte du contexte fixe et de la réserve de réponse, conserve les six
   derniers messages et garde l'historique intact si le provider échoue.
-- ⏳ Reste `send_chat_message(history, seed, user_text, provider)`.
-- Tests actuels : 42 tests dédiés au chat, suite complète à 110 tests réussis.
+- ✅ `send_chat_message()` valide le nouveau message, assemble le prompt et la
+  fiche de session, compresse au besoin, appelle le provider puis renvoie la
+  réponse et l'historique client resynchronisé. Les erreurs provider sont
+  converties en `ChatProviderError` sans produire d'historique partiel.
+- Tests actuels : 52 tests dédiés au chat, suite complète à 120 tests réussis.
 
 **Phase 2 — endpoint API**
 - `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body
@@ -600,7 +603,7 @@ modèle local abliterated n'a pas de function-calling fiable.
 - Discussion séparée sur l'ajout d'outils (`[TOOL:]/[SEARCH:]`) dans le
   chat, si le besoin se confirme à l'usage.
 
-La Phase 0 est terminée et la Phase 1 est en cours. Continuer phase par phase
+Les Phases 0 et 1 sont terminées. Continuer phase par phase
 avec les mêmes vérifications que le reste du projet (`ruff format .`,
 `ruff check .`, `pytest tests/ -q`).
 
