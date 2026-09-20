@@ -11,8 +11,6 @@ from .nmap import run_nmap
 from .whatweb import run_whatweb
 from .whois import run_whois
 
-_DEFAULT_RECON_TOOL_NAMES = ["nmap", "whois", "whatweb", "curl headers", "dig"]
-
 
 def resolve_tool_plan(tool_keys) -> list:
     """
@@ -22,9 +20,9 @@ def resolve_tool_plan(tool_keys) -> list:
     finding out what's left to run as each tool starts.
     """
     if tool_keys == "a":
-        return list(_DEFAULT_RECON_TOOL_NAMES)
+        return registry.default_tool_names()
     if tool_keys == "n":
-        return list(_DEFAULT_RECON_TOOL_NAMES) + ["nikto"]
+        return registry.default_tool_names() + ["nikto"]
     return [spec.name for key in tool_keys if (spec := registry.get(key))]
 
 
@@ -62,6 +60,11 @@ def run_default_recon(
             on_progress("tool_done", name)
         return output
 
+    # Kept explicit (not looped over registry.default_tool_names()) since
+    # each call needs its own dict key/print — "curl_headers" here vs.
+    # "curl headers" as the registry's display name, notably. Must stay the
+    # same 5 tools as the default=True set in nmap.py/whois.py/whatweb.py/
+    # http_headers.py/dig.py.
     results = {}
     results["nmap"] = _run("nmap", run_nmap)
     results["whois"] = _run("whois", run_whois)

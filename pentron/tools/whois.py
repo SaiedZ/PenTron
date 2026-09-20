@@ -2,7 +2,7 @@ from . import base
 from .registry import register_tool
 
 
-@register_tool(key="2", name="whois", command_name="whois")
+@register_tool(key="2", name="whois", command_name="whois", default=True)
 def run_whois(target: str, user_agent: str = None) -> str:
     """
     whois — domain registration, registrar, IP ownership info

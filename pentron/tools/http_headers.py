@@ -109,7 +109,7 @@ def _analyze_security_headers(headers_text: str) -> str:
     return "\n".join(lines)
 
 
-@register_tool(key="4", name="curl headers", command_name="curl")
+@register_tool(key="4", name="curl headers", command_name="curl", default=True)
 def run_curl_headers(target: str, user_agent: str = None) -> str:
     """
     curl -sI — fetch HTTP headers only
