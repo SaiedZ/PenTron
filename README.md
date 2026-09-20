@@ -84,23 +84,50 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 ## 🖥️ Screenshots
 
-### CLI
+### Terminal CLI
+
+#### Interactive main menu
 
 <p align="center">
   <img width="736" height="347" alt="image" src="https://github.com/user-attachments/assets/056328f0-49c7-4dd1-9297-daabe3e736ee" />
   <br><i>Main Menu</i>
 </p>
 
+#### Recon tools running
+
 <p align="center">
   <img width="748" height="724" alt="image" src="https://github.com/user-attachments/assets/a14c147d-d349-4086-a0ef-81b6c0c68cdb" />
   <br><i>Recon tools running on target</i>
 </p>
 
-### GUI
+### Web UI
+
+#### New scan configuration
+
+<p align="center">
+  <!-- Add the New Scan configuration <img> here. -->
+  <br><i>New scan configuration — target definition, recon tool selection, subdomain discovery, and live command preview.</i>
+</p>
+
+#### Live scan progress
 
 <p align="center">
   <img width="1269" height="716" alt="image" src="https://github.com/user-attachments/assets/f64b4c42-fa0c-4a01-ae10-2f10dc28600a" />
   <br><i>Live scan progress — real-time recon tracking, tool-by-tool execution, and automatic transition to AI analysis.</i>
+</p>
+
+#### Structured scan results
+
+<p align="center">
+  <!-- Add the structured scan results <img> here. -->
+  <br><i>Structured scan results — validated risk level, severity distribution, findings, remediation guidance, and traceable AI analysis.</i>
+</p>
+
+#### Contextual AI chat
+
+<p align="center">
+  <!-- Add the contextual AI chat <img> here once the feature is available. -->
+  <br><i>Contextual AI chat — discuss a scan and its findings using a concise, session-specific security context.</i>
 </p>
 
 ---
