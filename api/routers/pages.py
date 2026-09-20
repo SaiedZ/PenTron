@@ -20,7 +20,7 @@ from pentron.tools import registry as tool_registry
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
-markdown = MarkdownIt("commonmark", {"html": False, "linkify": False})
+markdown = MarkdownIt("commonmark", {"html": False, "linkify": False}).enable("table")
 
 
 def render_safe_markdown(value: str) -> Markup:

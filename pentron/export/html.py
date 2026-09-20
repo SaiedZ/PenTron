@@ -44,8 +44,10 @@ def export_html(data: dict, output_dir: str) -> str:
             f"<td><code>{payload}</code></td><td>{result}</td></tr>"
         )
 
-    ai_html = MarkdownIt("commonmark", {"html": False, "linkify": False}).render(
-        str(ai)
+    ai_html = (
+        MarkdownIt("commonmark", {"html": False, "linkify": False})
+        .enable("table")
+        .render(str(ai))
     )
     suggestion_rows = "".join(
         "<tr><td>"

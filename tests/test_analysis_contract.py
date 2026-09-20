@@ -76,3 +76,18 @@ def test_markdown_renderer_disables_raw_html_and_unsafe_links():
     assert "<h2>Safe</h2>" in rendered
     assert "<script>" not in rendered
     assert 'href="javascript:' not in rendered
+
+
+def test_markdown_renderer_supports_tables():
+    rendered = str(
+        render_safe_markdown(
+            "| Attribute | Value |\n"
+            "|---|---|\n"
+            "| Host | example.test |\n"
+            "| IP | 192.0.2.1 |"
+        )
+    )
+
+    assert "<table>" in rendered
+    assert "<th>Attribute</th>" in rendered
+    assert "<td>example.test</td>" in rendered
