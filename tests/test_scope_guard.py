@@ -17,9 +17,9 @@ from pentron import tools
 
 @pytest.fixture(autouse=True)
 def _clear_resolved_ips_cache():
-    tools._resolved_ips.cache_clear()
+    tools.dispatch._resolved_ips.cache_clear()
     yield
-    tools._resolved_ips.cache_clear()
+    tools.dispatch._resolved_ips.cache_clear()
 
 
 def _capture_execution(monkeypatch):
@@ -27,7 +27,7 @@ def _capture_execution(monkeypatch):
     a call, nothing should ever land here."""
     calls = []
     monkeypatch.setattr(
-        tools, "run_tool", lambda parts, **kw: calls.append(parts) or "OK"
+        tools.base, "run_tool", lambda parts, **kw: calls.append(parts) or "OK"
     )
     return calls
 

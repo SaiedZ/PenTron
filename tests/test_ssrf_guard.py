@@ -6,6 +6,7 @@ services and leak their headers into the AI's context.
 """
 
 from pentron import tools
+from pentron.tools import http_headers
 
 
 def test_same_host_standard_port_redirect_is_followed(monkeypatch):
@@ -15,8 +16,8 @@ def test_same_host_standard_port_redirect_is_followed(monkeypatch):
             "HTTP/2 200\nserver: nginx",
         ]
     )
-    monkeypatch.setattr(tools, "run_tool", lambda *a, **kw: next(responses))
-    result = tools._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
+    monkeypatch.setattr(tools.base, "run_tool", lambda *a, **kw: next(responses))
+    result = http_headers._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
     assert "Followed same-host redirect" in result
     assert "200" in result
 
@@ -28,18 +29,18 @@ def test_same_host_relative_redirect_is_followed(monkeypatch):
             "HTTP/1.1 200 OK\nserver: nginx",
         ]
     )
-    monkeypatch.setattr(tools, "run_tool", lambda *a, **kw: next(responses))
-    result = tools._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
+    monkeypatch.setattr(tools.base, "run_tool", lambda *a, **kw: next(responses))
+    result = http_headers._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
     assert "Followed same-host redirect" in result
 
 
 def test_cross_host_redirect_is_blocked_not_followed(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         lambda *a, **kw: "HTTP/1.1 302 Found\nLocation: https://evil.com/steal",
     )
-    result = tools._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
+    result = http_headers._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
     assert "Redirect to different host blocked" in result
     assert "evil.com" in result
 
@@ -49,19 +50,19 @@ def test_same_host_nonstandard_port_redirect_is_blocked(monkeypatch):
     # (an internal Ollama instance) — same hostname, but not a normal
     # same-site redirect, so it must NOT be auto-followed.
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         lambda *a, **kw: "HTTP/1.1 302 Found\nLocation: http://127.0.0.1:11434/",
     )
-    result = tools._fetch_headers_guarded("http://127.0.0.1", "127.0.0.1")
+    result = http_headers._fetch_headers_guarded("http://127.0.0.1", "127.0.0.1")
     assert "Redirect to different host blocked" in result
 
 
 def test_no_redirect_header_returns_response_unchanged(monkeypatch):
     monkeypatch.setattr(
-        tools, "run_tool", lambda *a, **kw: "HTTP/1.1 200 OK\nserver: nginx"
+        tools.base, "run_tool", lambda *a, **kw: "HTTP/1.1 200 OK\nserver: nginx"
     )
-    result = tools._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
+    result = http_headers._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
     assert result == "HTTP/1.1 200 OK\nserver: nginx"
 
 
@@ -72,6 +73,6 @@ def test_target_match_is_case_insensitive(monkeypatch):
             "HTTP/2 200\nserver: nginx",
         ]
     )
-    monkeypatch.setattr(tools, "run_tool", lambda *a, **kw: next(responses))
-    result = tools._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
+    monkeypatch.setattr(tools.base, "run_tool", lambda *a, **kw: next(responses))
+    result = http_headers._fetch_headers_guarded("http://clubs.ma", "clubs.ma")
     assert "Followed same-host redirect" in result
