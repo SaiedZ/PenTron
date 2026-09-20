@@ -98,6 +98,10 @@
           <p class="mt-1.5 text-xs font-mono text-slate-500">Port {{ v.port or "-" }} · {{ v.service or "-" }}</p>
         </div>
         <div class="flex shrink-0 gap-3 text-sm">
+          <button type="button" class="chat-finding-btn text-cyan-400 hover:text-cyan-300"
+            data-finding-name="{{ v.vuln_name }}" data-finding-severity="{{ v.severity or 'unknown' }}"
+            data-finding-port="{{ v.port or '-' }}" data-finding-service="{{ v.service or '-' }}"
+            data-finding-description="{{ v.description or '' }}">Discuss this finding</button>
           <button onclick="toggleEdit('vuln-{{ v.id }}')" class="text-cyan-400 hover:text-cyan-300">Edit</button>
           <button onclick="confirmAndDelete('/api/vulnerabilities/{{ v.id }}', 'Delete this vulnerability?')"
             class="text-slate-500 hover:text-red-400">Delete</button>
@@ -252,4 +256,39 @@
 </aside>
 
 </div>
+
+<button id="chat-toggle-btn" type="button" class="chat-toggle"
+  aria-label="Open session assistant" aria-expanded="false" aria-controls="chat-panel">
+  <span aria-hidden="true">🥷🏼</span>
+</button>
+
+<section id="chat-panel" class="chat-panel" data-session-id="{{ sl_no }}" hidden
+  aria-label="Session assistant">
+  <header class="chat-panel-header">
+    <div>
+      <p class="font-mono text-xs uppercase tracking-[0.14em] text-slate-300">Session assistant</p>
+      <p class="mt-1 text-[11px] text-slate-500">Context limited to this scan</p>
+    </div>
+    <button id="chat-close-btn" type="button" class="chat-panel-close" aria-label="Close session assistant">×</button>
+  </header>
+
+  <div id="chat-messages" class="chat-messages" aria-live="polite">
+    <div class="chat-notice">
+      I know the compact session summary and finding inventory, but not raw outputs or long details.
+      The local model uses an approximately 16,000-token context. With a cloud provider, messages and
+      the compact session context are sent to that provider.
+    </div>
+  </div>
+
+  <p id="chat-error" class="chat-error" role="alert" hidden></p>
+  <form id="chat-form" class="chat-panel-form">
+    <textarea id="chat-input" rows="2" maxlength="8000" required
+      placeholder="Ask about this session…" aria-label="Message"></textarea>
+    <button id="chat-send-btn" type="submit" class="chat-panel-send" aria-label="Send message">→</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/session-chat.js"></script>
 {% endblock %}
