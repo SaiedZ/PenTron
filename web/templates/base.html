@@ -11,6 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body class="h-full min-h-screen antialiased" data-page="{% block page_id %}{% endblock %}">
+  {% set current_path = request.url.path %}
   <div class="console-texture"></div>
   <div class="console-scanlines"></div>
 
@@ -24,10 +25,18 @@
         PENTRON
       </a>
       <nav class="hidden items-center gap-8 text-sm text-slate-400 md:flex">
-        <a href="/" data-nav="home" class="nav-link hover:text-slate-100">Overview</a>
-        <a href="/new-scan" data-nav="new-scan" class="nav-link hover:text-slate-100">New Scan</a>
-        <a href="/history" data-nav="history" class="nav-link hover:text-slate-100">History</a>
-        <a href="/settings" data-nav="settings" class="nav-link hover:text-slate-100">Settings</a>
+        <a href="/" data-nav="home"
+          class="nav-link hover:text-slate-100{% if current_path == '/' %} active{% endif %}"
+          {% if current_path == '/' %}aria-current="page"{% endif %}>Overview</a>
+        <a href="/new-scan" data-nav="new-scan"
+          class="nav-link hover:text-slate-100{% if current_path == '/new-scan' or current_path.startswith('/scans/') %} active{% endif %}"
+          {% if current_path == '/new-scan' or current_path.startswith('/scans/') %}aria-current="page"{% endif %}>New Scan</a>
+        <a href="/history" data-nav="history"
+          class="nav-link hover:text-slate-100{% if current_path.startswith('/history') %} active{% endif %}"
+          {% if current_path.startswith('/history') %}aria-current="page"{% endif %}>History</a>
+        <a href="/settings" data-nav="settings"
+          class="nav-link hover:text-slate-100{% if current_path.startswith('/settings') %} active{% endif %}"
+          {% if current_path.startswith('/settings') %}aria-current="page"{% endif %}>Settings</a>
       </nav>
       <a href="/new-scan" class="btn-primary hidden text-xs sm:inline-flex">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
