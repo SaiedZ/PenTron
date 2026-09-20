@@ -264,10 +264,7 @@ souci de synchro CLI/web déjà noté dans `CLAUDE.md`.
 
 ### Autres points secondaires
 
-- `export.py` : `export_pdf()` et `export_html()` sont deux générateurs
-  indépendants avec du HTML/CSS inline conséquent — candidats à un
-  découpage `export/pdf.py` + `export/html.py` (+ template HTML
-  externalisé plutôt qu'en f-string géante).
+- ✅ `export.py` — **découpé**, voir plus bas.
 - `providers.py` : 4 classes de provider dans un fichier — pas urgent
   (chacune est courte et le pattern `BaseProvider` est déjà propre), mais
   un `providers/` avec un fichier par provider serait cohérent avec le
@@ -405,8 +402,45 @@ Vérifié : rendu réel de la page via `TestClient` dans le conteneur
 rebuild (DB réelle) — mêmes 5 outils cochés par défaut, même contenu
 JSON pour les presets qu'avant.
 
+### ✅ `export.py` → package `pentron/export/` — implémenté
+
+Même schéma que `tools.py` (Option B) : un fichier par génération de
+rapport + les bouts partagés extraits une fois pour toutes, au lieu de
+dupliqués :
+
+- `common.py` — `SEVERITY_COLORS`/`RISK_COLORS` + deux helpers qui
+  étaient copiés-collés à l'identique dans `export_pdf` ET `export_html` :
+  `safe_filename()` (construction du nom de fichier `pentron_SL<n>_<target>.<ext>`)
+  et `session_summary()` (extraction `sl/target/date/risk/ai` depuis
+  `data["history"]`/`data["summary"]`).
+- `pdf.py` — `export_pdf()` (ReportLab), inchangé sauf pour passer par
+  `common.*`.
+- `html.py` — `export_html()` (le gros f-string HTML/CSS), inchangé pour
+  la même raison. L'externalisation du template HTML (évoquée comme
+  piste secondaire) n'a **pas** été faite — décision séparée si voulue un
+  jour, pas la même portée qu'un découpage de fichiers.
+- `menu.py` — `export_menu()` (menu interactif CLI, print/input).
+- `__init__.py` — réexporte `export_pdf`/`export_html`/`export_menu`,
+  donc `api/routers/exports.py` (`from pentron.export import
+  export_html, export_pdf`) et `pentron/cli.py` (`from .export import
+  export_menu`) n'ont rien eu à changer.
+- `__main__.py` — l'ancien bloc `if __name__ == "__main__":` du script
+  autonome (liste les sessions en DB, exporte celle choisie), maintenant
+  lancable via `python -m pentron.export`.
+
+Pas de registre à décorateur ici (contrairement à `tools/`) : seulement
+deux générateurs fixes (PDF/HTML), pas une liste ouverte d'unités
+interchangeables — un registre aurait été de l'abstraction sans un
+second cas d'usage pour la justifier.
+
+Vérifié : `ruff`/`pytest` propres (63/63, aucun test dédié à `export.py`
+n'existait), rebuild Docker `--no-cache`, génération réelle d'un PDF et
+d'un HTML avec des données synthétiques dans le conteneur (tailles de
+fichier non nulles, contenu du HTML vérifié — cible/risque/vuln présents),
+`pentron.cli`/`api.main` importés avec succès.
+
 **Refactor d'architecture : tout ce qui était planifié est maintenant fait**
-(Option A, Option B, et le point de friction web qu'elles avaient mis en
-évidence). Points secondaires notés plus haut (`export.py` en
-`export/pdf.py`+`export/html.py`, `providers.py` en package) restent des
-pistes non actées, pas un chantier en cours.
+(Option A, Option B, le point de friction web, et `export.py`). Seul
+point secondaire restant, non actée : `providers.py` (4 classes de
+provider dans un fichier) en package `providers/` un fichier par
+provider — pas urgent, chacune est déjà courte et propre.
