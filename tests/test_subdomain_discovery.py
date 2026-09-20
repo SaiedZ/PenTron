@@ -27,8 +27,8 @@ def test_level_0_is_disabled_and_never_calls_out(monkeypatch):
     def _boom(*a, **kw):
         raise AssertionError("level 0 must not make any network call")
 
-    monkeypatch.setattr(tools.requests, "get", _boom)
-    monkeypatch.setattr(tools, "run_tool", _boom)
+    monkeypatch.setattr(tools.subdomains.requests, "get", _boom)
+    monkeypatch.setattr(tools.base, "run_tool", _boom)
 
     text, allowed = tools.discover_subdomains("clubs.ma", 0)
     assert text == ""
@@ -37,7 +37,7 @@ def test_level_0_is_disabled_and_never_calls_out(monkeypatch):
 
 def test_level_1_passive_queries_crtsh_only(monkeypatch):
     monkeypatch.setattr(
-        tools.requests,
+        tools.subdomains.requests,
         "get",
         lambda *a, **kw: _FakeResponse(
             [
@@ -47,7 +47,7 @@ def test_level_1_passive_queries_crtsh_only(monkeypatch):
         ),
     )
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         lambda *a, **kw: (_ for _ in ()).throw(
             AssertionError("level 1 must not run subfinder")
@@ -66,12 +66,12 @@ def test_level_1_passive_queries_crtsh_only(monkeypatch):
 
 def test_level_2_active_merges_sources_and_widens_scope(monkeypatch):
     monkeypatch.setattr(
-        tools.requests,
+        tools.subdomains.requests,
         "get",
         lambda *a, **kw: _FakeResponse([{"name_value": "mail.clubs.ma"}]),
     )
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         lambda command, **kw: "mail.clubs.ma\nstaging.clubs.ma\n",
     )
@@ -83,7 +83,9 @@ def test_level_2_active_merges_sources_and_widens_scope(monkeypatch):
 
 
 def test_no_results_is_reported_not_silently_empty(monkeypatch):
-    monkeypatch.setattr(tools.requests, "get", lambda *a, **kw: _FakeResponse([]))
+    monkeypatch.setattr(
+        tools.subdomains.requests, "get", lambda *a, **kw: _FakeResponse([])
+    )
     text, allowed = tools.discover_subdomains("clubs.ma", 1)
     assert "none found" in text
     assert allowed == frozenset()
@@ -93,7 +95,7 @@ def test_crtsh_failure_degrades_to_empty_not_a_crash(monkeypatch):
     def _raise(*a, **kw):
         raise Exception("network error")
 
-    monkeypatch.setattr(tools.requests, "get", _raise)
+    monkeypatch.setattr(tools.subdomains.requests, "get", _raise)
     text, allowed = tools.discover_subdomains("clubs.ma", 1)
     assert "none found" in text
     assert allowed == frozenset()
@@ -101,12 +103,12 @@ def test_crtsh_failure_degrades_to_empty_not_a_crash(monkeypatch):
 
 def test_subfinder_failure_falls_back_to_passive_results_only(monkeypatch):
     monkeypatch.setattr(
-        tools.requests,
+        tools.subdomains.requests,
         "get",
         lambda *a, **kw: _FakeResponse([{"name_value": "mail.clubs.ma"}]),
     )
     monkeypatch.setattr(
-        tools, "run_tool", lambda *a, **kw: "[!] Tool not found: subfinder"
+        tools.base, "run_tool", lambda *a, **kw: "[!] Tool not found: subfinder"
     )
 
     text, allowed = tools.discover_subdomains("clubs.ma", 2)

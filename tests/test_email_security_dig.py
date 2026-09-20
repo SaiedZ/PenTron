@@ -20,7 +20,7 @@ def _fake_run_tool(responses):
 
 def test_spf_and_dmarc_present_are_reported_as_present(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         _fake_run_tool(
             {
@@ -37,7 +37,7 @@ def test_spf_and_dmarc_present_are_reported_as_present(monkeypatch):
 
 def test_spf_and_dmarc_absent_are_flagged_missing(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         _fake_run_tool(
             {
@@ -54,7 +54,7 @@ def test_spf_and_dmarc_absent_are_flagged_missing(monkeypatch):
 
 def test_dkim_found_under_default_selector(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         _fake_run_tool(
             {
@@ -70,7 +70,7 @@ def test_dkim_found_under_default_selector(monkeypatch):
 
 def test_dkim_absent_under_default_selector_notes_other_selectors_possible(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         _fake_run_tool(
             {
@@ -87,7 +87,7 @@ def test_dkim_absent_under_default_selector_notes_other_selectors_possible(monke
 
 def test_dkim_lookup_error_is_treated_as_not_found_not_a_crash(monkeypatch):
     monkeypatch.setattr(
-        tools,
+        tools.base,
         "run_tool",
         _fake_run_tool(
             {
