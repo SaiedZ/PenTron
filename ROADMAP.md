@@ -6,19 +6,7 @@ l'historique Git.
 
 ## Priorité recommandée
 
-### 1. Export JSON et journalisation structurée
-
-Statut : à cadrer.
-
-- Définir un schéma JSON versionné pour une session complète.
-- Exclure ou rendre optionnelles les sorties brutes potentiellement sensibles.
-- Ajouter un endpoint d'export et son action dans la page de session.
-- Couvrir la compatibilité du format par des tests.
-
-Décision attendue : contenu exact de l'export et inclusion éventuelle de
-`raw_scan`.
-
-### 2. Découverte prudente de répertoires et fichiers
+### 1. Découverte prudente de répertoires et fichiers
 
 Statut : à discuter avant implémentation.
 
@@ -36,7 +24,7 @@ et peut provoquer du rate-limiting ou affecter une cible fragile.
 
 Décision attendue : choix de l'outil, wordlist, cadence et activation manuelle.
 
-### 3. Enregistrer le provider et le modèle par session
+### 2. Enregistrer le provider et le modèle par session
 
 Statut : non implémenté.
 
