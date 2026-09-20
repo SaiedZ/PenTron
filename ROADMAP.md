@@ -558,10 +558,11 @@ modèle local abliterated n'a pas de function-calling fiable.
   conservés, les contenus sont nettoyés et plafonnés, les champs inattendus et
   rôles privilégiés sont rejetés. Son coût est estimé avec un overhead par
   message (`estimate_history_tokens()`).
-- ⏳ Restent `maybe_compress(history, provider, budget)` — résumé au-delà du
-  seuil avec conservation des derniers tours — puis
-  `send_chat_message(history, seed, user_text, provider)`.
-- Tests actuels : 32 tests dédiés au chat, suite complète à 100 tests réussis.
+- ✅ `maybe_compress()` résume les anciens messages au-delà du seuil de 75 %,
+  tient compte du contexte fixe et de la réserve de réponse, conserve les six
+  derniers messages et garde l'historique intact si le provider échoue.
+- ⏳ Reste `send_chat_message(history, seed, user_text, provider)`.
+- Tests actuels : 42 tests dédiés au chat, suite complète à 110 tests réussis.
 
 **Phase 2 — endpoint API**
 - `api/routers/chat.py` : `POST /api/scans/{sl_no}/chat`, body

@@ -1,6 +1,9 @@
 from pentron.chat import (
+    CHAT_COMPRESSION_MAX_TOKENS,
     CHAT_MESSAGE_OVERHEAD,
+    CHAT_RECENT_MESSAGES,
     CHAT_SYSTEM_PROMPT,
+    CONVERSATION_SUMMARY_PREFIX,
     MAX_CHAT_MESSAGE_CHARS,
     OMITTED_FINDINGS_NOTICE,
     _append_if_value,
@@ -9,8 +12,23 @@ from pentron.chat import (
     build_seed_context,
     estimate_history_tokens,
     estimate_tokens,
+    maybe_compress,
     normalize_history,
 )
+from pentron.providers import ProviderResponse
+
+
+class FakeProvider:
+    def __init__(self, response="Summary of older messages.", error=None):
+        self.response = response
+        self.error = error
+        self.calls = []
+
+    def send(self, messages, **kwargs):
+        self.calls.append((messages, kwargs))
+        if self.error:
+            raise self.error
+        return ProviderResponse(self.response)
 
 
 def test_estimate_tokens():
@@ -432,3 +450,134 @@ def test_estimate_history_tokens_safely_normalizes_malformed_history():
 
     assert estimate_history_tokens(history) == 1 + CHAT_MESSAGE_OVERHEAD
     assert estimate_history_tokens(None) == 0
+
+
+def _long_history(count=8):
+    return [
+        {
+            "role": "user" if index % 2 == 0 else "assistant",
+            "content": f"message-{index}-" + "x" * 40,
+        }
+        for index in range(count)
+    ]
+
+
+def test_maybe_compress_normalizes_history_below_threshold():
+    provider = FakeProvider()
+    history = [
+        {"role": "user", "content": "  Hello  ", "extra": True},
+        {"role": "system", "content": "ignored"},
+    ]
+
+    result = maybe_compress(history, provider, budget=1_000, response_reserve=0)
+
+    assert result == [{"role": "user", "content": "Hello"}]
+    assert provider.calls == []
+
+
+def test_maybe_compress_does_not_call_provider_below_threshold():
+    provider = FakeProvider()
+
+    result = maybe_compress(
+        _long_history(), provider, budget=10_000, response_reserve=0
+    )
+
+    assert result == _long_history()
+    assert provider.calls == []
+
+
+def test_maybe_compress_summarizes_old_and_preserves_recent_messages():
+    provider = FakeProvider("Confirmed facts and one unresolved question.")
+    history = _long_history()
+
+    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    assert len(provider.calls) == 1
+    assert result[0] == {
+        "role": "assistant",
+        "content": (
+            CONVERSATION_SUMMARY_PREFIX + "Confirmed facts and one unresolved question."
+        ),
+    }
+    assert result[1:] == history[-CHAT_RECENT_MESSAGES:]
+    assert history[0]["content"] not in str(result)
+    assert history[1]["content"] not in str(result)
+
+
+def test_maybe_compress_uses_expected_provider_parameters_and_transcript():
+    provider = FakeProvider()
+    history = _long_history()
+
+    maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    messages, kwargs = provider.calls[0]
+    assert messages[0]["role"] == "system"
+    assert "Do not invent" in messages[0]["content"]
+    assert "USER: message-0-" in messages[1]["content"]
+    assert "ASSISTANT: message-1-" in messages[1]["content"]
+    assert kwargs == {
+        "max_tokens": CHAT_COMPRESSION_MAX_TOKENS,
+        "temperature": 0.2,
+    }
+
+
+def test_maybe_compress_counts_fixed_context_toward_threshold():
+    provider = FakeProvider()
+    history = _long_history()
+
+    maybe_compress(
+        history,
+        provider,
+        fixed_context="x" * 400,
+        budget=200,
+        response_reserve=0,
+    )
+
+    assert len(provider.calls) == 1
+
+
+def test_maybe_compress_requires_messages_older_than_recent_window():
+    provider = FakeProvider()
+    history = _long_history(CHAT_RECENT_MESSAGES)
+
+    result = maybe_compress(history, provider, budget=1, response_reserve=1)
+
+    assert result == history
+    assert provider.calls == []
+
+
+def test_maybe_compress_keeps_history_on_empty_provider_response():
+    provider = FakeProvider("   ")
+    history = _long_history()
+
+    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    assert result == history
+
+
+def test_maybe_compress_keeps_history_on_provider_error_response():
+    provider = FakeProvider("[!] Provider unavailable")
+    history = _long_history()
+
+    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    assert result == history
+
+
+def test_maybe_compress_keeps_history_when_provider_raises():
+    provider = FakeProvider(error=RuntimeError("boom"))
+    history = _long_history()
+
+    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    assert result == history
+
+
+def test_maybe_compress_does_not_mutate_original_history():
+    provider = FakeProvider()
+    history = _long_history()
+    original = [message.copy() for message in history]
+
+    maybe_compress(history, provider, budget=100, response_reserve=10)
+
+    assert history == original
