@@ -85,7 +85,7 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 #### New scan configuration
 
 <p align="center">
-  <!-- Add the New Scan configuration <img> here. -->
+  <img width="1147" height="931" alt="image" src="https://github.com/user-attachments/assets/4c0eae8e-ca77-46f1-8575-079379b40a1a" />
   <br><i>New scan configuration — target definition, recon tool selection, subdomain discovery, and live command preview.</i>
 </p>
 
