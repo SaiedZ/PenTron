@@ -47,6 +47,12 @@
     if (open) input.focus();
   }
 
+  function autoGrowInput() {
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+  }
+  input.addEventListener("input", autoGrowInput);
+
   function showError(text) {
     error.textContent = text;
     error.hidden = !text;
@@ -269,6 +275,7 @@
         "Service: " + d.findingService,
         "Description: " + d.findingDescription,
       ].join("\n");
+      autoGrowInput();
       setOpen(true);
     });
   });
@@ -279,6 +286,7 @@
     if (!text || send.disabled) return;
     showError("");
     input.value = "";
+    autoGrowInput();
     appendMessage({ role: "user", content: text });
     setThinking(true);
     send.disabled = true;
@@ -294,6 +302,7 @@
     } catch (requestError) {
       showError("Message not sent: " + requestError.message);
       input.value = text;
+      autoGrowInput();
     } finally {
       setThinking(false);
       send.disabled = false;
