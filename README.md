@@ -106,7 +106,7 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 #### Contextual AI chat
 
 <p align="center">
-  <!-- Add the contextual AI chat <img> here. -->
+  <img width="1402" height="689" alt="image" src="https://github.com/user-attachments/assets/c52d3b3b-b814-4f35-8942-5aed6b6e10ed" />
   <br><i>Contextual AI chat — ask follow-up questions about a session's findings, backed by a concise, session-specific security context (not the raw recon output).</i>
 </p>
 
