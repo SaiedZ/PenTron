@@ -27,10 +27,10 @@
 You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
 Two ways to drive it:
-- **Web UI** — an ops-console homepage plus dedicated New Scan, live progress, history, report, and provider-settings screens.
-- **Terminal CLI** — an interactive menu in the same spirit as the original (New Scan / History / Settings), kept at full feature parity with the web UI rather than left as a legacy fallback.
+- **Web UI** — an ops-console homepage plus dedicated New Scan, live progress, history, report, and provider-settings screens. Also the only interface with the contextual AI chat and JSON export.
+- **Terminal CLI** — an interactive menu in the same spirit as the original (New Scan / History / Settings).
 
-Both talk to the exact same recon/AI/database engine, so scan history is shared between them.
+Both interfaces share the same scanning, AI, and database engine, so scan history is shared between them — but they aren't full feature parity: the contextual chat and JSON export are web-only for now.
 
 ---
 
@@ -43,9 +43,10 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 - 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection), and opt-in conditional WPScan
 - 🌐 **Web Search** — DuckDuckGo search + CVE lookup (no API key needed)
 - 🗄️ **MariaDB Backend** — full scan history with linked tables, shared between the web UI and the CLI
-- ✏️ **Edit / Delete** — modify any saved result from either interface
+- ✏️ **Edit / Delete** — modify saved vulnerabilities, fixes, and the risk level from either interface
+- 💬 **Contextual AI chat (web only)** — ask follow-up questions about a specific scan session; the AI answers from that session's findings and summary only (not the raw recon output), with older turns automatically summarized once the conversation grows long
 - 🔁 **Agentic Loop** — AI can request more tool runs mid-analysis
-- 📤 **Export Reports** — PDF and HTML, downloadable straight from the web UI or via the CLI
+- 📤 **Export Reports** — PDF and HTML from either interface; the web UI also offers JSON (optionally including raw scan data)
 - 🛡️ **Scoped tool dispatch** — every `[TOOL:]` call the AI issues must have *every* positional argument match the operator-declared target; anything else (a pivot to another host, or a second target smuggled alongside the real one) is blocked and reported, not silently run
 - ⏱️ **Rate limiting + retries** — optional delay between recon tools (Settings screen, default off) plus a single automatic retry on timeout for network-flaky tools (whois, curl headers, dig)
 - 🪪 **Configurable User-Agent** — override the HTTP User-Agent for curl/whatweb/nikto from the Settings screen; a fixed value applied to every scan, not randomized
@@ -105,8 +106,8 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 #### Contextual AI chat
 
 <p align="center">
-  <!-- Add the contextual AI chat <img> here once the feature is available. -->
-  <br><i>Contextual AI chat — discuss a scan and its findings using a concise, session-specific security context.</i>
+  <!-- Add the contextual AI chat <img> here. -->
+  <br><i>Contextual AI chat — ask follow-up questions about a session's findings, backed by a concise, session-specific security context (not the raw recon output).</i>
 </p>
 
 ---
@@ -284,7 +285,7 @@ recon tools, Ollama, MariaDB, and the native web UI.
 1. Open `http://localhost:8000` (or wherever `uvicorn api.main:app` is listening for a native install). The **Overview** homepage introduces the recon-to-report workflow and provides shortcuts to the main screens.
 2. Open **New Scan** (`/new-scan`), enter an authorized target, choose a preset or custom set of recon tools, select the subdomain-discovery level, and review the live command preview before submitting.
 3. You're redirected to a live progress page that polls automatically — a step tracker (Recon → AI Analysis → Saving → Done), a checklist of planned vs. completed recon tools, then AI analysis round N of 9, plus anything the scope/SSRF guards blocked along the way.
-4. Once done, jump to the session's detail page: vulnerabilities, fixes, and exploit attempts, each editable or deletable inline, plus **Download PDF** / **Download HTML** buttons.
+4. Once done, jump to the session's detail page: vulnerabilities and fixes, each editable or deletable inline; a contextual AI chat to ask follow-up questions about that session's findings; and **Download PDF** / **Download HTML** / **Download JSON** buttons (JSON can optionally include the raw scan data).
 5. **History** lists every past session (shared with the CLI); **Settings** configures the AI provider/model, timeouts, and shows live GPU status. The persistent navigation links Overview, New Scan, History, and Settings.
 
 ### Terminal CLI
@@ -337,7 +338,7 @@ Enter one or more tool numbers separated by spaces (for example, `1 2 4`), or us
 
 **7. Use View History to reopen and manage a session.**
 
-Enter a session's SL# to view it, or press **Enter** to go back. From a session you can export PDF, HTML, or both; edit vulnerabilities, fixes, exploit suggestions, and the risk level; delete individual results; or delete the full session. Destructive actions require confirmation.
+Enter a session's SL# to view it, or press **Enter** to go back. From a session you can export PDF, HTML, or both; edit vulnerabilities, fixes, and the risk level; delete individual results; or delete the full session. Destructive actions require confirmation.
 
 ---
 
@@ -362,7 +363,7 @@ PenTron/
 
 ## 🗃️ Database Schema
 
-Six tables, five of them linked by `sl_no` (session number) from the `history` table; `settings` is a standalone single-row table for runtime configuration:
+Seven tables, six of them linked by `sl_no` (session number) from the `history` table; `settings` is a standalone single-row table for runtime configuration. Source of truth: [`docker/schema.sql`](docker/schema.sql) — update this diagram if it drifts.
 
 ```
 history              ← one row per scan session (sl_no is the spine)
@@ -371,12 +372,14 @@ history              ← one row per scan session (sl_no is the spine)
     │       │
     │       └── fixes     ← fixes per vuln, linked by vuln_id + sl_no
     │
-    ├── exploits_attempted ← exploits tried, linked by sl_no
+    ├── exploit_suggestions ← AI-proposed exploit ideas (name/rationale/tool/safe validation), linked by sl_no
+    │
+    ├── ai_tool_calls      ← every AI-dispatched [TOOL:]/[SEARCH:] call, blocked or not, linked by sl_no
     │
     └── summary           ← full AI analysis dump, linked by sl_no
 
 settings              ← single row: active provider, model, timeouts, API key
-                         (read/written by the web UI's Settings screen)
+                         (read/written from both the web UI and the CLI Settings screen)
 ```
 
 ---
@@ -389,7 +392,7 @@ This tool is intended for **educational purposes and authorized penetration test
 - Unauthorized scanning or exploitation of systems is **illegal**.
 - The author is not responsible for any misuse of this tool.
 - A domain that resolves to a private/loopback/internal address is refused automatically (see Features) — if you're intentionally testing your own local network, enter the IP address directly rather than a hostname.
-- **Detection only, by design — there is no "safe mode" toggle because there is no unsafe mode to disable.** `ALLOWED_TOOLS` contains only recon/fingerprinting tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl, wafw00f) — no exploitation framework (no Metasploit, sqlmap, hydra, etc.) is ever invoked. WPScan is never AI-dispatchable: its opt-in command is fixed to passive enumeration of vulnerable plugins and themes (`vp,vt`), runs only after WordPress evidence, and includes no user or credential options. The `EXPLOIT:` entries you see in a session's results are the AI's own text suggestions parsed from its analysis — proposed exploit ideas for a human to review, never executed against the target.
+- **Detection only, by design — there is no "safe mode" toggle because there is no unsafe mode to disable.** `ALLOWED_TOOLS` contains only recon/fingerprinting tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl, wafw00f) — no exploitation framework (no Metasploit, sqlmap, hydra, etc.) is ever invoked. WPScan is never AI-dispatchable: its opt-in command is fixed to passive enumeration of vulnerable plugins and themes (`vp,vt`), runs only after WordPress evidence, and includes no user or credential options. The exploit suggestions you see in a session's results are the AI's own structured proposals from its analysis — proposed exploit ideas for a human to review, never executed against the target.
 
 ---
 

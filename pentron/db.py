@@ -225,28 +225,6 @@ def save_fix(sl_no: int, vuln_id: int, fix_text: str, source: str = "ai"):
     conn.close()
 
 
-def save_exploit(sl_no, exploit_name, tool_used, payload, result, notes):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        """
-        INSERT INTO exploits_attempted 
-        (sl_no, exploit_name, tool_used, payload, result, notes)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """,
-        (
-            sl_no,
-            str(exploit_name or "")[:1000],
-            str(tool_used or "")[:500],
-            str(payload or ""),
-            str(result or "")[:2000],
-            str(notes or ""),
-        ),
-    )
-    conn.commit()
-    conn.close()
-
-
 def save_summary(sl_no: int, raw_scan: str, ai_analysis: str, risk_level: str):
     """Insert the full session summary."""
     conn = get_connection()
@@ -295,9 +273,6 @@ def get_session(sl_no: int) -> dict:
     c.execute("SELECT * FROM fixes WHERE sl_no = %s", (sl_no,))
     fixes = c.fetchall()
 
-    c.execute("SELECT * FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
-    exploits = c.fetchall()
-
     c.execute(
         """SELECT id, sl_no, raw_scan, ai_analysis, risk_level, generated_at,
                   short_summary, analysis_status, analysis_error
@@ -317,7 +292,6 @@ def get_session(sl_no: int) -> dict:
         "history": history,
         "vulns": vulns,
         "fixes": fixes,
-        "exploits": exploits,
         "summary": summary,
         "suggestions": suggestions,
         "tool_calls": tool_calls,
@@ -337,15 +311,6 @@ def get_fixes(sl_no: int):
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM fixes WHERE sl_no = %s", (sl_no,))
-    rows = c.fetchall()
-    conn.close()
-    return rows
-
-
-def get_exploits(sl_no: int):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT * FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
     rows = c.fetchall()
     conn.close()
     return rows
@@ -382,22 +347,6 @@ def edit_fix(fix_id: int, fix_text: str):
     print(f"[+] fix id={fix_id} updated.")
 
 
-def edit_exploit(exploit_id: int, field: str, value: str):
-    """Edit a single field in exploits_attempted by id."""
-    allowed = {"exploit_name", "tool_used", "payload", "result", "notes"}
-    if field not in allowed:
-        print(f"[!] Invalid field: {field}. Allowed: {allowed}")
-        return
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        f"UPDATE exploits_attempted SET {field} = %s WHERE id = %s", (value, exploit_id)
-    )
-    conn.commit()
-    conn.close()
-    print(f"[+] exploits_attempted.{field} updated for id={exploit_id}")
-
-
 def edit_summary_risk(sl_no: int, risk_level: str):
     """Update the risk level on a summary."""
     conn = get_connection()
@@ -426,16 +375,6 @@ def delete_vulnerability(vuln_id: int):
     print(f"[+] Vulnerability id={vuln_id} and its fixes deleted.")
 
 
-def delete_exploit(exploit_id: int):
-    """Delete a single exploit attempt."""
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("DELETE FROM exploits_attempted WHERE id = %s", (exploit_id,))
-    conn.commit()
-    conn.close()
-    print(f"[+] Exploit id={exploit_id} deleted.")
-
-
 def delete_fix(fix_id: int):
     """Delete a single fix."""
     conn = get_connection()
@@ -448,7 +387,7 @@ def delete_fix(fix_id: int):
 
 def delete_full_session(sl_no: int):
     """
-    Wipe everything linked to a sl_no across all 5 tables.
+    Wipe everything linked to a sl_no across all tables.
     Order matters — delete children before parent (FK constraints).
     """
     conn = get_connection()
@@ -457,7 +396,6 @@ def delete_full_session(sl_no: int):
     c.execute("DELETE FROM fixes             WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM ai_tool_calls      WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM exploit_suggestions WHERE sl_no = %s", (sl_no,))
-    c.execute("DELETE FROM exploits_attempted WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM vulnerabilities   WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM summary           WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM history           WHERE sl_no = %s", (sl_no,))
@@ -598,15 +536,6 @@ def print_session(data: dict):
     if data["fixes"]:
         for f in data["fixes"]:
             print(f"  id={f[0]} | vuln_id={f[2]} | [{f[4]}] {f[3]}")
-    else:
-        print("  None recorded.")
-
-    print("\n[ EXPLOITS ATTEMPTED ]")
-    if data["exploits"]:
-        for e in data["exploits"]:
-            print(f"  id={e[0]} | {e[2]} | Tool: {e[3]} | Result: {e[5]}")
-            print(f"           Payload: {e[4]}")
-            print(f"           Notes:   {e[6]}")
     else:
         print("  None recorded.")
 

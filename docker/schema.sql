@@ -30,17 +30,6 @@ CREATE TABLE IF NOT EXISTS fixes (
   FOREIGN KEY (vuln_id) REFERENCES vulnerabilities(id)
 );
 
-CREATE TABLE IF NOT EXISTS exploits_attempted (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  sl_no        INT,
-  exploit_name TEXT,
-  tool_used    TEXT,
-  payload      LONGTEXT,
-  result       TEXT,
-  notes        TEXT,
-  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
-);
-
 CREATE TABLE IF NOT EXISTS summary (
   id           INT AUTO_INCREMENT PRIMARY KEY,
   sl_no        INT,

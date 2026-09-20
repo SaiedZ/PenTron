@@ -8,7 +8,6 @@ around db.py's existing CRUD functions.
 from fastapi import APIRouter, Depends, HTTPException
 
 from api.schemas import (
-    ExploitEditRequest,
     FixEditRequest,
     RiskEditRequest,
     VulnEditRequest,
@@ -47,12 +46,6 @@ def edit_fix(fix_id: int, payload: FixEditRequest):
     return {"ok": True}
 
 
-@router.patch("/exploits/{exploit_id}")
-def edit_exploit(exploit_id: int, payload: ExploitEditRequest):
-    db.edit_exploit(exploit_id, payload.field, payload.value)
-    return {"ok": True}
-
-
 @router.patch("/history/{sl_no}/risk")
 def edit_risk(sl_no: int, payload: RiskEditRequest):
     db.edit_summary_risk(sl_no, payload.risk)
@@ -68,12 +61,6 @@ def delete_vuln(vuln_id: int):
 @router.delete("/fixes/{fix_id}")
 def delete_fix(fix_id: int):
     db.delete_fix(fix_id)
-    return {"ok": True}
-
-
-@router.delete("/exploits/{exploit_id}")
-def delete_exploit(exploit_id: int):
-    db.delete_exploit(exploit_id)
     return {"ok": True}
 
 
