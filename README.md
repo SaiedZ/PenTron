@@ -16,36 +16,13 @@
 
 ---
 
-> 🥷🏼 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since been rewritten and expanded well past that starting point — roughly 2.6x the Python of the original alone, plus a full web app, Docker stack, and test suite that didn't exist upstream at all; see below for specifics.
-
-## 🆕 What's different from the original METATRON
-
-The original METATRON is a single ~2,000-line terminal script with a hardcoded local model, no web UI, no tests, and no target/scope enforcement beyond a tool-name allowlist. PenTron has grown into a packaged Python project (`pentron/`, installable console script) with a FastAPI web backend, a Dockerized stack, and a pytest suite — none of which exist upstream. On top of that foundation, it also adds:
-
-- **Full Dockerization** — `docker compose up -d` brings up MariaDB, Ollama, and the app together, with the schema applied automatically. The original requires manually installing and configuring every dependency (MariaDB, Ollama, system packages) natively.
-- **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Start from an ops-console Overview, launch scans from a dedicated two-column workspace with a live command preview, watch progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports. The terminal CLI still works unchanged, side by side.
-- **Multi-provider AI** — the original is hardwired to one local Ollama model. This fork adds a provider abstraction (`providers.py`) supporting Ollama, OpenAI, Anthropic, and Google, switchable at runtime from the Settings screen — no code edit, no restart.
-- **Runtime, database-backed settings** — provider, model, and timeouts are stored in a `settings` table and read fresh on every scan, instead of hardcoded constants in `llm.py`.
-- **Validated AI reports** — large recon outputs are condensed per tool, the final assessment is validated as structured JSON, and truncated or malformed responses are stored as `partial` instead of being reported as successful scans.
-- **Readable, traceable results** — session details show a short summary, a safely rendered Markdown report, structured findings and fixes, suggested exploit paths, and the AI-dispatched tool calls separately.
-- **Four new security guards, none of which existed upstream:**
-  - *Scope guard* — every `[TOOL:]` call the AI issues must have **every** positional argument match the declared session target; blocks both a pivot to a different host and a second target smuggled alongside the real one (`nmap target.com 10.0.0.5`).
-  - *SSRF guard* — recon header fetches no longer auto-follow redirects; a redirect to a different host, or to a non-standard port on the *same* host, is blocked and reported instead of silently followed.
-  - *Pre-flight private-target check* — before any recon runs, a domain whose DNS resolves to a private/loopback/internal address is refused outright, closing the gap where a target's own DNS could redirect a scan onto internal infrastructure.
-  - *CVE citation check* — flags any CVE the AI cites in its findings that never actually appeared in the scan data, instead of trusting the citation at face value.
-- **Configurable rate limiting + automatic retries** — an optional delay between recon tools (0 by default), set from the Settings screen, so a scan doesn't hit a small target with several tools back to back; short network-flaky tools (whois, curl headers, dig) auto-retry once on a timeout before giving up.
-- **Configurable User-Agent** — override the HTTP User-Agent sent by curl/whatweb/nikto (e.g. to see how a target behaves for a browser vs. a tool that's WAF-signature-blocked by default). A fixed, operator-chosen value applied to every scan — deliberately **not** randomized or rotated per request, which would trade traceability for evasion.
-- **Subdomain discovery (3 levels)** — the original only ever scans the exact declared target, missing `mail.`/`dev.`/`staging.` subdomains where real issues often live. Set from the Settings screen: disabled (default), passive (crt.sh certificate transparency — zero traffic to the target, listed in the report only), or active (crt.sh + subfinder — discovered subdomains also become valid scope-guard targets for that scan, so the AI can follow up on them). Passive never widens scope; only active does, and only for what it actually found.
-- **Email-security DNS checks (SPF/DMARC/DKIM)** — `dig` now also queries `_dmarc.<target>` and `default._domainkey.<target>`, and the report explicitly flags SPF/DMARC/DKIM as present or missing (their absence is a real spoofing/phishing risk for the domain, not just a DNS curiosity). The DKIM check only tests the common `default` selector — its absence doesn't prove DKIM isn't configured under another selector, and the report says so.
-- **WAF detection (wafw00f)** — a 9th, opt-in recon tool. A "clean" nikto/nmap pass behind an active WAF doesn't mean much on its own; knowing a WAF is there changes how the rest of the scan should be read. Checks both http and https in one pass.
-- **robots.txt / security.txt check** — a 10th, opt-in recon tool. Fetches `robots.txt` (sometimes leaks paths an admin doesn't want indexed) and `security.txt` per RFC 9116 (checked at `/.well-known/security.txt`, falling back to the legacy root path) to see whether the target documents a vulnerability-disclosure process.
-- **HTTP security header analysis** — `curl headers` now flags HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy as present or missing (checked on both http and https), instead of leaving the AI to spot their absence in a raw header dump.
-- **GPU as an explicit, documented choice** — CPU-only by default so the stack runs anywhere out of the box, with a one-line Compose overlay (`docker-compose.gpu.yml`) to opt into GPU passthrough, and a live (read-only, not a toggle) GPU status indicator in the UI.
-
+> PenTron was originally inspired by [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas), particularly its core idea of combining local AI with real reconnaissance tools.
+>
+> PenTron has since evolved into an independent project with its own architecture, web interface, CLI, multi-provider AI pipeline, structured analysis, security controls, persistence layer, Docker stack, exports, and automated test suite.
 
 ## 📌 What is PenTron?
 
-**PenTron** is an AI penetration testing assistant that runs entirely on your own machine — no cloud dependency required, no subscriptions.
+**PenTron** is an AI penetration testing assistant that can run entirely on your own machine with Ollama, without a cloud dependency or subscription. OpenAI, Anthropic, and Google are also supported as optional providers.
 
 You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
@@ -61,6 +38,8 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 - 🖥️ **Web ops console** — Overview homepage, dedicated New Scan workspace, live progress, history management, and report downloads
 - 🤖 **Multi-provider AI** — Ollama (local, offline, default), OpenAI, Anthropic, or Google, switchable from the Settings screen with no restart
+- ✅ **Validated AI reports** — large recon outputs are condensed per tool and final assessments are validated as structured data; malformed or truncated responses are preserved as partial scans instead of false successes
+- 📊 **Readable, traceable results** — short summary, safely rendered Markdown report, severity distribution, structured findings and fixes, suggested exploit paths, and separately logged AI-dispatched tool calls
 - 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection)
 - 🌐 **Web Search** — DuckDuckGo search + CVE lookup (no API key needed)
 - 🗄️ **MariaDB Backend** — full scan history with linked tables, shared between the web UI and the CLI
@@ -75,7 +54,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 - 🧱 **WAF detection (wafw00f)** — checks both http and https for a Web Application Firewall in front of the target, opt-in (custom tool selection)
 - 📄 **robots.txt / security.txt check** — fetches both files (RFC 9116 path + legacy fallback) to spot leaked paths and check for a documented vulnerability-disclosure process
 - 🔐 **HTTP security header analysis** — flags HSTS/CSP/X-Frame-Options/X-Content-Type-Options/Referrer-Policy/Permissions-Policy as present or missing on both http and https
-- 🔒 **Detection only, no exploitation** — `ALLOWED_TOOLS` is recon/fingerprinting tools only; the AI's `EXPLOIT:` suggestions are text proposals for a human to review, never code that gets run against the target
+- 🔒 **Detection only, no exploitation** — allowed tools are limited to reconnaissance and fingerprinting; suggested exploit paths remain proposals for human review and are never executed automatically
 - 🔒 **SSRF-guarded recon** — header fetches don't blindly follow redirects onto localhost/internal services/cloud metadata, including same-host redirects to a different, non-standard port
 - 🧭 **Pre-flight target check** — before any recon runs, a domain that resolves to a private/loopback/internal address is refused outright (its DNS could have been changed to redirect scans onto your own infrastructure); a literal IP typed directly by the operator is always allowed
 - ✅ **CVE citation check** — a CVE the AI cites but that never appeared in the actual scan data is flagged `[UNVERIFIED CVE]` instead of trusted at face value
