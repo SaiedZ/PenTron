@@ -42,6 +42,7 @@ TOOL_DESCRIPTIONS = {
     "testssl.sh": "Deep TLS security analysis",
     "wafw00f": "Web application firewall detection",
     "robots/security.txt": "robots.txt and security.txt discovery",
+    "wpscan": "Conditional vulnerable WordPress plugins/themes only",
 }
 
 

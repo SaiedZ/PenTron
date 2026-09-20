@@ -20,16 +20,24 @@ class ToolSpec:
     command_name: str  # binary name checked by the AI dispatch allowlist
     runner: ToolRunner
     default: bool = False  # part of the standard (non-nikto) recon bundle
+    ai_dispatch: bool = True  # may the LLM supply this binary's arguments?
 
 
 _REGISTRY: dict[str, ToolSpec] = {}
 
 
 def register_tool(
-    key: str, name: str, command_name: str, *, default: bool = False
+    key: str,
+    name: str,
+    command_name: str,
+    *,
+    default: bool = False,
+    ai_dispatch: bool = True,
 ) -> Callable[[ToolRunner], ToolRunner]:
     def decorator(func: ToolRunner) -> ToolRunner:
-        _REGISTRY[key] = ToolSpec(key, name, command_name, func, default)
+        _REGISTRY[key] = ToolSpec(
+            key, name, command_name, func, default, ai_dispatch
+        )
         return func
 
     return decorator
@@ -43,7 +51,9 @@ def all_tools() -> dict[str, ToolSpec]:
 
 def allowed_commands() -> frozenset[str]:
     """Binary names the AI is permitted to dispatch via run_tool_by_command."""
-    return frozenset(spec.command_name for spec in _REGISTRY.values())
+    return frozenset(
+        spec.command_name for spec in _REGISTRY.values() if spec.ai_dispatch
+    )
 
 
 def default_tool_names() -> list[str]:

@@ -57,11 +57,17 @@ files relative to the repository.
 On a Debian-based distribution:
 
 ```bash
-sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh subfinder wafw00f
+sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh subfinder wafw00f wpscan
 ```
 
 `subfinder` is only required for active subdomain discovery (level 2), which is
 disabled by default.
+
+WPScan is opt-in and runs only when another selected recon module first detects
+WordPress. Its command is fixed to vulnerable plugins and themes (`vp,vt`) in
+passive detection mode; user enumeration and password attacks are never run.
+Set `WPSCAN_API_TOKEN` in the runtime environment if vulnerability details are
+required from the WPScan API.
 
 ## 4. Configure the AI provider
 
