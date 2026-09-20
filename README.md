@@ -16,11 +16,11 @@
 
 ---
 
-> 🥷🏼 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since diverged substantially; see below.
+> 🥷🏼 **Originally forked from** [METATRON](https://github.com/sooryathejas/METATRON) by [Soorya Thejas](https://github.com/sooryathejas) — credit for the core concept (local AI + real recon tools + agentic analysis loop) goes to the upstream project. PenTron has since been rewritten and expanded well past that starting point — roughly 2.6x the Python of the original alone, plus a full web app, Docker stack, and test suite that didn't exist upstream at all; see below for specifics.
 
 ## 🆕 What's different from the original METATRON
 
-The original METATRON is a terminal-only tool with a single hardcoded local model and no target/scope enforcement beyond a tool-name allowlist. On top of that foundation, this project adds:
+The original METATRON is a single ~2,000-line terminal script with a hardcoded local model, no web UI, no tests, and no target/scope enforcement beyond a tool-name allowlist. PenTron has grown into a packaged Python project (`pentron/`, installable console script) with a FastAPI web backend, a Dockerized stack, and a pytest suite — none of which exist upstream. On top of that foundation, it also adds:
 
 - **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Launch scans, watch live progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports, all from a browser. The terminal CLI still works unchanged, side by side.
 - **Multi-provider AI** — the original is hardwired to one local Ollama model. This fork adds a provider abstraction (`providers.py`) supporting Ollama, OpenAI, Anthropic, and Google, switchable at runtime from the Settings screen — no code edit, no restart.
@@ -48,7 +48,7 @@ You give it a target IP or domain. It runs real recon tools (nmap, whois, whatwe
 
 Two ways to drive it:
 - **Web UI** — a browser dashboard to launch scans, watch live progress, browse/edit/delete history, download reports, and configure the AI provider.
-- **Terminal CLI** — the original interactive menu, still fully supported.
+- **Terminal CLI** — an interactive menu in the same spirit as the original (New Scan / History / Settings), kept at full feature parity with the web UI rather than left as a legacy fallback.
 
 Both talk to the exact same recon/AI/database engine, so scan history is shared between them.
 
@@ -95,12 +95,6 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
   <img width="731" height="571" alt="image" src="https://github.com/user-attachments/assets/e1f2d2c2-69ed-4065-8665-36b5e751ed61" />
   <br><i>Settings (CLI)</i>
 </p>
-
-<p align="center">
-  <img src="screenshots/results.png" alt="Results" width="700"/>
-  <br><i>Vulnerabilities saved to database</i>
-</p>
-<p align="center"> <img src="screenshots/export_menu.png" alt="Export Menu" width="700"/> <br><i>Export scan results as PDF and or HTML</i> </p>
 
 ---
 
@@ -363,11 +357,12 @@ PenTron/
 ├── pentron/                 ← core package (console script: `pentron`)
 │   ├── cli.py                 ← CLI entry point (pentron.cli:main)
 │   ├── db.py                   ← MariaDB connection and all CRUD operations
-│   ├── tools.py                 ← recon tool runners (nmap, whois, etc.)
+│   ├── tools/                   ← recon tool runners, one file per tool + a
+│   │                                decorator-based registry (nmap, whois, ...)
 │   ├── llm.py                    ← AI provider interface and tool dispatch loop
 │   ├── providers.py               ← LLM provider abstraction (Ollama/OpenAI/Anthropic/Google)
 │   ├── search.py                   ← DuckDuckGo web search and CVE lookup
-│   └── export.py                    ← PDF/HTML report generation
+│   └── export/                      ← PDF/HTML report generation, CLI export menu
 ├── api/                     ← FastAPI web backend
 │   ├── main.py               ← app entry point (uvicorn api.main:app)
 │   ├── jobs.py                ← live scan-progress tracking
@@ -391,8 +386,7 @@ PenTron/
 ├── uv.lock                  ← locked transitive dependency versions (re-run `uv lock` after editing pyproject.toml)
 ├── .gitignore                ← excludes venv, pycache, generated CSS, db files
 ├── LICENSE                   ← MIT License
-├── README.md                  ← this file
-└── screenshots/                ← terminal screenshots for documentation
+└── README.md                  ← this file
 ```
 
 ---
