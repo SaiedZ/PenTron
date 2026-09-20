@@ -285,57 +285,6 @@ def parse_vulnerabilities(response: str) -> list:
     return vulns
 
 
-def parse_exploits(response: str) -> list:
-    """
-    Parse EXPLOIT: lines from AI response into dicts.
-    Returns list of exploit dicts ready for db.save_exploit()
-    """
-    exploits = []
-    lines = response.splitlines()
-
-    i = 0
-    while i < len(lines):
-        line = _clean(lines[i])
-        if line.startswith("EXPLOIT:"):
-            exploit = {
-                "exploit_name": "",
-                "tool_used": "",
-                "payload": "",
-                "result": "unknown",
-                "notes": "",
-            }
-
-            parts = line.split("|")
-            for part in parts:
-                part = part.strip()
-                if part.startswith("EXPLOIT:"):
-                    exploit["exploit_name"] = part.replace("EXPLOIT:", "").strip()
-                elif part.startswith("TOOL:"):
-                    exploit["tool_used"] = part.replace("TOOL:", "").strip()
-                elif part.startswith("PAYLOAD:"):
-                    exploit["payload"] = part.replace("PAYLOAD:", "").strip()
-
-            j = i + 1
-            while j < len(lines) and j <= i + 4:
-                next_line = _clean(lines[j])
-                if next_line.startswith(
-                    ("VULN:", "EXPLOIT:", "RISK_LEVEL:", "SUMMARY:")
-                ):
-                    break
-                if next_line.startswith("RESULT:"):
-                    exploit["result"] = next_line.replace("RESULT:", "").strip()
-                elif next_line.startswith("NOTES:"):
-                    exploit["notes"] = next_line.replace("NOTES:", "").strip()
-                j += 1
-
-            if exploit["exploit_name"]:
-                exploits.append(exploit)
-
-        i += 1
-
-    return exploits
-
-
 def parse_risk_level(response: str) -> str:
     """Extract RISK_LEVEL from AI response."""
     match = re.search(
@@ -579,4 +528,4 @@ if __name__ == "__main__":
     print(f"\nRisk Level : {result['risk_level']}")
     print(f"Summary    : {result['summary']}")
     print(f"Vulns found: {len(result['vulnerabilities'])}")
-    print(f"Exploits   : {len(result['exploits'])}")
+    print(f"Exploit suggestions: {len(result['exploit_suggestions'])}")

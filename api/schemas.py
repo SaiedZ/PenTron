@@ -2,8 +2,8 @@
 """
 PENTRON - api/schemas.py
 Pydantic request/response models. Field allowlists here mirror db.py's own
-runtime `allowed` sets (edit_vulnerability/edit_exploit) so a malformed
-request is rejected with a clean 422 instead of relying solely on db.py.
+runtime `allowed` set (edit_vulnerability) so a malformed request is
+rejected with a clean 422 instead of relying solely on db.py.
 """
 
 from typing import Literal
@@ -61,11 +61,6 @@ class VulnEditRequest(BaseModel):
 
 class FixEditRequest(BaseModel):
     fix_text: str
-
-
-class ExploitEditRequest(BaseModel):
-    field: Literal["exploit_name", "tool_used", "payload", "result", "notes"]
-    value: str
 
 
 class RiskEditRequest(BaseModel):

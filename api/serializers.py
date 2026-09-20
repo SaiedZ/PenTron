@@ -43,19 +43,6 @@ def fix_to_dict(row) -> dict:
     }
 
 
-def exploit_to_dict(row) -> dict:
-    id_, sl_no, exploit_name, tool_used, payload, result, notes = row
-    return {
-        "id": id_,
-        "sl_no": sl_no,
-        "exploit_name": exploit_name,
-        "tool_used": tool_used,
-        "payload": payload,
-        "result": result,
-        "notes": notes,
-    }
-
-
 def summary_to_dict(row) -> dict:
     if row is None:
         return None
@@ -108,12 +95,11 @@ def tool_call_to_dict(row) -> dict:
 
 
 def session_to_dict(data: dict) -> dict:
-    """data is db.get_session()'s return shape: history/vulns/fixes/exploits/summary."""
+    """data is db.get_session()'s return shape: history/vulns/fixes/summary."""
     return {
         "history": history_to_dict(data["history"]),
         "vulnerabilities": [vuln_to_dict(v) for v in data["vulns"]],
         "fixes": [fix_to_dict(f) for f in data["fixes"]],
-        "exploits": [exploit_to_dict(e) for e in data["exploits"]],
         "summary": summary_to_dict(data["summary"]),
         "suggestions": [suggestion_to_dict(x) for x in data["suggestions"]],
         "tool_calls": [tool_call_to_dict(x) for x in data["tool_calls"]],

@@ -34,16 +34,6 @@ def export_html(data: dict, output_dir: str) -> str:
             f"<td><code>{fix_text}</code></td><td>{source}</td></tr>"
         )
 
-    exp_rows = ""
-    for e in data["exploits"]:
-        name, tool = escape(str(e[2] or "-")), escape(str(e[3] or "-"))
-        payload = escape(str(e[4] or "-")[:80])
-        result = escape(str(e[5] or "-"))
-        exp_rows += (
-            f"<tr><td>{e[0]}</td><td>{name}</td><td>{tool}</td>"
-            f"<td><code>{payload}</code></td><td>{result}</td></tr>"
-        )
-
     ai_html = (
         MarkdownIt("commonmark", {"html": False, "linkify": False})
         .enable("table")
@@ -165,20 +155,6 @@ a{{color:#555}}
             "<th>Source</th></tr></thead><tbody>" + fix_rows + "</tbody></table>"
         )
         if data["fixes"]
-        else '<p style="color:#888">None recorded.</p>'
-    }
-</section>
-
-<section>
-  <h2>Exploits Attempted</h2>
-  {
-        (
-            "<table><thead><tr><th>#</th><th>Exploit</th><th>Tool</th>"
-            "<th>Payload</th><th>Result</th></tr></thead><tbody>"
-            + exp_rows
-            + "</tbody></table>"
-        )
-        if data["exploits"]
         else '<p style="color:#888">None recorded.</p>'
     }
 </section>

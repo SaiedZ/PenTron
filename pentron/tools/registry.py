@@ -35,9 +35,7 @@ def register_tool(
     ai_dispatch: bool = True,
 ) -> Callable[[ToolRunner], ToolRunner]:
     def decorator(func: ToolRunner) -> ToolRunner:
-        _REGISTRY[key] = ToolSpec(
-            key, name, command_name, func, default, ai_dispatch
-        )
+        _REGISTRY[key] = ToolSpec(key, name, command_name, func, default, ai_dispatch)
         return func
 
     return decorator
