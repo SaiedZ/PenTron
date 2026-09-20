@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scan History — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<header id="site-nav" class="fixed top-0 inset-x-0 z-50 border-b border-transparent bg-white/90 py-5">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-6">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4.5 w-4.5"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9.5 12 2 2 3.5-4"/></svg>
+      </span>
+      <span class="text-[15px] font-bold tracking-tight text-slate-900">PenTron</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm">
+      <a href="index.html" data-nav-link class="nav-link">Overview</a>
+      <a href="new-scan.html" data-nav-link class="nav-link">New Scan</a>
+      <a href="history.html" data-nav-link class="nav-link">History</a>
+      <a href="settings.html" data-nav-link class="nav-link">Settings</a>
+    </nav>
+    <a href="new-scan.html" class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>
+      New scan
+    </a>
+  </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 pb-24 pt-32">
+
+  <div class="mb-10 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Sessions</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Scan history</h1>
+      <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">Five most recent sessions. Click one to open its full AI report.</p>
+    </div>
+    <div class="flex gap-2 text-xs font-medium">
+      <span class="badge badge-critical"><span class="badge-dot"></span>1 critical</span>
+      <span class="badge badge-high"><span class="badge-dot"></span>2 high</span>
+      <span class="badge badge-medium"><span class="badge-dot"></span>1 medium</span>
+      <span class="badge badge-low"><span class="badge-dot"></span>1 low</span>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+
+    <a href="session.html" class="card card-hover flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <p class="font-mono text-sm font-semibold text-slate-900">api.northwind-corp.io</p>
+          <p class="mt-1 max-w-md text-sm text-slate-600">Unauthenticated Redis instance and an outdated OpenSSH build expose this host to remote compromise.</p>
+          <p class="mt-2 text-xs text-slate-400">Sep 18, 2026 · nmap, whois, dig, curl, nikto, subfinder</p>
+        </div>
+      </div>
+      <span class="badge badge-critical shrink-0"><span class="badge-dot"></span>Critical</span>
+    </a>
+
+    <a href="session.html" class="card card-hover flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <p class="font-mono text-sm font-semibold text-slate-900">203.0.113.42</p>
+          <p class="mt-1 max-w-md text-sm text-slate-600">Multiple subdomains leak internal hostnames via DNS, one still points at a decommissioned load balancer.</p>
+          <p class="mt-2 text-xs text-slate-400">Sep 15, 2026 · nmap, dig, subfinder</p>
+        </div>
+      </div>
+      <span class="badge badge-high shrink-0"><span class="badge-dot"></span>High</span>
+    </a>
+
+    <a href="session.html" class="card card-hover flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <p class="font-mono text-sm font-semibold text-slate-900">shop.brightleaf.dev</p>
+          <p class="mt-1 max-w-md text-sm text-slate-600">TLS 1.0 and weak ciphers still enabled on the public load balancer alongside a verbose server banner.</p>
+          <p class="mt-2 text-xs text-slate-400">Sep 11, 2026 · nmap, curl, nikto</p>
+        </div>
+      </div>
+      <span class="badge badge-medium shrink-0"><span class="badge-dot"></span>Medium</span>
+    </a>
+
+    <a href="session.html" class="card card-hover flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <p class="font-mono text-sm font-semibold text-slate-900">vpn.covalent-tech.net</p>
+          <p class="mt-1 max-w-md text-sm text-slate-600">Minor information disclosure via banner grabbing; no exploitable finding identified.</p>
+          <p class="mt-2 text-xs text-slate-400">Sep 7, 2026 · whois, dig, curl</p>
+        </div>
+      </div>
+      <span class="badge badge-low shrink-0"><span class="badge-dot"></span>Low</span>
+    </a>
+
+    <a href="session.html" class="card card-hover flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <p class="font-mono text-sm font-semibold text-slate-900">198.51.100.17</p>
+          <p class="mt-1 max-w-md text-sm text-slate-600">Nikto identified an outdated CMS plugin with a known remote code execution advisory.</p>
+          <p class="mt-2 text-xs text-slate-400">Aug 29, 2026 · nmap, nikto, gobuster</p>
+        </div>
+      </div>
+      <span class="badge badge-high shrink-0"><span class="badge-dot"></span>High</span>
+    </a>
+
+  </div>
+
+</main>
+
+<script src="nav.js"></script>
+</body>
+</html>

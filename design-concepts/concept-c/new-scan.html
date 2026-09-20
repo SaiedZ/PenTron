@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>New Scan — PenTron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="new-scan" class="bg-[#0a0a0a] text-[#f3f1e7] antialiased">
+
+<nav id="site-nav" class="fixed top-0 inset-x-0 z-50">
+  <div class="mx-auto max-w-7xl px-6 flex items-center justify-between">
+    <a href="index.html" class="display text-xl font-semibold tracking-tight">PEN<span class="text-accent">TRON</span></a>
+    <div class="hidden md:flex items-center gap-9">
+      <a href="index.html" data-page="index" class="nav-link">Home</a>
+      <a href="new-scan.html" data-page="new-scan" class="nav-link">New Scan</a>
+      <a href="history.html" data-page="history" class="nav-link">History</a>
+      <a href="session-detail.html" data-page="session-detail" class="nav-link">Session</a>
+      <a href="settings.html" data-page="settings" class="nav-link">Settings</a>
+    </div>
+    <a href="new-scan.html" class="btn-accent hidden md:inline-flex">Launch Scan</a>
+  </div>
+</nav>
+
+<header class="border-b border-hair px-6 pt-36 pb-14 md:pt-44">
+  <div class="mx-auto max-w-5xl">
+    <p class="mb-4 text-xs uppercase tracking-[0.35em] text-accent-2">Step one</p>
+    <h1 class="text-5xl font-bold md:text-7xl">New <span class="text-accent">Scan.</span></h1>
+    <p class="mt-5 max-w-xl text-sm leading-relaxed text-muted">Point PenTron at a target you are authorized to test, choose your recon stack, and let the AI take it from there. This form is a static mockup — nothing is submitted.</p>
+  </div>
+</header>
+
+<main class="mx-auto max-w-5xl px-6 py-16">
+  <form onsubmit="return false;" class="space-y-16">
+
+    <section>
+      <div class="mb-5 flex items-baseline justify-between">
+        <h2 class="text-2xl font-semibold">01 / Target</h2>
+        <span class="text-xs uppercase tracking-[0.2em] text-muted">Required</span>
+      </div>
+      <label for="target" class="mb-2 block text-xs uppercase tracking-[0.2em] text-muted">IP, CIDR range, or domain</label>
+      <input
+        id="target"
+        name="target"
+        type="text"
+        placeholder="e.g. scan-corp.io"
+        class="w-full border-2 border-hair bg-transparent px-4 py-5 text-2xl text-fg outline-none transition placeholder:text-muted/60 focus:border-accent md:text-3xl"
+      />
+      <p class="mt-3 text-xs text-muted">Only scan infrastructure you own or have explicit written authorization to test.</p>
+    </section>
+
+    <section>
+      <div class="mb-5 flex items-baseline justify-between">
+        <h2 class="text-2xl font-semibold">02 / Recon tools</h2>
+        <span class="text-xs uppercase tracking-[0.2em] text-muted">Pulled from tool registry</span>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+        <div class="relative">
+          <input type="checkbox" id="tool-nmap" class="tool-input" checked />
+          <label for="tool-nmap" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">nmap</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">Port scan &amp; service/version fingerprinting.</p>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="checkbox" id="tool-whois" class="tool-input" checked />
+          <label for="tool-whois" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">whois</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">Registrar, ownership and registration metadata.</p>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="checkbox" id="tool-curl" class="tool-input" checked />
+          <label for="tool-curl" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">curl</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">Raw HTTP headers, redirects, response fingerprinting.</p>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="checkbox" id="tool-dig" class="tool-input" />
+          <label for="tool-dig" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">dig</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">DNS records: A/AAAA, MX, TXT, NS.</p>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="checkbox" id="tool-nikto" class="tool-input" checked />
+          <label for="tool-nikto" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">nikto</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">Web server misconfigurations &amp; known vulnerable files.</p>
+          </label>
+        </div>
+
+        <div class="relative">
+          <input type="checkbox" id="tool-subfinder" class="tool-input" checked />
+          <label for="tool-subfinder" class="tool-card block cursor-pointer border border-hair p-5">
+            <div class="flex items-start justify-between">
+              <span class="font-semibold">subfinder</span>
+              <span class="tick h-4 w-4 rounded-full bg-accent"></span>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted">Subdomain enumeration, feeds discovery level below.</p>
+          </label>
+        </div>
+
+      </div>
+    </section>
+
+    <section>
+      <div class="mb-5 flex items-baseline justify-between">
+        <h2 class="text-2xl font-semibold">03 / Subdomain discovery</h2>
+        <span class="text-xs uppercase tracking-[0.2em] text-muted">Choose one</span>
+      </div>
+      <div class="grid grid-cols-3 border border-hair text-center">
+        <div class="relative">
+          <input type="radio" name="discovery" id="disc-disabled" class="segment-input" />
+          <label for="disc-disabled" class="segment-label block cursor-pointer border-r border-hair px-4 py-5">
+            <span class="block font-semibold">Disabled</span>
+            <span class="mt-1 block text-xs text-muted">Skip entirely</span>
+          </label>
+        </div>
+        <div class="relative">
+          <input type="radio" name="discovery" id="disc-passive" class="segment-input" checked />
+          <label for="disc-passive" class="segment-label block cursor-pointer border-r border-hair px-4 py-5">
+            <span class="block font-semibold">Passive</span>
+            <span class="mt-1 block text-xs text-muted">Certificate &amp; DNS sources</span>
+          </label>
+        </div>
+        <div class="relative">
+          <input type="radio" name="discovery" id="disc-active" class="segment-input" />
+          <label for="disc-active" class="segment-label block cursor-pointer px-4 py-5">
+            <span class="block font-semibold">Active</span>
+            <span class="mt-1 block text-xs text-muted">Brute-force &amp; live probing</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-wrap items-center gap-5 border-t border-hair pt-10">
+      <button type="submit" class="btn-accent text-base">Start scan &rarr;</button>
+      <a href="history.html" class="btn-outline">Cancel</a>
+      <p class="text-xs text-muted">This is a static mockup — no scan will actually run.</p>
+    </section>
+
+  </form>
+</main>
+
+<script src="nav.js"></script>
+</body>
+</html>

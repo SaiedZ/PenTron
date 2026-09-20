@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New scan — PenTron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              mono: [
+                '"JetBrains Mono"',
+                "ui-monospace",
+                "SFMono-Regular",
+                "monospace",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-page="new-scan" class="bg-[#05070a] text-slate-200 antialiased">
+    <div class="console-texture"></div>
+    <div class="console-scanlines"></div>
+
+    <header id="site-nav">
+      <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <a
+          href="index.html"
+          class="flex items-center gap-2 font-mono text-sm tracking-[0.22em] text-slate-100"
+        >
+          <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          PENTRON
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+          <a href="index.html" data-nav="index" class="nav-link hover:text-slate-100">Overview</a>
+          <a href="new-scan.html" data-nav="new-scan" class="nav-link hover:text-slate-100">New Scan</a>
+          <a href="history.html" data-nav="history" class="nav-link hover:text-slate-100">History</a>
+          <a href="session.html" data-nav="session" class="nav-link hover:text-slate-100">Sample Report</a>
+          <a href="settings.html" data-nav="settings" class="nav-link hover:text-slate-100">Settings</a>
+        </nav>
+        <a href="new-scan.html" class="btn-primary hidden sm:inline-flex text-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          New Scan
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-24">
+      <p class="field-label mb-3">New session</p>
+      <h1 class="text-3xl font-semibold text-slate-50 mb-2">Launch a scan</h1>
+      <p class="text-slate-400 max-w-2xl mb-10">
+        Only run this against a target you are authorized to test. This is a
+        static mockup — the form below does not submit anywhere.
+      </p>
+
+      <div class="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+        <!-- form -->
+        <div class="space-y-8">
+          <div class="panel p-6">
+            <label for="target" class="field-label block mb-2">Target</label>
+            <input
+              id="target"
+              type="text"
+              value="10.10.14.22"
+              placeholder="IP address or domain"
+              class="w-full"
+            />
+            <p class="text-xs text-slate-500 mt-2">
+              Accepts an IP, CIDR-less host, or domain name. Scope is checked
+              against your authorized target list before a real scan runs.
+            </p>
+          </div>
+
+          <div class="panel p-6">
+            <div class="flex items-center justify-between mb-4">
+              <label class="field-label">Recon tools</label>
+              <span class="font-mono text-xs text-slate-500">5 selected</span>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">nmap</span>
+                  <span class="text-xs text-slate-500">Port &amp; service scan</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">whois</span>
+                  <span class="text-xs text-slate-500">Registration lookup</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">dig</span>
+                  <span class="text-xs text-slate-500">DNS record enumeration</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">curl</span>
+                  <span class="text-xs text-slate-500">HTTP headers &amp; banner grab</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">nikto</span>
+                  <span class="text-xs text-slate-500">Web server vulnerability scan</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">subfinder</span>
+                  <span class="text-xs text-slate-500">Subdomain enumeration</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">sslscan</span>
+                  <span class="text-xs text-slate-500">TLS/cipher configuration</span>
+                </span>
+              </label>
+              <label class="tool-row rounded-sm p-3.5 flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1" />
+                <span>
+                  <span class="font-mono text-sm text-slate-100 block">gobuster</span>
+                  <span class="text-xs text-slate-500">Directory &amp; file brute force</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel p-6">
+            <label class="field-label block mb-4">Subdomain discovery level</label>
+            <div class="grid sm:grid-cols-3 gap-3">
+              <label class="level-pill rounded-sm p-4 cursor-pointer">
+                <input type="radio" name="subdomain-level" class="sr-only" />
+                <span class="font-mono text-sm block mb-1">disabled</span>
+                <span class="text-xs text-slate-500">Skip subdomain discovery entirely.</span>
+              </label>
+              <label class="level-pill rounded-sm p-4 cursor-pointer">
+                <input type="radio" name="subdomain-level" checked class="sr-only" />
+                <span class="font-mono text-sm block mb-1">passive</span>
+                <span class="text-xs text-slate-500">Certificate transparency &amp; public sources only.</span>
+              </label>
+              <label class="level-pill rounded-sm p-4 cursor-pointer">
+                <input type="radio" name="subdomain-level" class="sr-only" />
+                <span class="font-mono text-sm block mb-1">active</span>
+                <span class="text-xs text-slate-500">Adds live DNS brute-forcing against the target.</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button type="button" class="btn-primary" title="Design mockup — not functional">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 4l14 8-14 8V4z" stroke-linejoin="round" />
+              </svg>
+              Start scan
+            </button>
+            <span class="text-xs text-slate-500 font-mono">est. runtime ~4m</span>
+          </div>
+        </div>
+
+        <!-- command preview -->
+        <aside class="panel rounded-sm overflow-hidden lg:sticky lg:top-28">
+          <div class="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--bg-panel-raised)]">
+            <p class="font-mono text-[11px] text-slate-500">command preview</p>
+          </div>
+          <pre class="font-mono text-[12px] leading-relaxed text-slate-400 p-4 whitespace-pre-wrap"><span class="text-cyan-400">$</span> pentron scan \
+  --target <span class="text-slate-100">10.10.14.22</span> \
+  --tools <span class="text-slate-100">nmap,whois,dig,nikto,subfinder</span> \
+  --subdomains <span class="text-slate-100">passive</span></pre>
+          <div class="px-4 pb-4">
+            <div class="border-t border-[var(--border-soft)] pt-4">
+              <p class="field-label mb-2">After the scan</p>
+              <ul class="text-xs text-slate-500 space-y-1.5 leading-relaxed">
+                <li>· Tool output is collected per module</li>
+                <li>· The active LLM provider parses findings</li>
+                <li>· A risk level and report are saved to history</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="border-t border-[var(--border)]">
+      <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500">
+        <p class="font-mono">PENTRON // design concept — "ops console" — static mockup, no backend.</p>
+        <div class="flex items-center gap-6">
+          <a href="index.html" class="hover:text-slate-300">Overview</a>
+          <a href="new-scan.html" class="hover:text-slate-300">New Scan</a>
+          <a href="history.html" class="hover:text-slate-300">History</a>
+          <a href="settings.html" class="hover:text-slate-300">Settings</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./nav.js"></script>
+  </body>
+</html>

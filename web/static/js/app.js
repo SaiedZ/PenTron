@@ -42,3 +42,39 @@ async function submitPatch(url, body, onDone) {
     alert(`Update failed: ${err.message}`);
   }
 }
+
+// Shared navbar behavior: scroll-reactive shrink/blur, active link underline.
+(function () {
+  var nav = document.getElementById("site-nav");
+  if (!nav) return;
+
+  var SCROLL_THRESHOLD = 12;
+  var ticking = false;
+
+  function applyScrollState() {
+    nav.classList.toggle("nav-scrolled", window.scrollY > SCROLL_THRESHOLD);
+    ticking = false;
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!ticking) {
+        window.requestAnimationFrame(applyScrollState);
+        ticking = true;
+      }
+    },
+    { passive: true },
+  );
+
+  applyScrollState();
+
+  var currentPage = document.body.getAttribute("data-page");
+  if (currentPage) {
+    document.querySelectorAll(".nav-link[data-nav]").forEach(function (link) {
+      if (link.getAttribute("data-nav") === currentPage) {
+        link.classList.add("active");
+      }
+    });
+  }
+})();

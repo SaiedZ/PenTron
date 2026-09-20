@@ -1,8 +1,5 @@
-@import "tailwindcss";
-@source "./templates/**/*.html";
-
-/* PenTron web UI — "ops console" visual language.
-   Dark-only by design (see ROADMAP.md "Migration visuelle"); no light variant. */
+/* PenTron — concept A: "Ops Console"
+   Dark, monospace-accented, tight-density security console aesthetic. */
 
 :root {
   --bg: #05070a;
@@ -24,12 +21,18 @@
 html {
   background: var(--bg);
   scroll-behavior: smooth;
-  color-scheme: dark;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   position: relative;
 }
 
@@ -87,8 +90,8 @@ footer {
   left: 0;
   right: 0;
   z-index: 50;
-  padding-top: 1.1rem;
-  padding-bottom: 1.1rem;
+  padding-top: 1.35rem;
+  padding-bottom: 1.35rem;
   background: rgba(5, 7, 10, 0);
   border-bottom: 1px solid transparent;
   transition:
@@ -187,26 +190,6 @@ footer {
   background: rgba(34, 211, 238, 0.06);
 }
 
-.preset-btn {
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  background: var(--bg-panel-raised);
-  color: var(--text-dim);
-  padding: 0.3rem 0.6rem;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.preset-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -239,11 +222,6 @@ footer {
   color: var(--low);
   background: rgba(52, 211, 153, 0.08);
   border-color: rgba(52, 211, 153, 0.35);
-}
-.badge-unknown {
-  color: var(--text-dim);
-  background: rgba(148, 163, 184, 0.08);
-  border-color: var(--border);
 }
 
 .chip {
@@ -400,4 +378,138 @@ table.data-table tr[data-href]:hover td {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 1px;
+}
+
+/* ---- session assistant chat widget ---- */
+.chat-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 60;
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #04141a;
+  border-radius: 2px;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.75);
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.chat-toggle:hover {
+  background: #67e3f5;
+}
+
+.chat-toggle:active {
+  transform: translateY(1px);
+}
+
+.chat-panel {
+  position: fixed;
+  bottom: 5rem;
+  right: 1rem;
+  z-index: 60;
+  width: 22rem;
+  max-height: 28rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  box-shadow: 0 20px 45px -18px rgba(0, 0, 0, 0.8);
+}
+
+.chat-panel[hidden] {
+  display: none;
+}
+
+.chat-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.chat-panel-close {
+  color: var(--text-faint);
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 2px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.chat-panel-close:hover {
+  color: var(--text);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.chat-bubble {
+  max-width: 88%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 2px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.chat-bubble-user {
+  align-self: flex-end;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  color: var(--text);
+}
+
+.chat-bubble-assistant {
+  align-self: flex-start;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.chat-panel-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.chat-panel-form input[type="text"] {
+  flex: 1;
+  font-size: 0.8rem;
+}
+
+.chat-panel-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  background: var(--accent);
+  color: #04141a;
+  border-radius: 2px;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.chat-panel-send:hover {
+  background: #67e3f5;
+}
+
+.chat-panel-send:active {
+  transform: translateY(1px);
 }

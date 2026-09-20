@@ -22,7 +22,7 @@
 
 The original METATRON is a single ~2,000-line terminal script with a hardcoded local model, no web UI, no tests, and no target/scope enforcement beyond a tool-name allowlist. PenTron has grown into a packaged Python project (`pentron/`, installable console script) with a FastAPI web backend, a Dockerized stack, and a pytest suite — none of which exist upstream. On top of that foundation, it also adds:
 
-- **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Launch scans, watch live progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports, all from a browser. The terminal CLI still works unchanged, side by side.
+- **A full web UI** (FastAPI + HTMX + Tailwind) — the original has no browser interface at all. Start from an ops-console Overview, launch scans from a dedicated two-column workspace with a live command preview, watch progress (step tracker + per-tool checklist), browse/edit/delete history, and download reports. The terminal CLI still works unchanged, side by side.
 - **Multi-provider AI** — the original is hardwired to one local Ollama model. This fork adds a provider abstraction (`providers.py`) supporting Ollama, OpenAI, Anthropic, and Google, switchable at runtime from the Settings screen — no code edit, no restart.
 - **Runtime, database-backed settings** — provider, model, and timeouts are stored in a `settings` table and read fresh on every scan, instead of hardcoded constants in `llm.py`.
 - **Four new security guards, none of which existed upstream:**
@@ -47,7 +47,7 @@ The original METATRON is a single ~2,000-line terminal script with a hardcoded l
 You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
 Two ways to drive it:
-- **Web UI** — a browser dashboard to launch scans, watch live progress, browse/edit/delete history, download reports, and configure the AI provider.
+- **Web UI** — an ops-console homepage plus dedicated New Scan, live progress, history, report, and provider-settings screens.
 - **Terminal CLI** — an interactive menu in the same spirit as the original (New Scan / History / Settings), kept at full feature parity with the web UI rather than left as a legacy fallback.
 
 Both talk to the exact same recon/AI/database engine, so scan history is shared between them.
@@ -56,7 +56,7 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 ## ✨ Features
 
-- 🖥️ **Web dashboard** — launch scans, watch live progress, manage history and download reports from a browser
+- 🖥️ **Web ops console** — Overview homepage, dedicated New Scan workspace, live progress, history management, and report downloads
 - 🤖 **Multi-provider AI** — Ollama (local, offline, default), OpenAI, Anthropic, or Google, switchable from the Settings screen with no restart
 - 🔍 **Automated Recon** — nmap, whois, whatweb, curl headers, dig DNS, nikto, sslscan, testssl.sh (TLS/SSL config audit), wafw00f (WAF detection)
 - 🌐 **Web Search** — DuckDuckGo search + CVE lookup (no API key needed)
@@ -300,11 +300,11 @@ mysql -u pentron -p123 pentron < docker/schema.sql
 
 ### Web UI
 
-1. Open `http://localhost:8000` (or wherever `uvicorn api.main:app` is listening for a native install).
-2. **New Scan** — enter a target, pick recon tools (standard, standard + nikto, or a custom selection), submit.
+1. Open `http://localhost:8000` (or wherever `uvicorn api.main:app` is listening for a native install). The **Overview** homepage introduces the recon-to-report workflow and provides shortcuts to the main screens.
+2. Open **New Scan** (`/new-scan`), enter an authorized target, choose a preset or custom set of recon tools, select the subdomain-discovery level, and review the live command preview before submitting.
 3. You're redirected to a live progress page that polls automatically — a step tracker (Recon → AI Analysis → Saving → Done), a checklist of planned vs. completed recon tools, then AI analysis round N of 9, plus anything the scope/SSRF guards blocked along the way.
 4. Once done, jump to the session's detail page: vulnerabilities, fixes, and exploit attempts, each editable or deletable inline, plus **Download PDF** / **Download HTML** buttons.
-5. **History** lists every past session (shared with the CLI); **Settings** configures the AI provider/model, timeouts, and shows live GPU status.
+5. **History** lists every past session (shared with the CLI); **Settings** configures the AI provider/model, timeouts, and shows live GPU status. The persistent navigation links Overview, New Scan, History, and Settings.
 
 ### Terminal CLI
 
@@ -373,6 +373,12 @@ PenTron/
 │   └── routers/                    ← scans / history / exports / settings / pages
 ├── web/                     ← web UI assets
 │   ├── templates/             ← Jinja2 + HTMX pages
+│   │   ├── home.html            ← Overview homepage (/)
+│   │   ├── dashboard.html       ← New Scan form (/new-scan)
+│   │   ├── scan_progress.html   ← live scan progress
+│   │   ├── history_list.html    ← saved sessions
+│   │   ├── session_detail.html  ← findings and report detail
+│   │   └── settings.html        ← provider and scan settings
 │   ├── static/                  ← compiled Tailwind CSS + JS
 │   ├── input.css                 ← Tailwind source
 ├── Modelfile               ← optional custom-tuned model alias (see AI Model Setup)
