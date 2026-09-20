@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/AI-Qwen%203.5-red?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/DB-MariaDB-orange?style=for-the-badge&logo=mariadb"/>
   <img src="https://img.shields.io/badge/Web-FastAPI-teal?style=for-the-badge&logo=fastapi"/>
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-yellow?style=for-the-badge"/>
 </p>
 
 ---
@@ -387,4 +387,4 @@ Originally forked from [METATRON](https://github.com/sooryathejas/METATRON) by [
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
