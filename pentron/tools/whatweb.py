@@ -2,7 +2,7 @@ from . import base
 from .registry import register_tool
 
 
-@register_tool(key="3", name="whatweb", command_name="whatweb")
+@register_tool(key="3", name="whatweb", command_name="whatweb", default=True)
 def run_whatweb(target: str, user_agent: str = None) -> str:
     """
     whatweb -a 3 — fingerprint web technologies, CMS, frameworks, headers

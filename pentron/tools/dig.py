@@ -2,7 +2,7 @@ from . import base
 from .registry import register_tool
 
 
-@register_tool(key="5", name="dig DNS", command_name="dig")
+@register_tool(key="5", name="dig DNS", command_name="dig", default=True)
 def run_dig(target: str, user_agent: str = None) -> str:
     """
     dig — DNS records: A, MX, NS, TXT, plus a basic email-security check
