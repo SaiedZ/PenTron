@@ -11,6 +11,13 @@
 {% set h = session.history %}
 {% set s = session.summary %}
 
+{% if h.status|lower == 'partial' %}
+<div class="mb-8 border border-amber-900 bg-amber-950/40 p-4 text-sm text-amber-300">
+  <p class="font-medium">AI analysis incomplete</p>
+  <p class="mt-1 text-amber-400">{{ s.analysis_error if s else "The structured result could not be validated." }}</p>
+</div>
+{% endif %}
+
 <div class="panel p-6 sm:p-7 mb-8">
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
@@ -41,7 +48,7 @@
     <p class="field-label">Summary</p>
     <div class="flex items-center gap-2">
       <select id="risk-select" class="text-sm">
-        {% for level in ["CRITICAL", "HIGH", "MEDIUM", "LOW"] %}
+        {% for level in ["UNKNOWN", "CRITICAL", "HIGH", "MEDIUM", "LOW"] %}
         <option value="{{ level }}" {% if s and s.risk_level == level %}selected{% endif %}>{{ level }}</option>
         {% endfor %}
       </select>
@@ -52,9 +59,21 @@
     </div>
   </div>
   <div class="panel p-6">
-    <p class="whitespace-pre-line text-sm text-slate-300 leading-relaxed">
-      {{ s.ai_analysis if s else "No AI analysis recorded." }}
-    </p>
+    {% if s and s.short_summary %}
+    <p class="text-sm text-slate-200 leading-relaxed">{{ s.short_summary }}</p>
+    {% endif %}
+    {% if s and s.ai_analysis %}
+    <details class="raw-output mt-5 border-t border-[var(--border-soft)] pt-4" {% if not s.short_summary %}open{% endif %}>
+      <summary class="flex items-center gap-2 text-sm text-cyan-400">
+        <span class="chevron">&#9656;</span> Full AI analysis
+      </summary>
+      <div class="markdown-body mt-4 text-sm text-slate-300 leading-relaxed">
+        {{ s.ai_analysis|safe_markdown }}
+      </div>
+    </details>
+    {% elif not s %}
+    <p class="text-sm text-slate-500">No AI analysis recorded.</p>
+    {% endif %}
   </div>
 </section>
 
@@ -132,44 +151,56 @@
   {% endif %}
 </section>
 
-<section>
-  <p class="field-label mb-3">Exploits attempted</p>
-  {% if not session.exploits %}
+<section class="mb-8">
+  <p class="field-label mb-3">Suggested exploit paths</p>
+  {% if not session.suggestions %}
   <p class="text-sm text-slate-500">None recorded.</p>
   {% else %}
   <div class="panel divide-y divide-[var(--border-soft)]">
-    {% for e in session.exploits %}
+    {% for e in session.suggestions %}
     <div class="p-5">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="font-medium text-slate-100">{{ e.exploit_name }}</p>
-          <p class="mt-1 text-sm text-slate-400 leading-relaxed">Tool: {{ e.tool_used or "-" }} · Result: {{ e.result or "-" }}</p>
-          <p class="mt-1.5 text-xs font-mono text-slate-500">Payload: {{ e.payload or "-" }}</p>
-          {% if e.notes %}<p class="mt-1 text-xs font-mono text-slate-500">Notes: {{ e.notes }}</p>{% endif %}
-        </div>
-        <div class="flex shrink-0 gap-3 text-sm">
-          <button onclick="toggleEdit('exploit-{{ e.id }}')" class="text-cyan-400 hover:text-cyan-300">Edit</button>
-          <button onclick="confirmAndDelete('/api/exploits/{{ e.id }}', 'Delete this exploit entry?')"
-            class="text-slate-500 hover:text-red-400">Delete</button>
-        </div>
-      </div>
-      <div id="exploit-{{ e.id }}" class="hidden mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--border-soft)] pt-4">
-        <select id="exploit-{{ e.id }}-field" class="text-sm">
-          <option value="exploit_name">Name</option>
-          <option value="tool_used">Tool</option>
-          <option value="payload">Payload</option>
-          <option value="result">Result</option>
-          <option value="notes">Notes</option>
-        </select>
-        <input id="exploit-{{ e.id }}-value" class="flex-1 text-sm">
-        <button onclick="submitPatch('/api/exploits/{{ e.id }}', {field: document.getElementById('exploit-{{ e.id }}-field').value, value: document.getElementById('exploit-{{ e.id }}-value').value})"
-          class="btn-primary text-sm px-3 py-1">Save</button>
-      </div>
+      <p class="font-medium text-slate-100">{{ e.name }}</p>
+      <p class="mt-1 text-sm text-slate-400 leading-relaxed">{{ e.rationale }}</p>
+      {% if e.tool %}<p class="mt-1.5 text-xs font-mono text-slate-500">Suggested tool: {{ e.tool }}</p>{% endif %}
+      {% if e.safe_validation %}<p class="mt-1 text-xs text-slate-500">Safe validation: {{ e.safe_validation }}</p>{% endif %}
     </div>
     {% endfor %}
   </div>
   {% endif %}
 </section>
+
+<section>
+  <p class="field-label mb-3">AI-dispatched tool calls</p>
+  {% if not session.tool_calls %}
+  <p class="text-sm text-slate-500">None executed.</p>
+  {% else %}
+  <div class="panel divide-y divide-[var(--border-soft)]">
+    {% for call in session.tool_calls %}
+    <details class="raw-output p-5">
+      <summary class="flex items-center justify-between gap-3 text-sm">
+        <span class="font-mono text-slate-200">{{ call.call_type }}: {{ call.command }}</span>
+        <span class="badge {{ 'badge-high' if call.blocked else 'badge-low' }}">{{ 'BLOCKED' if call.blocked else 'EXECUTED' }}</span>
+      </summary>
+      <pre class="mt-3 overflow-x-auto whitespace-pre-wrap text-xs text-slate-500">{{ call.result }}</pre>
+    </details>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+{% if session.exploits %}
+<section class="mt-8">
+  <p class="field-label mb-3">Legacy exploit records</p>
+  <div class="panel divide-y divide-[var(--border-soft)]">
+    {% for e in session.exploits %}
+    <div class="p-5">
+      <p class="font-medium text-slate-100">{{ e.exploit_name }}</p>
+      <p class="mt-1 text-sm text-slate-500">{{ e.notes or e.result }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 </div>
 

@@ -59,7 +59,17 @@ def exploit_to_dict(row) -> dict:
 def summary_to_dict(row) -> dict:
     if row is None:
         return None
-    id_, sl_no, raw_scan, ai_analysis, risk_level, generated_at = row
+    (
+        id_,
+        sl_no,
+        raw_scan,
+        ai_analysis,
+        risk_level,
+        generated_at,
+        short_summary,
+        analysis_status,
+        analysis_error,
+    ) = row
     return {
         "id": id_,
         "sl_no": sl_no,
@@ -67,6 +77,33 @@ def summary_to_dict(row) -> dict:
         "ai_analysis": ai_analysis,
         "risk_level": risk_level,
         "generated_at": str(generated_at) if generated_at else None,
+        "short_summary": short_summary,
+        "analysis_status": analysis_status,
+        "analysis_error": analysis_error,
+    }
+
+
+def suggestion_to_dict(row) -> dict:
+    id_, sl_no, name, rationale, tool, safe_validation = row
+    return {
+        "id": id_,
+        "sl_no": sl_no,
+        "name": name,
+        "rationale": rationale,
+        "tool": tool,
+        "safe_validation": safe_validation,
+    }
+
+
+def tool_call_to_dict(row) -> dict:
+    id_, sl_no, call_type, command, result, blocked = row
+    return {
+        "id": id_,
+        "sl_no": sl_no,
+        "call_type": call_type,
+        "command": command,
+        "result": result,
+        "blocked": bool(blocked),
     }
 
 
@@ -78,6 +115,8 @@ def session_to_dict(data: dict) -> dict:
         "fixes": [fix_to_dict(f) for f in data["fixes"]],
         "exploits": [exploit_to_dict(e) for e in data["exploits"]],
         "summary": summary_to_dict(data["summary"]),
+        "suggestions": [suggestion_to_dict(x) for x in data["suggestions"]],
+        "tool_calls": [tool_call_to_dict(x) for x in data["tool_calls"]],
     }
 
 

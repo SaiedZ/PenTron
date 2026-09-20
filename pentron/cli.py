@@ -8,6 +8,7 @@ Run with: python -m pentron.cli, or the `pentron` console script.
 import os
 import sys
 
+from .analysis_pipeline import analyse_and_save
 from .db import (
     create_session,
     delete_exploit,
@@ -27,14 +28,10 @@ from .db import (
     get_vulnerabilities,
     print_history,
     print_session,
-    save_exploit,
-    save_fix,
     save_settings,
-    save_summary,
-    save_vulnerability,
+    update_session_status,
 )
 from .export import export_menu
-from .llm import analyse_target
 from .providers import OllamaProvider
 from .tools import (
     check_target_safety,
@@ -155,48 +152,23 @@ def new_scan():
 
     if not raw_scan.strip():
         warn("No scan data collected. Aborting.")
-        delete_full_session(sl_no)
+        update_session_status(sl_no, "failed")
         return
 
     # send to AI
     divider("AI ANALYSIS")
-    result = analyse_target(target, raw_scan, allowed_subdomains=allowed_subdomains)
+    status, result, analysis_error = analyse_and_save(
+        sl_no, target, raw_scan, allowed_subdomains=allowed_subdomains
+    )
 
     # ── save everything to DB ──────────────────
     divider("SAVING TO DATABASE")
 
-    # save vulnerabilities and their fixes
-    for vuln in result["vulnerabilities"]:
-        vuln_id = save_vulnerability(
-            sl_no,
-            vuln["vuln_name"],
-            vuln["severity"],
-            vuln["port"],
-            vuln["service"],
-            vuln["description"],
-        )
-        if vuln.get("fix"):
-            save_fix(sl_no, vuln_id, vuln["fix"], source="ai")
-        success(f"Saved vuln: {vuln['vuln_name']} [{vuln['severity']}]")
-
-    # save exploits
-    for exp in result["exploits"]:
-        save_exploit(
-            sl_no,
-            exp["exploit_name"],
-            exp["tool_used"],
-            exp["payload"],
-            exp["result"],
-            exp["notes"],
-        )
-        success(f"Saved exploit: {exp['exploit_name']}")
-
-    # save summary
-    save_summary(
-        sl_no, result["raw_scan"], result["full_response"], result["risk_level"]
-    )
-
-    success(f"All data saved. SL# {sl_no} | Risk: {result['risk_level']}")
+    if status == "partial":
+        warn(f"Recon saved, but AI analysis is partial: {analysis_error}")
+    else:
+        assert result is not None
+        success(f"All data saved. SL# {sl_no} | Risk: {result['risk_level']}")
     divider()
 
     # show results and offer edit/delete
