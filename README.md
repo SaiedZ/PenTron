@@ -181,121 +181,11 @@ Avoid rebuilding or restarting the `web` service while a scan is actively in pro
 
 ---
 
-## 🛠️ Alternative: native install (no Docker)
+## 🛠️ Native installation (alternative)
 
-Native installation is still supported and requires **Python 3.12 or newer** plus the recon tools available on the host. The CLI works after installing the Python and system dependencies below. Running the web UI natively additionally requires the [Tailwind standalone CLI](https://tailwindcss.com/blog/standalone-cli) to compile `web/static/css/tailwind.css` once (`tailwindcss -i web/input.css -o web/static/css/tailwind.css --minify`) before `uvicorn api.main:app` will serve styled pages; its Python dependencies are already pinned in `pyproject.toml`.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/SaiedZ/PenTron.git
-cd PenTron
-```
-
-### 2. Install Python dependencies
-
-Uses [`uv`](https://docs.astral.sh/uv/) — creates `.venv` and installs from the committed `uv.lock` in one step (`pip install -e .` also works if you'd rather not install `uv`, see below):
-
-```bash
-uv sync
-```
-
-Add `--extra dev` to also pull in `pytest`, `ruff`, and `mypy`:
-
-```bash
-uv sync --extra dev
-```
-
-Then activate the venv it created (`source .venv/bin/activate`), or prefix commands with `uv run` instead.
-
-> Without `uv`: `python3 -m venv venv && source venv/bin/activate && pip install -e .` (or `pip install -e ".[dev]"`) works the same way, just without the lockfile's exact transitive-dependency pins. Editable install (`-e`) matters here — `api/main.py` resolves `web/` (templates/static) relative to its own file location, and a plain non-editable `pip install .` would copy the code into site-packages and break that.
-
-### 3. Install system tools
-
-```bash
-sudo apt install nmap whois whatweb curl dnsutils nikto sslscan testssl.sh subfinder wafw00f
-```
-
-`subfinder` is only needed if you enable active subdomain discovery (level 2) from the Settings screen — the feature is disabled by default.
-
----
-
-## 🤖 AI Model Setup (native Ollama)
-
-### Step 1 — Install Ollama
-
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-### Step 2 — Download the base model
-
-This matches PenTron's default model setting — nothing else is required to start scanning once this finishes.
-
-```bash
-ollama pull huihui_ai/qwen3.5-abliterated:9b
-```
-
-> ⚠️ This model requires at least 8.4 GB of RAM. If your system has less, use the 4b variant:
-> ```bash
-> ollama pull huihui_ai/qwen3.5-abliterated:4b
-> ```
-> Then set the model to `huihui_ai/qwen3.5-abliterated:4b` from the Settings screen (or `PENTRON_MODEL` env var).
-
-### Step 3 (optional) — Build a custom-tuned alias
-
-The repo includes a `Modelfile` that applies pentest-tuned parameters (16k context, temperature 0.7, top-k 10, top-p 0.9) to the base model under a friendlier local name. Not required — only do this if you want those specific parameters:
-
-```bash
-ollama create pentron-qwen -f Modelfile
-```
-
-Then select `pentron-qwen` from the Settings screen (it won't be picked up automatically — the default model setting stays `huihui_ai/qwen3.5-abliterated:9b` either way).
-
-### Step 4 — Verify the model exists
-
-```bash
-ollama list
-```
-
-You should see `huihui_ai/qwen3.5-abliterated:9b` (and `pentron-qwen` too, if you built the optional alias) in the list.
-
-> Prefer a cloud provider instead? Skip this whole section and set `LLM_PROVIDER`/`OPENAI_API_KEY` (or the Anthropic/Google equivalents) via environment variables, or configure it from the web UI's Settings screen.
-
----
-
-## 🗄️ Database Setup (native MariaDB)
-
-### Step 1 — Make sure MariaDB is running
-
-```bash
-sudo systemctl start mariadb
-sudo systemctl enable mariadb
-```
-
-### Step 2 — Create the database and user
-
-```bash
-mysql -u root
-```
-
-```sql
-CREATE DATABASE pentron;
-CREATE USER 'pentron'@'localhost' IDENTIFIED BY '123';
-GRANT ALL PRIVILEGES ON pentron.* TO 'pentron'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-### Step 3 — Create the tables
-
-```bash
-mysql -u pentron -p123 pentron < docker/schema.sql
-```
-
-(`docker/schema.sql` is the same file the Docker `mariadb` service auto-applies on first start — it covers all six tables including `settings`.)
-
----
+Docker is the recommended setup. To run PenTron directly on the host, follow
+the [native installation guide](docs/native-installation.md) for Python 3.12,
+recon tools, Ollama, MariaDB, and the native web UI.
 
 ## 🚀 Usage
 
@@ -382,13 +272,15 @@ PenTron/
 │   │   └── settings.html        ← provider and scan settings
 │   ├── static/                  ← compiled Tailwind CSS + JS
 │   ├── input.css                 ← Tailwind source
-├── Modelfile               ← optional custom-tuned model alias (see AI Model Setup)
+├── Modelfile               ← optional custom-tuned model alias (see native guide)
 ├── Dockerfile               ← Kali Rolling image (recon tools + Tailwind build)
 ├── docker-compose.yml       ← mariadb + ollama + web + pentron (CLI) services
 ├── docker-compose.gpu.yml   ← GPU overlay for the ollama service
 ├── docker/
 │   ├── schema.sql             ← full DB schema, auto-applied on first start
 │   └── entrypoint.sh            ← waits for MariaDB/Ollama before launching
+├── docs/
+│   └── native-installation.md ← native setup without Docker
 ├── pyproject.toml           ← Python deps (runtime + optional [dev]/[test]), ruff/mypy config
 ├── uv.lock                  ← locked transitive dependency versions (re-run `uv lock` after editing pyproject.toml)
 ├── .gitignore                ← excludes venv, pycache, generated CSS, db files
