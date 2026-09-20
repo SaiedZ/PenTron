@@ -1,4 +1,4 @@
-# 🥷🏼 PenTron
+# 🛡️ PenTron
 ## AI-Powered Penetration Testing Assistant
 
 
