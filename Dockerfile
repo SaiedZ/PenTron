@@ -67,4 +67,4 @@ RUN mkdir -p /app/exports
 EXPOSE 8000
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-CMD ["python3", "pentron.py"]
+CMD ["pentron"]

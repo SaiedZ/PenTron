@@ -13,9 +13,9 @@ import re
 
 import requests
 
-from providers import OllamaProvider, get_provider
-from search import handle_search_dispatch
-from tools import run_tool_by_command
+from .providers import OllamaProvider, get_provider
+from .search import handle_search_dispatch
+from .tools import run_tool_by_command
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
 MODEL_NAME = "huihui_ai/qwen3.5-abliterated:9b"

@@ -9,7 +9,7 @@ selectable levels (settings.subdomain_discovery_level):
                allowed_subdomains param).
 """
 
-import tools
+from pentron import tools
 
 
 class _FakeResponse:

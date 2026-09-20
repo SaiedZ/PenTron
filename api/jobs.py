@@ -95,7 +95,7 @@ def resolve_status(sl_no: int):
     if job is not None:
         return job.to_dict()
 
-    import db
+    from pentron import db
 
     data = db.get_session(sl_no)
     if not data["history"]:

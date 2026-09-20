@@ -6,12 +6,12 @@ Start a scan and poll its live progress.
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-import db
 from api import jobs
 from api.scan_runner import run_scan_job
 from api.schemas import ScanCreateRequest
 from api.security import verify_token
-from tools import check_target_safety
+from pentron import db
+from pentron.tools import check_target_safety
 
 router = APIRouter(
     prefix="/api/scans", tags=["scans"], dependencies=[Depends(verify_token)]

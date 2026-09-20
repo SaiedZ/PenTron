@@ -17,8 +17,8 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from db import get_all_history as fetch_all_history
-from db import get_session as fetch_session
+from .db import get_all_history as fetch_all_history
+from .db import get_session as fetch_session
 
 SEVERITY_COLORS = {
     "critical": "#c0392b",

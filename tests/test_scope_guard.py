@@ -12,7 +12,7 @@ import socket
 
 import pytest
 
-import tools
+from pentron import tools
 
 
 @pytest.fixture(autouse=True)

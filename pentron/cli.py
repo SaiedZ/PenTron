@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-PENTRON - pentron.py
+PENTRON - pentron/cli.py
 Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
-Run with: python pentron.py
+Run with: python -m pentron.cli, or the `pentron` console script.
 """
 
 import os
 import sys
 
-from db import (
+from .db import (
     create_session,
     delete_exploit,
     delete_fix,
@@ -33,10 +33,10 @@ from db import (
     save_summary,
     save_vulnerability,
 )
-from export import export_menu
-from llm import analyse_target
-from providers import OllamaProvider
-from tools import (
+from .export import export_menu
+from .llm import analyse_target
+from .providers import OllamaProvider
+from .tools import (
     check_target_safety,
     discover_subdomains,
     interactive_tool_run,
@@ -602,7 +602,12 @@ def main_menu():
 # ENTRY POINT
 # ─────────────────────────────────────────────
 
-if __name__ == "__main__":
+
+def main():
     if not check_db():
         sys.exit(1)
     main_menu()
+
+
+if __name__ == "__main__":
+    main()
