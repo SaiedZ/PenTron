@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python"/>
-  <img src="https://img.shields.io/badge/OS-Parrot%20Linux-green?style=for-the-badge&logo=linux"/>
+  <img src="https://img.shields.io/badge/Python-3.12%2B-blue?style=for-the-badge&logo=python"/>
+  <img src="https://img.shields.io/badge/Runtime-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
   <img src="https://img.shields.io/badge/AI-Qwen%203.5-red?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/DB-MariaDB-orange?style=for-the-badge&logo=mariadb"/>
   <img src="https://img.shields.io/badge/Web-FastAPI-teal?style=for-the-badge&logo=fastapi"/>
@@ -102,20 +102,20 @@ Both talk to the exact same recon/AI/database engine, so scan history is shared 
 
 | Component     | Technology                                          |
 |---------------|------------------------------------------------------|
-| Language      | Python 3                                            |
+| Language      | Python 3.12+                                        |
 | Web backend   | FastAPI + Uvicorn                                   |
 | Web frontend  | Jinja2 + HTMX + Tailwind CSS                        |
 | AI Providers  | Ollama (local), OpenAI, Anthropic, Google            |
 | Default model | huihui_ai/qwen3.5-abliterated:9b via Ollama (optional custom-tuned alias via `Modelfile`) |
 | Database      | MariaDB                                             |
-| Containers    | Docker + Docker Compose (Kali Rolling base image)    |
+| Containers    | Docker + Docker Compose (portable host; Kali Rolling container image) |
 | Search        | DuckDuckGo (free, no key)                           |
 
 ---
 
 ## 🚀 Quick Start (Docker — recommended)
 
-This is the fastest path and the only one that ships the web UI out of the box. Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+This is the fastest path and the only one that ships the web UI out of the box. It requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose, but no particular host distribution: Linux, macOS, and Windows with Docker Desktop are supported. Kali Rolling is used only inside the application container because it provides the recon-tool packages PenTron needs; the host itself does not need to run Kali or Parrot.
 
 ```bash
 git clone https://github.com/SaiedZ/PenTron.git
@@ -182,7 +182,7 @@ Avoid rebuilding or restarting the `web` service while a scan is actively in pro
 
 ## 🛠️ Alternative: native install (no Docker)
 
-Still supported for CLI-only usage. The web UI additionally needs `fastapi`, `uvicorn`, `jinja2`, and `python-multipart` (already pinned in `pyproject.toml`) plus the [Tailwind standalone CLI](https://tailwindcss.com/blog/standalone-cli) to compile `web/static/css/tailwind.css` once (`tailwindcss -i web/input.css -o web/static/css/tailwind.css --minify`) before `uvicorn api.main:app` will serve styled pages.
+Native installation is still supported and requires **Python 3.12 or newer** plus the recon tools available on the host. The CLI works after installing the Python and system dependencies below. Running the web UI natively additionally requires the [Tailwind standalone CLI](https://tailwindcss.com/blog/standalone-cli) to compile `web/static/css/tailwind.css` once (`tailwindcss -i web/input.css -o web/static/css/tailwind.css --minify`) before `uvicorn api.main:app` will serve styled pages; its Python dependencies are already pinned in `pyproject.toml`.
 
 ### 1. Clone the repository
 
