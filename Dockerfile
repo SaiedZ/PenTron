@@ -1,6 +1,6 @@
 # PENTRON - AI Penetration Testing Assistant
-# Base image: Kali Rolling, so nmap/whois/whatweb/nikto etc. match the
-# tools the app expects (originally built for Parrot OS).
+# Kali Rolling is an implementation detail of the container image: it provides
+# the recon tools the app expects, while the host can run any Docker-supported OS.
 
 FROM kalilinux/kali-rolling
 
