@@ -329,6 +329,63 @@ Vérifié : `ruff format .` / `ruff check .` propres, tous les modules
 s'importent correctement (`pentron.cli`, `api.main`), `pytest tests/ -q`
 toujours 63/63, script console `pentron` confirmé généré dans `.venv`.
 
-**Option B (éclater `tools.py`) reste à faire** — sujet dédié à venir,
-pour discuter spécifiquement du pattern à utiliser (registre de plugins,
-un fichier par outil ou par groupe cohérent, etc.) avant de l'implémenter.
+### ✅ Option B — implémenté
+
+`pentron/tools.py` (906 lignes) éclaté en sous-package `pentron/tools/`,
+avec le pattern retenu après discussion : **un registre à décorateur** +
+**un fichier par outil du menu** (règle uniforme, pas d'exception à
+géométrie variable) :
+
+- `base.py` — `run_tool()` générique. Toujours appelé via `from . import
+  base` puis `base.run_tool(...)` dans chaque module d'outil (jamais
+  `from .base import run_tool`), pour que les tests puissent monkeypatcher
+  une seule cible (`pentron.tools.base.run_tool`) quel que soit l'outil
+  qui l'appelle en interne.
+- `safety.py` — `check_target_safety` / `_is_unsafe_ip` (garde-fou pré-scan).
+- `registry.py` — `ToolSpec` + `@register_tool(key, name, command_name)` ;
+  `TOOLS_MENU` et `ALLOWED_TOOLS` sont maintenant *dérivés* du registre au
+  lieu d'être écrits à la main à deux endroits.
+- `nmap.py`, `whois.py`, `whatweb.py`, `http_headers.py`,
+  `robots_security_txt.py`, `dig.py`, `nikto.py`, `sslscan.py`,
+  `testssl.py`, `waf.py` — un fichier par entrée du menu (10 fichiers pour
+  10 outils), chacun avec son `run_xxx()` décoré.
+- `subdomains.py` — `discover_subdomains` (pas dans le menu, pas un
+  "outil" sélectionnable, donc pas dans le registre).
+- `dispatch.py` — `run_tool_by_command` + le scope guard IA
+  (`_resolve_host`, `_extract_positional_tokens`, `_resolved_ips`),
+  `ALLOWED_TOOLS` désormais lu depuis `registry.allowed_commands()`.
+- `pipeline.py` — `run_default_recon`, `run_selected_tools`,
+  `run_single_tool`, `resolve_tool_plan`, `format_recon_for_llm`.
+- `interactive.py` — `interactive_tool_run` (menu CLI, print/input).
+- `__init__.py` — importe tous les modules d'outils (effet de bord :
+  déclenche leur `@register_tool`) et réexporte l'API publique, donc
+  `api/`, `tests/`, `pentron/cli.py` continuent d'écrire
+  `from pentron.tools import check_target_safety` / `from pentron import
+  tools` exactement comme avant — aucun appelant externe à toucher.
+
+**Ajouter un outil, maintenant** : créer `pentron/tools/<nom>.py` avec un
+`run_<nom>(target, user_agent=None)` décoré `@register_tool(...)`,
+l'ajouter à la liste d'imports de `__init__.py`. Un seul fichier créé, un
+seul fichier touché (l'import) — plus besoin de toucher `TOOLS_MENU` ni
+`ALLOWED_TOOLS` à la main.
+
+Les 8 fichiers de tests qui monkeypatchaient `tools.run_tool` ont été mis
+à jour pour cibler `tools.base.run_tool` (mécanique, même principe que les
+imports lors de l'Option A) ; ceux qui appelaient des helpers privés
+directement (`_fetch_headers_guarded`, `_analyze_security_headers`,
+`_fetch_text_file`, `_resolved_ips`, `tools.requests`) ciblent maintenant
+le sous-module qui les possède (`tools.http_headers`, `tools.dispatch`,
+`tools.subdomains`, etc.).
+
+Vérifié : `ruff format .` / `ruff check .` propres, `pytest tests/ -q`
+63/63, registre reproduit exactement le `TOOLS_MENU`/`ALLOWED_TOOLS`
+d'origine (vérifié par introspection), rebuild Docker complet
+`--no-cache` + `pentron.cli`/`api.main` importés avec succès dans le
+conteneur.
+
+**Hors scope, noté pour plus tard** : `web/templates/dashboard.html` a
+toujours la liste des 10 outils codée en dur en checkboxes HTML,
+déconnectée du registre — 4e point de friction déjà identifié plus haut.
+Le résoudre demande de faire passer la liste du registre à travers une
+route `api/` vers le template Jinja, un sujet côté web distinct de ce
+refactor de `tools.py`.
