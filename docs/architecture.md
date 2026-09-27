@@ -28,8 +28,9 @@ pentron/ai/
 ```
 
 - `analysis.service` is the application-facing entry point for a target
-  assessment. The workflow coordinates provider calls, validation, and safe tool
-  dispatch without depending on the database.
+  assessment. `analysis.graph` coordinates evidence-driven LangGraph branches
+  and bounded tool cycles over the typed state in `analysis.state`, without
+  changing the service contract. Durable checkpointing is explicit and opt-in.
 - `chat.service` handles contextual conversations. `chat.context` builds bounded
   scan context, while `chat.compression` manages long conversation histories.
 - `providers` defines the shared provider contract, concrete integrations, and
@@ -41,6 +42,27 @@ pentron/ai/
   engine.
 - `prompts.py` contains prompt text used internally by analysis and chat. It is
   not an application service API.
+
+### Analysis orchestration
+
+LangGraph is adopted behind `run_analysis_workflow`; callers of
+`analysis.service` keep the same inputs and outputs. The graph operates on the
+typed `AnalysisState` introduced after provider capabilities, bounded context,
+targeted retrieval, and evidence provenance were established. Its branches are
+domain decisions: sufficient evidence proceeds to finalization, while a tool
+proposal proceeds through safe dispatch and a bounded investigation cycle.
+
+The procedural workflow remains a reference implementation for behavioral
+fixtures during the migration. Iteration exhaustion raises
+`AnalysisLimitReached`, whose `state` contains the observations, executions,
+and provenance collected before the limit.
+
+Checkpointing is disabled by default. A caller must supply both a checkpointer
+and a unique `thread_id`; resuming an existing thread is another explicit
+choice. This prevents transient scans from being persisted accidentally while
+allowing an interrupted long-running analysis to continue without repeating
+completed tool side effects. Production storage is intentionally deferred
+until retention, encryption, and multi-user isolation requirements are known.
 
 ### Supported imports
 
