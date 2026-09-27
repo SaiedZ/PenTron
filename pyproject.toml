@@ -32,7 +32,7 @@ dependencies = [
     "markdown-it-py==4.2.0",
     "MarkupSafe==3.0.3",
     "mdurl==0.1.2",
-    "mysql-connector-python==9.6.0",
+    "mysql-connector-python==26.7.0",
     "pillow==12.3.0",
     "primp==1.2.1",
     "pydantic==2.13.5",
