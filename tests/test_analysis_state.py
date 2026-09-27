@@ -1,15 +1,22 @@
 import json
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import ValidationError
 
+from pentron.ai.analysis.graph import AnalysisGraphNodes
 from pentron.ai.analysis.state import (
+    AnalysisLimitReached,
     AnalysisState,
     AnalysisStateError,
     DuplicateActionError,
     PendingAction,
 )
-from pentron.ai.analysis.workflow import create_analysis_state, run_analysis_workflow
+from pentron.ai.analysis.workflow import (
+    create_analysis_state,
+    run_analysis_workflow,
+    run_procedural_analysis_workflow,
+)
 from pentron.ai.providers import ProviderResponse
 from pentron.ai.tool_calls import ToolCall
 
@@ -59,6 +66,19 @@ def executed_state() -> AnalysisState:
     return state
 
 
+def graph_value(state: AnalysisState, **overrides):
+    value = {
+        "analysis": state,
+        "response_text": "",
+        "response_finish_reason": "unknown",
+        "response_truncated": False,
+        "dispatch_calls": [],
+        "evidence_decision": "sufficient",
+    }
+    value.update(overrides)
+    return value
+
+
 def test_state_serialization_preserves_provenance_and_safe_defaults():
     state = executed_state()
 
@@ -104,6 +124,44 @@ def test_duplicate_action_is_detected_before_execution():
         state.queue(repeated)
 
     assert len(state.executions) == 1
+
+
+def test_graph_routing_methods_are_independently_testable():
+    nodes = AnalysisGraphNodes(
+        provider=FakeProvider([]),
+        target="example.test",
+        allowed_subdomains=frozenset(),
+        max_iterations=2,
+    )
+    state = create_analysis_state("example.test", "evidence")
+
+    assert nodes.route_after_investigation(graph_value(state)) == "finalize"
+    assert (
+        nodes.route_after_investigation(
+            graph_value(state, evidence_decision="investigate")
+        )
+        == "continue_or_limit"
+    )
+    assert (
+        nodes.route_after_investigation(graph_value(state, dispatch_calls=[{}]))
+        == "execute_tools"
+    )
+
+
+def test_limit_node_is_independently_testable():
+    state = executed_state()
+    nodes = AnalysisGraphNodes(
+        provider=FakeProvider([]),
+        target=state.target,
+        allowed_subdomains=frozenset(),
+        max_iterations=state.iteration,
+    )
+
+    with pytest.raises(AnalysisLimitReached) as exc_info:
+        nodes.continue_or_limit(graph_value(state))
+
+    assert exc_info.value.state is state
+    assert state.status == "failed"
 
 
 def test_workflow_records_multiple_iterations_and_collected_evidence(monkeypatch):
@@ -235,3 +293,191 @@ def test_resume_with_exhausted_budget_fails_without_provider_call():
 
     assert provider.calls == []
     assert state.status == "awaiting_actions"
+
+
+def test_iteration_limit_exposes_inspectable_partial_state(monkeypatch):
+    state = create_analysis_state("example.test", "initial evidence")
+    provider = FakeProvider(
+        [
+            ProviderResponse(
+                "",
+                "tool_calls",
+                tool_calls=(
+                    ToolCall(name="nmap", arguments={"target": "example.test"}),
+                ),
+            )
+        ]
+    )
+    monkeypatch.setattr(
+        "pentron.ai.analysis.workflow.run_tool_calls",
+        lambda *args: (
+            "port 443 open",
+            [
+                {
+                    "command": "nmap",
+                    "result": "port 443 open",
+                    "status": "accepted",
+                    "blocked": False,
+                }
+            ],
+        ),
+    )
+
+    with pytest.raises(AnalysisLimitReached) as exc_info:
+        run_analysis_workflow(
+            state.target,
+            state.raw_scan,
+            provider,
+            max_tool_loops=1,
+            state=state,
+        )
+
+    partial = exc_info.value.state
+    assert partial.status == "failed"
+    assert partial.iteration == 1
+    assert partial.executions[0].result == "port 443 open"
+    assert any("port 443 open" in item.value for item in partial.observations)
+
+
+def test_checkpointing_is_explicit_and_requires_thread_id():
+    state = create_analysis_state("example.test", "initial evidence")
+    provider = FakeProvider([ProviderResponse(valid_result(), "stop")])
+
+    with pytest.raises(ValueError, match="thread_id is required"):
+        run_analysis_workflow(
+            state.target,
+            state.raw_scan,
+            provider,
+            state=state,
+            checkpointer=InMemorySaver(),
+        )
+
+
+def test_checkpoint_resume_does_not_repeat_completed_tools(monkeypatch):
+    checkpointer = InMemorySaver()
+    state = create_analysis_state("example.test", "initial evidence")
+    first_provider = FakeProvider(
+        [
+            ProviderResponse(
+                "",
+                "tool_calls",
+                tool_calls=(
+                    ToolCall(name="nmap", arguments={"target": "example.test"}),
+                ),
+            )
+        ]
+    )
+    dispatched = []
+
+    def fake_run(calls, *args):
+        dispatched.extend(calls)
+        return (
+            "port 443 open",
+            [
+                {
+                    "command": "nmap",
+                    "result": "port 443 open",
+                    "status": "accepted",
+                    "blocked": False,
+                }
+            ],
+        )
+
+    monkeypatch.setattr("pentron.ai.analysis.workflow.run_tool_calls", fake_run)
+    with pytest.raises(AnalysisLimitReached):
+        run_analysis_workflow(
+            state.target,
+            state.raw_scan,
+            first_provider,
+            max_tool_loops=1,
+            state=state,
+            checkpointer=checkpointer,
+            thread_id="analysis-1",
+        )
+
+    resumed, records = run_analysis_workflow(
+        state.target,
+        state.raw_scan,
+        FakeProvider([ProviderResponse(valid_result(), "stop")]),
+        max_tool_loops=2,
+        state=state,
+        checkpointer=checkpointer,
+        thread_id="analysis-1",
+        resume_from_checkpoint=True,
+    )
+
+    assert resumed.risk_level == "LOW"
+    assert len(dispatched) == 1
+    assert len(records) == 1
+
+
+def test_graph_and_procedural_workflows_match_reference_fixture():
+    graph_state = create_analysis_state("example.test", "initial evidence")
+    procedural_state = create_analysis_state("example.test", "initial evidence")
+    graph_provider = FakeProvider([ProviderResponse(valid_result(), "stop")])
+    procedural_provider = FakeProvider([ProviderResponse(valid_result(), "stop")])
+
+    graph_result, graph_records = run_analysis_workflow(
+        graph_state.target,
+        graph_state.raw_scan,
+        graph_provider,
+        state=graph_state,
+    )
+    procedural_result, procedural_records = run_procedural_analysis_workflow(
+        procedural_state.target,
+        procedural_state.raw_scan,
+        procedural_provider,
+        state=procedural_state,
+    )
+
+    assert graph_result == procedural_result
+    assert graph_records == procedural_records
+    assert graph_state.iteration == procedural_state.iteration == 1
+
+
+def test_graph_and_procedural_workflows_make_same_tool_decisions(monkeypatch):
+    tool_response = ProviderResponse(
+        "",
+        "tool_calls",
+        tool_calls=(ToolCall(name="nmap", arguments={"target": "example.test"}),),
+    )
+    graph_provider = FakeProvider(
+        [tool_response, ProviderResponse(valid_result(), "stop")]
+    )
+    procedural_provider = FakeProvider(
+        [tool_response, ProviderResponse(valid_result(), "stop")]
+    )
+    graph_state = create_analysis_state("example.test", "initial evidence")
+    procedural_state = create_analysis_state("example.test", "initial evidence")
+    monkeypatch.setattr(
+        "pentron.ai.analysis.workflow.run_tool_calls",
+        lambda calls, *args: (
+            "port 443 open",
+            [
+                {
+                    "command": calls[0].name,
+                    "arguments": calls[0].arguments,
+                    "result": "port 443 open",
+                    "status": "accepted",
+                    "blocked": False,
+                }
+            ],
+        ),
+    )
+
+    graph_result, graph_records = run_analysis_workflow(
+        graph_state.target,
+        graph_state.raw_scan,
+        graph_provider,
+        state=graph_state,
+    )
+    procedural_result, procedural_records = run_procedural_analysis_workflow(
+        procedural_state.target,
+        procedural_state.raw_scan,
+        procedural_provider,
+        state=procedural_state,
+    )
+
+    assert graph_result == procedural_result
+    assert graph_records == procedural_records
+    assert graph_state.raw_scan == procedural_state.raw_scan

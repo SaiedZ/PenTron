@@ -1,5 +1,6 @@
 from .service import AnalysisIncompleteError, analyse_target
 from .state import (
+    AnalysisLimitReached,
     AnalysisState,
     AnalysisStateError,
     DuplicateActionError,
@@ -9,6 +10,7 @@ from .state import (
 
 __all__ = [
     "AnalysisIncompleteError",
+    "AnalysisLimitReached",
     "AnalysisState",
     "AnalysisStateError",
     "DuplicateActionError",

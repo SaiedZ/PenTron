@@ -18,6 +18,18 @@ class AnalysisStateError(ValueError):
     """Raised when a state transition would violate workflow invariants."""
 
 
+class AnalysisLimitReached(AnalysisStateError):
+    """Raised with the inspectable partial state when the budget is exhausted."""
+
+    def __init__(self, state: "AnalysisState", max_iterations: int):
+        self.state = state
+        self.max_iterations = max_iterations
+        super().__init__(
+            f"analysis iteration limit reached "
+            f"({state.iteration}/{max_iterations}); partial state is available"
+        )
+
+
 class DuplicateActionError(AnalysisStateError):
     """Raised when a proposal has already been queued or executed."""
 

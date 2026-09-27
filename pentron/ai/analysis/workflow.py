@@ -107,7 +107,7 @@ def _condense_recon(raw_scan: str, provider, policy: ContextPolicy) -> str:
     return "\n\n".join(condensed)
 
 
-def run_analysis_workflow(
+def run_procedural_analysis_workflow(
     target: str,
     raw_scan: str,
     provider,
@@ -265,3 +265,45 @@ If analysis is complete, return the final JSON assessment.""",
     state.hypotheses = parsed.hypotheses
     state.complete(parsed)
     return parsed, state.audit_records()
+
+
+def run_analysis_workflow(
+    target: str,
+    raw_scan: str,
+    provider,
+    on_progress=None,
+    allowed_subdomains: frozenset = frozenset(),
+    max_tool_loops: int = MAX_TOOL_LOOPS,
+    state: AnalysisState | None = None,
+    *,
+    checkpointer=None,
+    thread_id: str | None = None,
+    resume_from_checkpoint: bool = False,
+) -> tuple[AnalysisResult, list[dict]]:
+    """Run the LangGraph workflow without changing the public service contract."""
+    from .graph import run_graph_analysis
+
+    state = state or create_analysis_state(target, raw_scan)
+    if state.target != target:
+        raise ValueError("analysis state target does not match requested target")
+    if state.status == "completed":
+        if state.final_result is None:  # guarded by AnalysisState validation
+            raise ValueError("completed analysis state has no final result")
+        return state.final_result, state.audit_records()
+    if state.pending_actions:
+        raise ValueError("cannot resume while actions remain pending")
+
+    completed = run_graph_analysis(
+        state,
+        provider,
+        target=target,
+        allowed_subdomains=allowed_subdomains,
+        max_iterations=max_tool_loops,
+        on_progress=on_progress,
+        checkpointer=checkpointer,
+        thread_id=thread_id,
+        resume_from_checkpoint=resume_from_checkpoint,
+    )
+    if completed.final_result is None:
+        raise AnalysisStateError("analysis graph ended without a final result")
+    return completed.final_result, completed.audit_records()
