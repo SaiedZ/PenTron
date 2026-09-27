@@ -7,8 +7,12 @@ exactly, reusing the same persistence, tool, and AI services, but reports
 live progress into the api.jobs store instead of print()ing to a terminal.
 """
 
+import time
+
 from api import jobs
 from pentron import db
+from pentron.ai.approval import PersistentApprovalGate, ProposedAction
+from pentron.ai.approval_db import get_approval_service
 from pentron.ai.providers import get_provider
 from pentron.analysis_pipeline import analyse_and_save
 from pentron.tools import (
@@ -65,6 +69,29 @@ def _make_on_progress(sl_no: int):
     return on_progress
 
 
+def _wait_for_web_decision(sl_no: int):
+    service = get_approval_service()
+
+    def decide(action: ProposedAction):
+        db.update_session_status(sl_no, "awaiting_approval")
+        while True:
+            actions = service.list_for_session(sl_no)
+            jobs.update_job(
+                sl_no,
+                state="WAITING_APPROVAL",
+                detail="review the proposed investigation",
+                approvals=[item.model_dump(mode="json") for item in actions],
+            )
+            current = next(item for item in actions if item.id == action.id)
+            if current.status != "proposed":
+                db.update_session_status(sl_no, "active")
+                decision = "approved" if current.status == "approved" else "rejected"
+                return decision, current.actor, current.reason
+            time.sleep(0.5)
+
+    return decide
+
+
 def run_scan_job(
     sl_no: int, target: str, tool_keys, subdomain_level: int = None
 ) -> None:
@@ -109,6 +136,9 @@ def run_scan_job(
             return
 
         provider = get_provider()
+        approval_gate = PersistentApprovalGate(
+            get_approval_service(), sl_no, _wait_for_web_decision(sl_no)
+        )
         status, result, error = analyse_and_save(
             sl_no,
             target,
@@ -116,6 +146,7 @@ def run_scan_job(
             provider=provider,
             on_progress=on_progress,
             allowed_subdomains=allowed_subdomains,
+            approval_gate=approval_gate,
         )
 
         if status == "partial":

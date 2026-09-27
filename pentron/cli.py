@@ -8,6 +8,8 @@ Run with: python -m pentron.cli, or the `pentron` console script.
 import os
 import sys
 
+from .ai.approval import PersistentApprovalGate, ProposedAction
+from .ai.approval_db import get_approval_service
 from .ai.providers import OllamaProvider
 from .analysis_pipeline import analyse_and_save
 from .db import (
@@ -98,6 +100,19 @@ def confirm(question: str) -> bool:
     return ans == "y"
 
 
+def _cli_approval_decision(action: ProposedAction):
+    divider("APPROVAL REQUIRED")
+    print(f"  Action    : {action.name}")
+    print(f"  Target    : {action.target or 'n/a'}")
+    print(f"  Risk      : {action.risk}")
+    print(f"  Rationale : {action.rationale}")
+    if not sys.stdin.isatty():
+        return "rejected", "cli", "non-interactive CLI fails closed"
+    if confirm("Approve this investigation?"):
+        return "approved", "cli-user", "approved interactively"
+    return "rejected", "cli-user", "rejected interactively"
+
+
 # ─────────────────────────────────────────────
 # NEW SCAN
 # ─────────────────────────────────────────────
@@ -155,7 +170,13 @@ def new_scan():
     # send to AI
     divider("AI ANALYSIS")
     status, result, analysis_error = analyse_and_save(
-        sl_no, target, raw_scan, allowed_subdomains=allowed_subdomains
+        sl_no,
+        target,
+        raw_scan,
+        allowed_subdomains=allowed_subdomains,
+        approval_gate=PersistentApprovalGate(
+            get_approval_service(), sl_no, _cli_approval_decision
+        ),
     )
 
     # ── save everything to DB ──────────────────

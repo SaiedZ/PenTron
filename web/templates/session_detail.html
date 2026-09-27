@@ -225,6 +225,30 @@
   {% endif %}
 </section>
 
+<section class="mt-8">
+  <p class="field-label mb-3">Investigation approval history</p>
+  {% if not session.approvals %}
+  <p class="text-sm text-slate-500">No human approval was required.</p>
+  {% else %}
+  <div class="panel divide-y divide-[var(--border-soft)]">
+    {% for action in session.approvals %}
+    <div class="p-5">
+      <div class="flex items-center justify-between gap-3">
+        <span class="font-mono text-sm text-slate-200">{{ action.name }} · {{ action.target or "n/a" }}</span>
+        <span class="badge {% if action.status == 'executed' %}badge-low{% elif action.status in ['rejected', 'expired', 'failed'] %}badge-high{% else %}badge-unknown{% endif %}">
+          {{ action.status }}
+        </span>
+      </div>
+      <p class="mt-2 text-xs text-slate-500">
+        Risk {{ action.risk }} · actor {{ action.actor }} · proposed {{ action.proposed_at }}
+      </p>
+      {% if action.reason %}<p class="mt-1 text-xs text-slate-400">{{ action.reason }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
 </div>
 
 <aside>

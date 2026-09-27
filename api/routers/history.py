@@ -15,6 +15,7 @@ from api.schemas import (
 from api.security import verify_token
 from api.serializers import history_to_dict, session_to_dict
 from pentron import db
+from pentron.ai.approval_db import get_approval_service
 
 router = APIRouter(
     prefix="/api", tags=["history"], dependencies=[Depends(verify_token)]
@@ -31,7 +32,12 @@ def get_history_detail(sl_no: int):
     data = db.get_session(sl_no)
     if not data["history"]:
         raise HTTPException(status_code=404, detail=f"SL# {sl_no} not found")
-    return session_to_dict(data)
+    session = session_to_dict(data)
+    session["approvals"] = [
+        action.model_dump(mode="json")
+        for action in get_approval_service().list_for_session(sl_no)
+    ]
+    return session
 
 
 @router.patch("/vulnerabilities/{vuln_id}")

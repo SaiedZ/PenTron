@@ -119,10 +119,10 @@ failures. Until telemetry can provide that evidence, the decision is to defer.
 
 ## Database schema
 
-Seven tables, six of them linked by `sl_no` (session number) from the
-`history` table; `settings` is a standalone single-row table for runtime
-configuration. Source of truth: [`docker/schema.sql`](../docker/schema.sql)
-— update this diagram if it drifts.
+Ten tables, with scan results and proposed-action audit records linked to the
+session in `history`; `settings` is a standalone single-row table for runtime
+configuration. Source of truth: [`docker/schema.sql`](../docker/schema.sql) —
+update this diagram if it drifts.
 
 ```
 history              ← one row per scan session (sl_no is the spine)
@@ -135,7 +135,13 @@ history              ← one row per scan session (sl_no is the spine)
     │
     ├── ai_tool_calls      ← every AI-dispatched [TOOL:]/[SEARCH:] call, blocked or not, linked by sl_no
     │
-    └── summary           ← full AI analysis dump, linked by sl_no
+    ├── analysis_domains   ← versioned observations, facts, hypotheses, and findings, linked by sl_no
+    │
+    ├── proposed_actions   ← current authorization state, actor, risk, and timestamps, linked by session_id
+    │       │
+    │       └── proposed_action_events ← immutable lifecycle transition log, linked by action_id
+    │
+    └── summary            ← full AI analysis dump, linked by sl_no
 
 settings              ← single row: active provider, model, timeouts, API key
                          (read/written from both the web UI and the CLI Settings screen)

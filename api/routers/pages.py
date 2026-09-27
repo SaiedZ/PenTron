@@ -16,6 +16,7 @@ from markupsafe import Markup
 from api import jobs
 from api.serializers import history_to_dict, mask_api_key, session_to_dict
 from pentron import db
+from pentron.ai.approval_db import get_approval_service
 from pentron.tools import registry as tool_registry
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -99,10 +100,15 @@ def session_detail_page(request: Request, sl_no: int):
     data = db.get_session(sl_no)
     if not data["history"]:
         raise HTTPException(status_code=404, detail=f"SL# {sl_no} not found")
+    session = session_to_dict(data)
+    session["approvals"] = [
+        action.model_dump(mode="json")
+        for action in get_approval_service().list_for_session(sl_no)
+    ]
     return templates.TemplateResponse(
         request,
         "session_detail.html",
-        {"sl_no": sl_no, "session": session_to_dict(data)},
+        {"sl_no": sl_no, "session": session},
     )
 
 

@@ -92,10 +92,42 @@ def _ensure_analysis_schema(cursor) -> None:
     cursor.execute(
         "ALTER TABLE ai_tool_calls ADD COLUMN IF NOT EXISTS reason TEXT NULL"
     )
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS proposed_actions (
+          id VARCHAR(64) PRIMARY KEY,
+          session_id INT NOT NULL,
+          name VARCHAR(100) NOT NULL,
+          arguments LONGTEXT NOT NULL,
+          target TEXT NOT NULL,
+          rationale TEXT NOT NULL,
+          risk VARCHAR(20) NOT NULL,
+          requires_approval BOOLEAN NOT NULL,
+          status VARCHAR(20) NOT NULL,
+          actor VARCHAR(255) NOT NULL,
+          reason TEXT NOT NULL,
+          proposed_at DATETIME(6) NOT NULL,
+          expires_at DATETIME(6) NOT NULL,
+          decided_at DATETIME(6) NULL,
+          executed_at DATETIME(6) NULL,
+          INDEX idx_proposed_actions_session (session_id),
+          FOREIGN KEY (session_id) REFERENCES history(sl_no)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS proposed_action_events (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          action_id VARCHAR(64) NOT NULL,
+          status VARCHAR(20) NOT NULL,
+          actor VARCHAR(255) NOT NULL,
+          reason TEXT NOT NULL,
+          occurred_at DATETIME(6) NOT NULL,
+          FOREIGN KEY (action_id) REFERENCES proposed_actions(id)
+        )
+    """)
 
 
 def update_session_status(sl_no: int, status: str) -> None:
-    if status not in {"active", "done", "partial", "failed"}:
+    if status not in {"active", "awaiting_approval", "done", "partial", "failed"}:
         raise ValueError(f"Invalid session status: {status}")
     conn = get_connection()
     c = conn.cursor()
@@ -442,6 +474,14 @@ def delete_full_session(sl_no: int):
     _ensure_analysis_schema(c)
     c.execute("DELETE FROM fixes             WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM ai_tool_calls      WHERE sl_no = %s", (sl_no,))
+    c.execute(
+        """DELETE FROM proposed_action_events
+           WHERE action_id IN (
+             SELECT id FROM proposed_actions WHERE session_id = %s
+           )""",
+        (sl_no,),
+    )
+    c.execute("DELETE FROM proposed_actions  WHERE session_id = %s", (sl_no,))
     c.execute("DELETE FROM analysis_domains   WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM exploit_suggestions WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM vulnerabilities   WHERE sl_no = %s", (sl_no,))
