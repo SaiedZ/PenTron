@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from pentron.chat import MAX_CHAT_MESSAGE_CHARS
+from pentron.ai.chat.context import MAX_CHAT_MESSAGE_CHARS
 
 MAX_CHAT_HISTORY_MESSAGES = 100
 

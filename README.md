@@ -344,6 +344,7 @@ Enter a session's SL# to view it, or press **Enter** to go back. From a session 
 ```
 PenTron/
 ├── pentron/              # Core scanning, AI analysis, contextual chat, and exports
+│   ├── ai/               # Models, prompts, providers, analysis, and chat services
 │   ├── tools/            # Reconnaissance and security tool integrations
 │   └── export/           # PDF, HTML, and JSON report generation
 ├── api/                  # FastAPI backend, routes, and background scan jobs

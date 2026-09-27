@@ -7,8 +7,8 @@ from api.schemas import ChatRequest, ChatResponse
 from api.security import verify_token
 from api.serializers import session_to_dict
 from pentron import db
-from pentron.chat import ChatProviderError, build_seed_context, send_chat_message
-from pentron.providers import get_provider
+from pentron.ai.chat import ChatProviderError, build_seed_context, send_chat_message
+from pentron.ai.providers import get_provider
 
 router = APIRouter(prefix="/api", tags=["chat"], dependencies=[Depends(verify_token)])
 

@@ -8,36 +8,10 @@ llm.py already relies on for ask_ollama().
 """
 
 import os
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 import requests
 
-
-@dataclass(frozen=True)
-class ProviderResponse:
-    text: str
-    finish_reason: str = "unknown"
-    truncated: bool = False
-
-    def __str__(self) -> str:
-        return self.text
-
-
-class BaseProvider(ABC):
-    def __init__(self, model: str, timeout: int = 600, **kwargs):
-        self.model = model
-        self.timeout = timeout
-
-    @abstractmethod
-    def send(
-        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
-    ) -> ProviderResponse:
-        """Return text plus the provider's completion metadata."""
-
-    @abstractmethod
-    def list_models(self) -> list:
-        """Return the list of model names/ids available for this provider."""
+from .ai.providers.base import BaseProvider, ProviderResponse
 
 
 class OllamaProvider(BaseProvider):
@@ -304,37 +278,7 @@ PROVIDERS = {
 
 
 def get_provider(settings: dict = None) -> BaseProvider:
-    """
-    Build a provider from persisted settings (db.settings table), falling
-    back to env vars for anything not set. Imports db lazily to avoid a
-    hard dependency for callers that only need the provider classes.
-    """
-    if settings is None:
-        try:
-            from .db import get_settings
+    """Compatibility wrapper for :mod:`pentron.ai.providers.factory`."""
+    from .ai.providers.factory import get_provider as build_provider
 
-            settings = get_settings()
-        except Exception:
-            settings = {}
-
-    name = (
-        settings.get("provider") or os.environ.get("LLM_PROVIDER") or "ollama"
-    ).lower()
-    provider_cls = PROVIDERS.get(name, OllamaProvider)
-
-    model = settings.get("model") or os.environ.get(
-        "PENTRON_MODEL", "huihui_ai/qwen3.5-abliterated:9b"
-    )
-    timeout = int(
-        settings.get("ollama_timeout") or os.environ.get("PENTRON_OLLAMA_TIMEOUT", 600)
-    )
-
-    kwargs = {}
-    if name == "ollama":
-        kwargs["host"] = settings.get("ollama_host") or os.environ.get(
-            "OLLAMA_HOST", "localhost:11434"
-        )
-    else:
-        kwargs["api_key"] = settings.get("api_key")
-
-    return provider_cls(model=model, timeout=timeout, **kwargs)
+    return build_provider(settings)
