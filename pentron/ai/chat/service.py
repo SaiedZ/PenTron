@@ -1,7 +1,8 @@
 """High-level contextual chat service."""
 
+from ..capabilities import context_policy_for
 from ..prompts import CHAT_SYSTEM_PROMPT
-from .compression import CHAT_RESPONSE_RESERVE, maybe_compress
+from .compression import maybe_compress
 from .context import MAX_CHAT_MESSAGE_CHARS, normalize_history
 
 
@@ -10,6 +11,7 @@ class ChatProviderError(RuntimeError):
 
 
 def send_chat_message(history, seed: str, user_text: str, provider):
+    policy = context_policy_for(provider)
     if not isinstance(user_text, str):
         raise ValueError("Chat message must be a string.")
     user_text = user_text.strip()[:MAX_CHAT_MESSAGE_CHARS]
@@ -28,12 +30,15 @@ def send_chat_message(history, seed: str, user_text: str, provider):
         {"role": "user", "content": user_text},
     ]
     compressed_history = maybe_compress(
-        pending_history, provider, fixed_context=system_content
+        pending_history,
+        provider,
+        fixed_context=system_content,
+        policy=policy,
     )
     try:
         response = provider.send(
             [{"role": "system", "content": system_content}, *compressed_history],
-            max_tokens=CHAT_RESPONSE_RESERVE,
+            max_tokens=policy.output_reserve,
             temperature=0.3,
         )
     except Exception as exc:

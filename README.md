@@ -345,6 +345,7 @@ Enter a session's SL# to view it, or press **Enter** to go back. From a session 
 PenTron/
 ├── pentron/              # Core scanning, AI analysis, contextual chat, and exports
 │   ├── ai/               # Modular AI engine
+│   │   ├── capabilities.py # Provider/model limits and context policies
 │   │   ├── models.py     # Validated analysis result models
 │   │   ├── prompts.py    # Analysis, repair, tool, and chat prompts
 │   │   ├── providers/    # Provider contracts, implementations, and factory

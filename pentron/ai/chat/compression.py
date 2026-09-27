@@ -1,13 +1,10 @@
 """Conversation compression policy for session chat."""
 
+from ..capabilities import ContextPolicy, context_policy_for
 from ..prompts import CHAT_COMPRESSION_SYSTEM_PROMPT
 from .context import estimate_history_tokens, estimate_tokens, normalize_history
 
-CHAT_CONTEXT_BUDGET = 16_000
-CHAT_RESPONSE_RESERVE = 2_000
-CHAT_COMPRESSION_THRESHOLD = 0.75
 CHAT_RECENT_MESSAGES = 6
-CHAT_COMPRESSION_MAX_TOKENS = 800
 CONVERSATION_SUMMARY_PREFIX = "[Conversation summary]\n"
 
 
@@ -16,17 +13,13 @@ def maybe_compress(
     provider,
     *,
     fixed_context: str = "",
-    budget: int = CHAT_CONTEXT_BUDGET,
-    response_reserve: int = CHAT_RESPONSE_RESERVE,
+    policy: ContextPolicy | None = None,
 ) -> list[dict[str, str]]:
+    policy = policy or context_policy_for(provider)
     normalized = normalize_history(history)
-    total_tokens = (
-        estimate_tokens(fixed_context)
-        + estimate_history_tokens(normalized)
-        + max(0, response_reserve)
-    )
+    total_tokens = estimate_tokens(fixed_context) + estimate_history_tokens(normalized)
     if (
-        total_tokens < max(0, budget) * CHAT_COMPRESSION_THRESHOLD
+        total_tokens < policy.compression_trigger_tokens
         or len(normalized) <= CHAT_RECENT_MESSAGES
     ):
         return normalized
@@ -45,7 +38,7 @@ def maybe_compress(
                     "content": f"Conversation to summarize:\n\n{transcript}",
                 },
             ],
-            max_tokens=CHAT_COMPRESSION_MAX_TOKENS,
+            max_tokens=policy.summary_budget,
             temperature=0.2,
         )
     except Exception:

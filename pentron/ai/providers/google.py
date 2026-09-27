@@ -8,6 +8,8 @@ from .base import BaseProvider, ProviderResponse
 
 
 class GoogleProvider(BaseProvider):
+    provider_name = "google"
+
     def __init__(
         self, model: str, timeout: int = 600, api_key: str | None = None, **kwargs
     ):

@@ -15,6 +15,8 @@ class ProviderResponse:
 
 
 class BaseProvider(ABC):
+    provider_name = "unknown"
+
     def __init__(self, model: str, timeout: int = 600, **kwargs):
         self.model = model
         self.timeout = timeout

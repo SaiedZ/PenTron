@@ -4,6 +4,7 @@ import re
 
 from ...search import handle_search_dispatch
 from ...tools import run_tool_by_command
+from ..capabilities import context_policy_for
 from ..prompts import TOOL_OUTPUT_SYSTEM_PROMPT
 from ..providers.factory import get_provider
 
@@ -23,6 +24,7 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
 
     try:
         provider = provider or get_provider()
+        policy = context_policy_for(provider)
         summary = provider.send(
             [
                 {"role": "system", "content": TOOL_OUTPUT_SYSTEM_PROMPT},
@@ -31,7 +33,7 @@ def summarize_tool_output(raw_output: str, provider=None) -> str:
                     "content": f"Compress this tool output:\n{raw_output[:6000]}",
                 },
             ],
-            max_tokens=512,
+            max_tokens=min(512, policy.summary_budget),
             temperature=0.2,
         )
         text = summary.text

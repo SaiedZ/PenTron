@@ -2,26 +2,26 @@
 
 import re
 
+from ..capabilities import ContextPolicy, context_policy_for
 from ..models import AnalysisResult
 from ..prompts import FINAL_PROMPT, SYSTEM_PROMPT
 from ..providers.base import ProviderResponse
 from .tool_dispatch import extract_tool_calls, run_tool_calls, summarize_tool_output
 from .validators import validate_or_repair_analysis
 
-MAX_TOKENS = 8192
 MAX_TOOL_LOOPS = 9
-SUMMARY_THRESHOLD = 4000
 
 
-def _condense_recon(raw_scan: str, provider) -> str:
-    if len(raw_scan) <= SUMMARY_THRESHOLD:
+def _condense_recon(raw_scan: str, provider, policy: ContextPolicy) -> str:
+    summary_threshold = policy.session_context_budget * 4
+    if len(raw_scan) <= summary_threshold:
         return raw_scan
     sections = re.split(r"(?=\n={20,}\n\[ )", raw_scan)
     condensed = []
     for section in sections:
         if not section.strip():
             continue
-        if len(section) <= SUMMARY_THRESHOLD:
+        if len(section) <= summary_threshold:
             condensed.append(section.strip())
         else:
             condensed.append(summarize_tool_output(section, provider))
@@ -36,7 +36,8 @@ def run_analysis_workflow(
     allowed_subdomains: frozenset = frozenset(),
     max_tool_loops: int = MAX_TOOL_LOOPS,
 ) -> tuple[AnalysisResult, list[dict]]:
-    evidence = _condense_recon(raw_scan, provider)
+    policy = context_policy_for(provider)
+    evidence = _condense_recon(raw_scan, provider, policy)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + FINAL_PROMPT},
         {
@@ -56,7 +57,7 @@ When no more tools are needed, return the final JSON assessment.""",
     for loop in range(max_tool_loops):
         if on_progress:
             on_progress("ai_round_start", f"{loop + 1}/{max_tool_loops}")
-        response = provider.send(messages, max_tokens=MAX_TOKENS)
+        response = provider.send(messages, max_tokens=policy.max_output_tokens)
         if not isinstance(response, ProviderResponse):
             response = ProviderResponse(str(response))
 
@@ -92,7 +93,7 @@ If analysis is complete, return the final JSON assessment.""",
     parsed, _ = validate_or_repair_analysis(
         provider,
         final_response,
-        max_tokens=MAX_TOKENS,
+        max_tokens=policy.max_output_tokens,
         tool_calls=tool_call_records,
     )
     return parsed, tool_call_records

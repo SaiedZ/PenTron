@@ -1,5 +1,5 @@
+from pentron.ai.capabilities import ContextPolicy, ModelCapabilities, context_policy_for
 from pentron.ai.chat.compression import (
-    CHAT_COMPRESSION_MAX_TOKENS,
     CHAT_RECENT_MESSAGES,
     CONVERSATION_SUMMARY_PREFIX,
     maybe_compress,
@@ -45,6 +45,18 @@ class SequenceProvider:
         if isinstance(response, Exception):
             raise response
         return ProviderResponse(response)
+
+
+def _tight_policy():
+    return ContextPolicy(
+        capabilities=ModelCapabilities(256, 64),
+        output_reserve=64,
+        safety_margin=32,
+        compression_threshold=0.5,
+        session_context_budget=50,
+        history_budget=80,
+        summary_budget=30,
+    )
 
 
 def test_estimate_tokens():
@@ -485,7 +497,7 @@ def test_maybe_compress_normalizes_history_below_threshold():
         {"role": "system", "content": "ignored"},
     ]
 
-    result = maybe_compress(history, provider, budget=1_000, response_reserve=0)
+    result = maybe_compress(history, provider)
 
     assert result == [{"role": "user", "content": "Hello"}]
     assert provider.calls == []
@@ -494,9 +506,7 @@ def test_maybe_compress_normalizes_history_below_threshold():
 def test_maybe_compress_does_not_call_provider_below_threshold():
     provider = FakeProvider()
 
-    result = maybe_compress(
-        _long_history(), provider, budget=10_000, response_reserve=0
-    )
+    result = maybe_compress(_long_history(), provider)
 
     assert result == _long_history()
     assert provider.calls == []
@@ -506,7 +516,7 @@ def test_maybe_compress_summarizes_old_and_preserves_recent_messages():
     provider = FakeProvider("Confirmed facts and one unresolved question.")
     history = _long_history()
 
-    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+    result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert len(provider.calls) == 1
     assert result[0] == {
@@ -524,7 +534,7 @@ def test_maybe_compress_uses_expected_provider_parameters_and_transcript():
     provider = FakeProvider()
     history = _long_history()
 
-    maybe_compress(history, provider, budget=100, response_reserve=10)
+    maybe_compress(history, provider, policy=_tight_policy())
 
     messages, kwargs = provider.calls[0]
     assert messages[0]["role"] == "system"
@@ -532,7 +542,7 @@ def test_maybe_compress_uses_expected_provider_parameters_and_transcript():
     assert "USER: message-0-" in messages[1]["content"]
     assert "ASSISTANT: message-1-" in messages[1]["content"]
     assert kwargs == {
-        "max_tokens": CHAT_COMPRESSION_MAX_TOKENS,
+        "max_tokens": _tight_policy().summary_budget,
         "temperature": 0.2,
     }
 
@@ -545,8 +555,7 @@ def test_maybe_compress_counts_fixed_context_toward_threshold():
         history,
         provider,
         fixed_context="x" * 400,
-        budget=200,
-        response_reserve=0,
+        policy=_tight_policy(),
     )
 
     assert len(provider.calls) == 1
@@ -556,7 +565,7 @@ def test_maybe_compress_requires_messages_older_than_recent_window():
     provider = FakeProvider()
     history = _long_history(CHAT_RECENT_MESSAGES)
 
-    result = maybe_compress(history, provider, budget=1, response_reserve=1)
+    result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert result == history
     assert provider.calls == []
@@ -566,7 +575,7 @@ def test_maybe_compress_keeps_history_on_empty_provider_response():
     provider = FakeProvider("   ")
     history = _long_history()
 
-    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+    result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert result == history
 
@@ -575,7 +584,7 @@ def test_maybe_compress_keeps_history_on_provider_error_response():
     provider = FakeProvider("[!] Provider unavailable")
     history = _long_history()
 
-    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+    result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert result == history
 
@@ -584,7 +593,7 @@ def test_maybe_compress_keeps_history_when_provider_raises():
     provider = FakeProvider(error=RuntimeError("boom"))
     history = _long_history()
 
-    result = maybe_compress(history, provider, budget=100, response_reserve=10)
+    result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert result == history
 
@@ -594,7 +603,7 @@ def test_maybe_compress_does_not_mutate_original_history():
     history = _long_history()
     original = [message.copy() for message in history]
 
-    maybe_compress(history, provider, budget=100, response_reserve=10)
+    maybe_compress(history, provider, policy=_tight_policy())
 
     assert history == original
 
@@ -727,7 +736,10 @@ def test_send_chat_message_compresses_before_final_response():
     reply, updated = send_chat_message(history, "seed", "Latest question", provider)
 
     assert len(provider.calls) == 2
-    assert provider.calls[0][1]["max_tokens"] == CHAT_COMPRESSION_MAX_TOKENS
+    assert (
+        provider.calls[0][1]["max_tokens"]
+        == context_policy_for(provider).summary_budget
+    )
     assert provider.calls[1][1] == {"max_tokens": 2_000, "temperature": 0.3}
     assert updated[0]["content"] == (
         CONVERSATION_SUMMARY_PREFIX + "Older conversation summary"
