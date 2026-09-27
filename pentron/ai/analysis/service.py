@@ -14,7 +14,7 @@ from ..evidence import (
 )
 from ..providers.factory import get_provider
 from .validators import AnalysisIncompleteError as AnalysisIncompleteError
-from .workflow import run_analysis_workflow
+from .workflow import create_analysis_state, run_analysis_workflow
 
 CVE_RE = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
 
@@ -61,10 +61,16 @@ def analyse_target(
     allowed_subdomains: frozenset = frozenset(),
 ) -> dict:
     provider = provider or get_provider()
+    state = create_analysis_state(target, raw_scan)
     parsed, tool_call_records = run_analysis_workflow(
-        target, raw_scan, provider, on_progress, allowed_subdomains
+        target,
+        raw_scan,
+        provider,
+        on_progress,
+        allowed_subdomains,
+        state=state,
     )
-    raw_scan = _complete_raw_scan(raw_scan, tool_call_records)
+    raw_scan = state.raw_scan
 
     observations = observations_from_raw(raw_scan)
     facts = facts_from_observations(observations)
@@ -102,6 +108,7 @@ def analyse_target(
             conflicts=conflicts_from_observations(observations),
         )
         domain.validate_raw_source(raw_scan)
+        state.findings = findings
     except (ValidationError, ValueError) as exc:
         raise AnalysisIncompleteError(f"invalid evidence graph: {exc}") from exc
 
