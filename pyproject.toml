@@ -45,7 +45,7 @@ dependencies = [
     "requests==2.33.1",
     "rich==15.0.0",
     "soupsieve==2.9.2",
-    "starlette==1.6.0",
+    "starlette==1.7.0",
     "typing-inspection==0.4.4",
     "typing_extensions==4.16.0",
     "urllib3==2.7.0",
