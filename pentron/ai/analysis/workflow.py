@@ -3,6 +3,7 @@
 import re
 
 from ..capabilities import ContextPolicy, context_policy_for
+from ..chat.context import estimate_tokens
 from ..evidence import (
     conflicts_from_observations,
     facts_from_observations,
@@ -11,6 +12,7 @@ from ..evidence import (
 from ..models import AnalysisResult
 from ..prompts import FINAL_PROMPT, SYSTEM_PROMPT
 from ..providers.base import ProviderResponse
+from ..telemetry import CompressionMetric
 from ..tool_calls import RejectedToolCall, parse_fallback_tool_calls
 from ..tool_registry import tool_schemas
 from .state import (
@@ -103,7 +105,25 @@ def _condense_recon(raw_scan: str, provider, policy: ContextPolicy) -> str:
         if len(section) <= summary_threshold:
             condensed.append(section.strip())
         else:
-            condensed.append(summarize_tool_output(section, provider))
+            previous_purpose = getattr(provider, "purpose", None)
+            if previous_purpose is not None:
+                provider.purpose = "compression"
+            try:
+                summary = summarize_tool_output(section, provider)
+            finally:
+                if previous_purpose is not None:
+                    provider.purpose = previous_purpose
+            condensed.append(summary)
+            telemetry = getattr(provider, "telemetry", None)
+            if telemetry is not None:
+                telemetry.compressions.append(
+                    CompressionMetric(
+                        policy="analysis_context",
+                        model=telemetry.model,
+                        input_tokens=estimate_tokens(section),
+                        output_tokens=estimate_tokens(summary),
+                    )
+                )
     return "\n\n".join(condensed)
 
 

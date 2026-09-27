@@ -29,7 +29,12 @@ def analyse_and_save(
         if on_progress:
             on_progress("saving_results", None)
         db.save_partial_analysis(
-            sl_no, raw_scan, exc.raw_response, error, exc.tool_calls
+            sl_no,
+            raw_scan,
+            exc.raw_response,
+            error,
+            exc.tool_calls,
+            exc.telemetry,
         )
         return "partial", None, error
 

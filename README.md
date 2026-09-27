@@ -62,6 +62,9 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 - ✋ **Human approval for active investigations** — higher-risk or unknown AI
   tool proposals pause for an explicit decision in both Web and CLI; decisions,
   actors, expiry, and execution transitions are persisted for audit
+- **AI observability and evaluation** — provider/model attribution, request and
+  workflow metrics, structured-output reliability, a sanitized reference corpus,
+  and stable JSON comparison reports for engine changes
 - 📤 **Export Reports** — PDF and HTML from either interface; the web UI also offers JSON (optionally including raw scan data)
 - 🌐 **Subdomain discovery (3 levels)** — disabled (default) / passive (crt.sh, informative only) / active (crt.sh + subfinder, discovered subdomains become scannable) — set from the Settings screen
 - 📧 **SPF/DMARC/DKIM checks** — dig now flags missing email-security DNS records (spoofing/phishing risk), not just the raw A/MX/NS/TXT dump
@@ -388,8 +391,8 @@ boundaries, supported imports, and migration from the former compatibility paths
 
 ## 🗃️ Database Schema
 
-Ten tables, with scan results and proposed-action audit records linked to the
-session in `history`; `settings` is a standalone single-row table for runtime
+Analysis results, authorization history, and content-free AI metrics are linked to
+the session in `history`; `settings` is a standalone single-row table for runtime
 configuration. See the [architecture guide](docs/architecture.md) for the full
 table diagram (source of truth: [`docker/schema.sql`](docker/schema.sql)).
 

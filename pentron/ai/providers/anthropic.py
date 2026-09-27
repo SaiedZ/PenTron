@@ -88,6 +88,7 @@ class AnthropicProvider(BaseProvider):
             tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
             rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = data.get("stop_reason", "unknown")
+            usage = data.get("usage", {})
             return ProviderResponse(
                 text
                 if text or tool_calls or rejected
@@ -96,6 +97,9 @@ class AnthropicProvider(BaseProvider):
                 reason == "max_tokens",
                 tool_calls,
                 rejected,
+                usage.get("input_tokens"),
+                usage.get("output_tokens"),
+                "provider" if usage else "unavailable",
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] Anthropic request timed out.", "timeout", True)

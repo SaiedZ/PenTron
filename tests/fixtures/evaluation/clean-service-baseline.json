@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "clean-service-baseline",
+  "version": 1,
+  "description": "Synthetic service with no supported security finding.",
+  "scan": "[NMAP]\n443/tcp open https synthetic-service",
+  "expected_findings": [],
+  "intentionally_absent": ["sql-injection", "remote-code-execution", "default-credentials"]
+}

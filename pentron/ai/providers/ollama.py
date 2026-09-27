@@ -73,6 +73,12 @@ class OllamaProvider(BaseProvider):
                 reason == "length",
                 tool_calls,
                 rejected,
+                data.get("prompt_eval_count"),
+                data.get("eval_count"),
+                "provider"
+                if data.get("prompt_eval_count") is not None
+                or data.get("eval_count") is not None
+                else "unavailable",
             )
         except requests.exceptions.ConnectionError:
             return ProviderResponse("[!] Cannot connect to Ollama. Is it running?")
