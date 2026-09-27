@@ -4,6 +4,7 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import ValidationError
 
+from pentron.ai.analysis.graph import AnalysisGraphNodes
 from pentron.ai.analysis.state import (
     AnalysisLimitReached,
     AnalysisState,
@@ -65,6 +66,19 @@ def executed_state() -> AnalysisState:
     return state
 
 
+def graph_value(state: AnalysisState, **overrides):
+    value = {
+        "analysis": state,
+        "response_text": "",
+        "response_finish_reason": "unknown",
+        "response_truncated": False,
+        "dispatch_calls": [],
+        "evidence_decision": "sufficient",
+    }
+    value.update(overrides)
+    return value
+
+
 def test_state_serialization_preserves_provenance_and_safe_defaults():
     state = executed_state()
 
@@ -110,6 +124,44 @@ def test_duplicate_action_is_detected_before_execution():
         state.queue(repeated)
 
     assert len(state.executions) == 1
+
+
+def test_graph_routing_methods_are_independently_testable():
+    nodes = AnalysisGraphNodes(
+        provider=FakeProvider([]),
+        target="example.test",
+        allowed_subdomains=frozenset(),
+        max_iterations=2,
+    )
+    state = create_analysis_state("example.test", "evidence")
+
+    assert nodes.route_after_investigation(graph_value(state)) == "finalize"
+    assert (
+        nodes.route_after_investigation(
+            graph_value(state, evidence_decision="investigate")
+        )
+        == "continue_or_limit"
+    )
+    assert (
+        nodes.route_after_investigation(graph_value(state, dispatch_calls=[{}]))
+        == "execute_tools"
+    )
+
+
+def test_limit_node_is_independently_testable():
+    state = executed_state()
+    nodes = AnalysisGraphNodes(
+        provider=FakeProvider([]),
+        target=state.target,
+        allowed_subdomains=frozenset(),
+        max_iterations=state.iteration,
+    )
+
+    with pytest.raises(AnalysisLimitReached) as exc_info:
+        nodes.continue_or_limit(graph_value(state))
+
+    assert exc_info.value.state is state
+    assert state.status == "failed"
 
 
 def test_workflow_records_multiple_iterations_and_collected_evidence(monkeypatch):
