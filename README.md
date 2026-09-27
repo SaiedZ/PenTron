@@ -59,6 +59,9 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
   provider-neutral calls; Pydantic validation, the tool allow-list, and target
   scope checks run before the fixed Python runner is invoked (LLM output is never
   forwarded to a shell)
+- ✋ **Human approval for active investigations** — higher-risk or unknown AI
+  tool proposals pause for an explicit decision in both Web and CLI; decisions,
+  actors, expiry, and execution transitions are persisted for audit
 - 📤 **Export Reports** — PDF and HTML from either interface; the web UI also offers JSON (optionally including raw scan data)
 - 🌐 **Subdomain discovery (3 levels)** — disabled (default) / passive (crt.sh, informative only) / active (crt.sh + subfinder, discovered subdomains become scannable) — set from the Settings screen
 - 📧 **SPF/DMARC/DKIM checks** — dig now flags missing email-security DNS records (spoofing/phishing risk), not just the raw A/MX/NS/TXT dump
@@ -294,7 +297,7 @@ recon tools, Ollama, MariaDB, and the native web UI.
 
 1. Open `http://localhost:8000` (or wherever `uvicorn api.main:app` is listening for a native install). The **Overview** homepage introduces the recon-to-report workflow and provides shortcuts to the main screens.
 2. Open **New Scan** (`/new-scan`), enter an authorized target, choose a preset or custom set of recon tools, select the subdomain-discovery level, and review the live command preview before submitting.
-3. You're redirected to a live progress page that polls automatically — a step tracker (Recon → AI Analysis → Saving → Done), a checklist of planned vs. completed recon tools, then AI analysis round N of 9, plus anything the scope/SSRF guards blocked along the way.
+3. You're redirected to a live progress page that polls automatically — a step tracker (Recon → AI Analysis → Saving → Done), a checklist of planned vs. completed recon tools, then AI analysis round N of 9, plus anything the scope/SSRF guards blocked along the way. If the AI proposes an active investigation, review its target, rationale, and risk before approving or rejecting it.
 4. Once done, jump to the session's detail page: vulnerabilities and fixes, each editable or deletable inline; a contextual AI chat to ask follow-up questions about that session's findings; and **Download PDF** / **Download HTML** / **Download JSON** buttons (JSON can optionally include the raw scan data).
 5. **History** lists every past session (shared with the CLI); **Settings** configures the AI provider/model, timeouts, and shows live GPU status. The persistent navigation links Overview, New Scan, History, and Settings.
 
@@ -342,7 +345,7 @@ or
 
 Enter one or more tool numbers separated by spaces (for example, `1 2 4`), or use one of the `a` / `n` presets.
 
-**5. PenTron runs the tools, feeds results to the AI, and prints the analysis.**
+**5. PenTron runs the tools, feeds results to the AI, and prints the analysis.** Active AI-proposed investigations display their target, rationale, and risk and require interactive approval; non-interactive CLI runs fail closed.
 
 **6. Everything is saved to MariaDB automatically — visible from the web UI too.**
 
@@ -358,6 +361,8 @@ Enter a session's SL# to view it, or press **Enter** to go back. From a session 
 PenTron/
 ├── pentron/              # Core scanning, AI analysis, contextual chat, and exports
 │   ├── ai/               # Modular AI engine
+│   │   ├── approval.py   # Shared approval lifecycle, policy, and gate
+│   │   ├── approval_db.py # Durable MariaDB approval repository
 │   │   ├── capabilities.py # Provider/model limits and context policies
 │   │   ├── models.py     # Validated analysis result models
 │   │   ├── prompts.py    # Analysis, repair, tool, and chat prompts
@@ -383,7 +388,10 @@ boundaries, supported imports, and migration from the former compatibility paths
 
 ## 🗃️ Database Schema
 
-Seven tables, six of them linked by `sl_no` (session number) from the `history` table; `settings` is a standalone single-row table for runtime configuration. See the [architecture guide](docs/architecture.md) for the full table diagram (source of truth: [`docker/schema.sql`](docker/schema.sql)).
+Ten tables, with scan results and proposed-action audit records linked to the
+session in `history`; `settings` is a standalone single-row table for runtime
+configuration. See the [architecture guide](docs/architecture.md) for the full
+table diagram (source of truth: [`docker/schema.sql`](docker/schema.sql)).
 
 ---
 

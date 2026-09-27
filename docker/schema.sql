@@ -72,6 +72,36 @@ CREATE TABLE IF NOT EXISTS analysis_domains (
   FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 
+CREATE TABLE IF NOT EXISTS proposed_actions (
+  id VARCHAR(64) PRIMARY KEY,
+  session_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  arguments LONGTEXT NOT NULL,
+  target TEXT NOT NULL,
+  rationale TEXT NOT NULL,
+  risk VARCHAR(20) NOT NULL,
+  requires_approval BOOLEAN NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  actor VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  proposed_at DATETIME(6) NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  decided_at DATETIME(6) NULL,
+  executed_at DATETIME(6) NULL,
+  INDEX idx_proposed_actions_session (session_id),
+  FOREIGN KEY (session_id) REFERENCES history(sl_no)
+);
+
+CREATE TABLE IF NOT EXISTS proposed_action_events (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  action_id VARCHAR(64) NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  actor VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  occurred_at DATETIME(6) NOT NULL,
+  FOREIGN KEY (action_id) REFERENCES proposed_actions(id)
+);
+
 -- Single-row runtime configuration (provider/model/timeouts), editable from
 -- the web settings screen without restarting containers or editing .env.
 CREATE TABLE IF NOT EXISTS settings (

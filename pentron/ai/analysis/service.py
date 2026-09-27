@@ -59,6 +59,7 @@ def analyse_target(
     provider=None,
     on_progress=None,
     allowed_subdomains: frozenset = frozenset(),
+    approval_gate=None,
 ) -> dict:
     provider = provider or get_provider()
     state = create_analysis_state(target, raw_scan)
@@ -69,6 +70,7 @@ def analyse_target(
         on_progress,
         allowed_subdomains,
         state=state,
+        approval_gate=approval_gate,
     )
     raw_scan = state.raw_scan
 

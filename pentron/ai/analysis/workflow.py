@@ -279,6 +279,7 @@ def run_analysis_workflow(
     checkpointer=None,
     thread_id: str | None = None,
     resume_from_checkpoint: bool = False,
+    approval_gate=None,
 ) -> tuple[AnalysisResult, list[dict]]:
     """Run the LangGraph workflow without changing the public service contract."""
     from .graph import run_graph_analysis
@@ -303,6 +304,7 @@ def run_analysis_workflow(
         checkpointer=checkpointer,
         thread_id=thread_id,
         resume_from_checkpoint=resume_from_checkpoint,
+        approval_gate=approval_gate,
     )
     if completed.final_result is None:
         raise AnalysisStateError("analysis graph ended without a final result")

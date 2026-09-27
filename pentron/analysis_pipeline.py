@@ -12,6 +12,7 @@ def analyse_and_save(
     provider=None,
     on_progress=None,
     allowed_subdomains: frozenset = frozenset(),
+    approval_gate=None,
 ) -> tuple[str, dict | None, str | None]:
     """Return (status, result, error); status is done or partial."""
     try:
@@ -21,6 +22,7 @@ def analyse_and_save(
             provider=provider,
             on_progress=on_progress,
             allowed_subdomains=allowed_subdomains,
+            approval_gate=approval_gate,
         )
     except AnalysisIncompleteError as exc:
         error = str(exc)

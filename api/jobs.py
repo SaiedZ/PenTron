@@ -15,6 +15,7 @@ VALID_STATES = (
     "QUEUED",
     "RECON_RUNNING",
     "AI_ANALYSIS_ROUND",
+    "WAITING_APPROVAL",
     "SAVING_RESULTS",
     "DONE",
     "PARTIAL",
@@ -34,6 +35,7 @@ class JobStatus:
     max_rounds: int = None
     dispatched_calls: list = field(default_factory=list)
     blocked_calls: list = field(default_factory=list)
+    approvals: list = field(default_factory=list)
     risk_level: str = None
     error: str = None
     updated_at: datetime = field(default_factory=datetime.now)
@@ -50,6 +52,7 @@ class JobStatus:
             "max_rounds": self.max_rounds,
             "dispatched_calls": self.dispatched_calls,
             "blocked_calls": self.blocked_calls,
+            "approvals": self.approvals,
             "risk_level": self.risk_level,
             "error": self.error,
             "updated_at": self.updated_at.isoformat(),
@@ -101,6 +104,25 @@ def resolve_status(sl_no: int):
     data = db.get_session(sl_no)
     if not data["history"]:
         return None
+    if data["history"][3] == "awaiting_approval":
+        from pentron.ai.approval_db import get_approval_service
+
+        approvals = get_approval_service().list_for_session(sl_no)
+        return {
+            "sl_no": sl_no,
+            "state": "WAITING_APPROVAL",
+            "detail": "approval state restored from durable storage",
+            "current_tool": None,
+            "planned_tools": [],
+            "completed_tools": [],
+            "round_num": None,
+            "max_rounds": None,
+            "dispatched_calls": [],
+            "blocked_calls": [],
+            "approvals": [item.model_dump(mode="json") for item in approvals],
+            "risk_level": None,
+            "error": None,
+        }
     if data["summary"]:
         persisted = (data["history"][3] or "").upper()
         state = "PARTIAL" if persisted == "PARTIAL" else "DONE"
@@ -115,6 +137,7 @@ def resolve_status(sl_no: int):
             "max_rounds": None,
             "dispatched_calls": [],
             "blocked_calls": [],
+            "approvals": [],
             "risk_level": data["summary"][4],
             "error": None,
         }
@@ -129,6 +152,7 @@ def resolve_status(sl_no: int):
         "max_rounds": None,
         "dispatched_calls": [],
         "blocked_calls": [],
+        "approvals": [],
         "risk_level": None,
         "error": None,
     }

@@ -67,6 +67,7 @@ class AnalysisGraphNodes:
     allowed_subdomains: frozenset[str]
     max_iterations: int
     on_progress: Callable | None = None
+    approval_gate: Any = None
     policy: ContextPolicy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -144,20 +145,44 @@ class AnalysisGraphNodes:
     def execute_tools(self, value: AnalysisGraphState) -> dict:
         state = value["analysis"]
         calls = [ToolCall.model_validate(call) for call in value["dispatch_calls"]]
+        pending = {action.id: action for action in state.pending_actions}
+        approved_calls = []
+        approved_action_ids = []
+        for call in calls:
+            action_id = PendingAction.from_tool_call(call, state.iteration).id
+            action = pending[action_id]
+            if self.approval_gate is None:
+                approved = True
+                reason = ""
+            else:
+                approved, reason = self.approval_gate.authorize(
+                    action.id, action.name, action.arguments
+                )
+            if approved:
+                approved_calls.append(call)
+                approved_action_ids.append(action_id)
+            else:
+                state.record_execution(action, status="blocked", reason=reason)
         if self.on_progress:
-            self.on_progress("tool_dispatch", calls)
-        tool_results, records = procedural.run_tool_calls(
-            calls,
-            self.target,
-            self.provider,
-            self.on_progress,
-            self.allowed_subdomains,
-        )
+            self.on_progress("tool_dispatch", approved_calls)
+        try:
+            tool_results, records = procedural.run_tool_calls(
+                approved_calls,
+                self.target,
+                self.provider,
+                self.on_progress,
+                self.allowed_subdomains,
+            )
+        except Exception as exc:
+            if self.approval_gate is not None:
+                for action_id in approved_action_ids:
+                    self.approval_gate.complete(
+                        action_id, succeeded=False, reason=str(exc)
+                    )
+            raise
         if len(records) == 1 and not records[0].get("result"):
             records[0]["result"] = tool_results
-        pending = {action.id: action for action in state.pending_actions}
-        for call, record in zip(calls, records, strict=True):
-            action_id = PendingAction.from_tool_call(call, state.iteration).id
+        for action_id, record in zip(approved_action_ids, records, strict=True):
             state.record_execution(
                 pending[action_id],
                 status=record.get(
@@ -167,6 +192,15 @@ class AnalysisGraphNodes:
                 reason=record.get("reason", ""),
                 call_type=record.get("call_type", "TOOL"),
             )
+            if self.approval_gate is not None:
+                succeeded = record.get("status") == "accepted"
+                self.approval_gate.complete(
+                    action_id,
+                    succeeded=succeeded,
+                    reason=""
+                    if succeeded
+                    else record.get("reason", "execution failed"),
+                )
         procedural._refresh_evidence(state)
         return {"analysis": state, "dispatch_calls": []}
 
@@ -206,6 +240,7 @@ def build_analysis_graph(
     allowed_subdomains: frozenset,
     max_iterations: int,
     on_progress=None,
+    approval_gate=None,
     checkpointer=None,
 ):
     """Compile the graph; durable checkpointing is deliberately opt-in."""
@@ -215,6 +250,7 @@ def build_analysis_graph(
         allowed_subdomains=allowed_subdomains,
         max_iterations=max_iterations,
         on_progress=on_progress,
+        approval_gate=approval_gate,
     )
 
     graph = StateGraph(AnalysisGraphState)
@@ -250,6 +286,7 @@ def run_graph_analysis(
     allowed_subdomains: frozenset,
     max_iterations: int,
     on_progress=None,
+    approval_gate=None,
     checkpointer=None,
     thread_id: str | None = None,
     resume_from_checkpoint: bool = False,
@@ -266,6 +303,7 @@ def run_graph_analysis(
         allowed_subdomains=allowed_subdomains,
         max_iterations=max_iterations,
         on_progress=on_progress,
+        approval_gate=approval_gate,
         checkpointer=checkpointer,
     )
     config = (
