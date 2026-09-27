@@ -6,6 +6,7 @@ The AI engine lives under `pentron.ai` and is split by responsibility:
 
 ```text
 pentron/ai/
+├── capabilities.py
 ├── models.py
 ├── prompts.py
 ├── providers/
@@ -33,6 +34,9 @@ pentron/ai/
   scan context, while `chat.compression` manages long conversation histories.
 - `providers` defines the shared provider contract, concrete integrations, and
   the configured-provider factory.
+- `capabilities.py` is the single source of truth for provider limits, model
+  limits, and context policies. Chat, analysis, and provider request options
+  resolve the same policy from the active provider and model.
 - `models.py` contains the validated analysis result models shared across the
   engine.
 - `prompts.py` contains prompt text used internally by analysis and chat. It is
@@ -44,6 +48,7 @@ Application code should use these stable import paths:
 
 ```python
 from pentron.ai.analysis import AnalysisIncompleteError, analyse_target
+from pentron.ai.capabilities import context_policy_for
 from pentron.ai.chat import ChatProviderError, build_seed_context, send_chat_message
 from pentron.ai.models import AnalysisResult, ExploitSuggestion, VulnerabilityResult
 from pentron.ai.providers import ProviderResponse, get_provider
@@ -58,6 +63,28 @@ The former `pentron.llm`, `pentron.chat`, and `pentron.providers` facades were
 removed before the first stable release. Downstream code must migrate to the
 `pentron.ai.*` paths above; there is no compatibility alias or deprecation
 period to maintain.
+
+### Model limits and context policy
+
+Provider capabilities and model capabilities are intentionally distinct. The
+effective limits are the lower bound of both, while optional features are only
+enabled when both layers support them. An unregistered provider or model gets a
+deterministic 8,192-token context, a 2,048-token maximum output, and no optional
+features. This is a safety fallback, not a claim about the model's real limits.
+
+Every workflow calls `context_policy_for(provider, model)`. The policy reserves
+output and a safety margin before allocating the remaining input budget:
+
+```text
+input budget = context window - output reserve - safety margin
+```
+
+The current token estimator deliberately remains provider-independent. Exact
+tokenizers would add SDK dependencies, model-version coupling, and network/API
+accounting differences. Adopt provider-specific counting only if measurements
+against representative PenTron prompts show the approximation regularly differs
+from provider-reported input usage by more than 15%, or causes context-limit
+failures. Until telemetry can provide that evidence, the decision is to defer.
 
 ## Database schema
 

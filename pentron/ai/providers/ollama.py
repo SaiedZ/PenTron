@@ -4,10 +4,13 @@ import os
 
 import requests
 
+from ..capabilities import context_policy_for
 from .base import BaseProvider, ProviderResponse
 
 
 class OllamaProvider(BaseProvider):
+    provider_name = "ollama"
+
     def __init__(
         self, model: str, timeout: int = 600, host: str | None = None, **kwargs
     ):
@@ -18,13 +21,14 @@ class OllamaProvider(BaseProvider):
         self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
     ) -> ProviderResponse:
         try:
+            policy = context_policy_for(self)
             payload = {
                 "model": self.model,
                 "messages": messages,
                 "stream": False,
                 "options": {
-                    "num_predict": max_tokens,
-                    "num_ctx": 16384,
+                    "num_predict": min(max(1, max_tokens), policy.max_output_tokens),
+                    "num_ctx": policy.context_window,
                     "temperature": temperature,
                     "top_p": 0.9,
                 },

@@ -8,6 +8,8 @@ from .base import BaseProvider, ProviderResponse
 
 
 class OpenAIProvider(BaseProvider):
+    provider_name = "openai"
+
     def __init__(
         self,
         model: str,

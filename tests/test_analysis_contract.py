@@ -4,6 +4,7 @@ import pytest
 
 from api.routers.pages import render_safe_markdown
 from pentron.ai.analysis import AnalysisIncompleteError, analyse_target
+from pentron.ai.capabilities import context_policy_for
 from pentron.ai.providers import ProviderResponse
 
 
@@ -38,6 +39,19 @@ def test_valid_json_is_structured():
     assert result["summary"].startswith("No material")
     assert result["vulnerabilities"] == []
     assert len(provider.calls) == 1
+
+
+def test_analysis_uses_the_resolved_provider_model_policy():
+    provider = FakeProvider([ProviderResponse(valid_result(), "stop")])
+    provider.provider_name = "ollama"
+    provider.model = "huihui_ai/qwen3.5-abliterated:9b"
+
+    analyse_target("example.test", "short evidence", provider=provider)
+
+    assert (
+        provider.calls[0][1]["max_tokens"]
+        == context_policy_for(provider).max_output_tokens
+    )
 
 
 def test_invalid_json_is_repaired_once():

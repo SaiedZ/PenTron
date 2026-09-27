@@ -8,6 +8,7 @@ from .base import BaseProvider, ProviderResponse
 
 
 class AnthropicProvider(BaseProvider):
+    provider_name = "anthropic"
     API_VERSION = "2023-06-01"
 
     def __init__(
