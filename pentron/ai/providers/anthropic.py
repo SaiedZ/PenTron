@@ -4,6 +4,7 @@ import os
 
 import requests
 
+from ..tool_calls import ToolCall
 from .base import BaseProvider, ProviderResponse
 
 
@@ -36,7 +37,11 @@ class AnthropicProvider(BaseProvider):
         return system_text, rest
 
     def send(
-        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+        self,
+        messages: list,
+        max_tokens: int = 8192,
+        temperature: float = 0.7,
+        tools: list[dict] | None = None,
     ) -> ProviderResponse:
         try:
             system_text, rest = self._split_system(messages)
@@ -48,6 +53,15 @@ class AnthropicProvider(BaseProvider):
             }
             if system_text:
                 payload["system"] = system_text
+            if tools:
+                payload["tools"] = [
+                    {
+                        "name": tool["name"],
+                        "description": tool["description"],
+                        "input_schema": tool["parameters"],
+                    }
+                    for tool in tools
+                ]
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers=self._headers(),
@@ -58,11 +72,21 @@ class AnthropicProvider(BaseProvider):
             data = response.json()
             text = "".join(block.get("text", "") for block in data.get("content", []))
             text = text.strip()
+            tool_calls = tuple(
+                ToolCall(
+                    id=block.get("id", ""),
+                    name=block["name"],
+                    arguments=block.get("input", {}),
+                )
+                for block in data.get("content", [])
+                if block.get("type") == "tool_use"
+            )
             reason = data.get("stop_reason", "unknown")
             return ProviderResponse(
-                text or "[!] Model returned empty response.",
+                text if text or tool_calls else "[!] Model returned empty response.",
                 reason,
                 reason == "max_tokens",
+                tool_calls,
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] Anthropic request timed out.", "timeout", True)

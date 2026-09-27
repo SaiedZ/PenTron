@@ -77,10 +77,21 @@ def _ensure_analysis_schema(cursor) -> None:
         CREATE TABLE IF NOT EXISTS ai_tool_calls (
           id INT AUTO_INCREMENT PRIMARY KEY,
           sl_no INT, call_type VARCHAR(20), command TEXT, result LONGTEXT,
-          blocked BOOLEAN DEFAULT FALSE,
+          blocked BOOLEAN DEFAULT FALSE, arguments LONGTEXT NULL,
+          status VARCHAR(20) DEFAULT 'accepted', reason TEXT NULL,
           FOREIGN KEY (sl_no) REFERENCES history(sl_no)
         )
     """)
+    cursor.execute(
+        "ALTER TABLE ai_tool_calls ADD COLUMN IF NOT EXISTS arguments LONGTEXT NULL"
+    )
+    cursor.execute(
+        "ALTER TABLE ai_tool_calls ADD COLUMN IF NOT EXISTS "
+        "status VARCHAR(20) DEFAULT 'accepted'"
+    )
+    cursor.execute(
+        "ALTER TABLE ai_tool_calls ADD COLUMN IF NOT EXISTS reason TEXT NULL"
+    )
 
 
 def update_session_status(sl_no: int, status: str) -> None:
@@ -178,14 +189,18 @@ def _save_tool_calls(cursor, sl_no: int, calls: list) -> None:
     for call in calls:
         cursor.execute(
             """INSERT INTO ai_tool_calls
-               (sl_no, call_type, command, result, blocked)
-               VALUES (%s, %s, %s, %s, %s)""",
+               (sl_no, call_type, command, result, blocked,
+                arguments, status, reason)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 sl_no,
                 call["call_type"],
                 call["command"],
                 call["result"],
                 bool(call["blocked"]),
+                json.dumps(call.get("arguments", {})),
+                call.get("status", "blocked" if call["blocked"] else "accepted"),
+                call.get("reason", ""),
             ),
         )
 

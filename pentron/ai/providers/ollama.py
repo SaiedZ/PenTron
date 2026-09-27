@@ -5,6 +5,7 @@ import os
 import requests
 
 from ..capabilities import context_policy_for
+from ..tool_calls import ToolCall
 from .base import BaseProvider, ProviderResponse
 
 
@@ -18,7 +19,11 @@ class OllamaProvider(BaseProvider):
         self.host = host or os.environ.get("OLLAMA_HOST", "localhost:11434")
 
     def send(
-        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+        self,
+        messages: list,
+        max_tokens: int = 8192,
+        temperature: float = 0.7,
+        tools: list[dict] | None = None,
     ) -> ProviderResponse:
         try:
             policy = context_policy_for(self)
@@ -33,15 +38,30 @@ class OllamaProvider(BaseProvider):
                     "top_p": 0.9,
                 },
             }
+            if tools:
+                payload["tools"] = [
+                    {"type": "function", "function": tool} for tool in tools
+                ]
             response = requests.post(
                 f"http://{self.host}/api/chat", json=payload, timeout=self.timeout
             )
             response.raise_for_status()
             data = response.json()
-            text = data.get("message", {}).get("content", "").strip()
+            message = data.get("message", {})
+            text = message.get("content", "").strip()
+            tool_calls = tuple(
+                ToolCall(
+                    name=item["function"]["name"],
+                    arguments=item["function"].get("arguments", {}),
+                )
+                for item in message.get("tool_calls", [])
+            )
             reason = data.get("done_reason", "unknown")
             return ProviderResponse(
-                text or "[!] Model returned empty response.", reason, reason == "length"
+                text if text or tool_calls else "[!] Model returned empty response.",
+                reason,
+                reason == "length",
+                tool_calls,
             )
         except requests.exceptions.ConnectionError:
             return ProviderResponse("[!] Cannot connect to Ollama. Is it running?")

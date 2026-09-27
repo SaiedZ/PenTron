@@ -2,11 +2,13 @@
 
 import re
 
+from ...tools.registry import ai_tool_specs
 from ..capabilities import ContextPolicy, context_policy_for
 from ..models import AnalysisResult
 from ..prompts import FINAL_PROMPT, SYSTEM_PROMPT
 from ..providers.base import ProviderResponse
-from .tool_dispatch import extract_tool_calls, run_tool_calls, summarize_tool_output
+from ..tool_calls import parse_fallback_tool_calls
+from .tool_dispatch import run_tool_calls, summarize_tool_output
 from .validators import validate_or_repair_analysis
 
 MAX_TOOL_LOOPS = 9
@@ -47,7 +49,7 @@ def run_analysis_workflow(
 RECON EVIDENCE:
 {evidence}
 
-Analyze this target completely. Use [TOOL:] or [SEARCH:] if you need more information.
+Analyze this target completely. Use the supplied registered tools if needed.
 When no more tools are needed, return the final JSON assessment.""",
         },
     ]
@@ -57,7 +59,14 @@ When no more tools are needed, return the final JSON assessment.""",
     for loop in range(max_tool_loops):
         if on_progress:
             on_progress("ai_round_start", f"{loop + 1}/{max_tool_loops}")
-        response = provider.send(messages, max_tokens=policy.max_output_tokens)
+        schemas = ai_tool_specs()
+        response = provider.send(
+            messages,
+            max_tokens=policy.max_output_tokens,
+            tools=schemas
+            if getattr(provider, "supports_native_tools", False)
+            else None,
+        )
         if not isinstance(response, ProviderResponse):
             response = ProviderResponse(str(response))
 
@@ -67,7 +76,23 @@ When no more tools are needed, return the final JSON assessment.""",
         print(response.text)
         final_response = response
 
-        tool_calls = extract_tool_calls(response.text)
+        fallback_errors = []
+        if response.tool_calls:
+            tool_calls = list(response.tool_calls)
+        else:
+            tool_calls, fallback_errors = parse_fallback_tool_calls(response.text)
+        for error in fallback_errors:
+            tool_call_records.append(
+                {
+                    "call_type": "TOOL",
+                    "command": "invalid",
+                    "arguments": {},
+                    "result": "",
+                    "status": "rejected",
+                    "reason": error,
+                    "blocked": True,
+                }
+            )
         if not tool_calls:
             print("\n[*] No tool calls. Analysis complete.")
             break
@@ -78,7 +103,12 @@ When no more tools are needed, return the final JSON assessment.""",
             tool_calls, target, provider, on_progress, allowed_subdomains
         )
         tool_call_records.extend(records)
-        messages.append({"role": "assistant", "content": response.text})
+        messages.append(
+            {
+                "role": "assistant",
+                "content": response.text or "Requested registered tool execution.",
+            }
+        )
         messages.append(
             {
                 "role": "user",

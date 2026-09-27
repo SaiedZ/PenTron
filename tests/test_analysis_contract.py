@@ -6,6 +6,7 @@ from api.routers.pages import render_safe_markdown
 from pentron.ai.analysis import AnalysisIncompleteError, analyse_target
 from pentron.ai.capabilities import context_policy_for
 from pentron.ai.providers import ProviderResponse
+from pentron.ai.tool_calls import ToolCall
 
 
 def valid_result(**overrides):
@@ -83,7 +84,13 @@ def test_truncated_then_invalid_becomes_partial():
 def test_one_tool_call_is_reinjected_before_final_result(monkeypatch):
     provider = FakeProvider(
         [
-            ProviderResponse("[TOOL: nmap -sV example.test]", "stop"),
+            ProviderResponse(
+                "",
+                "tool_calls",
+                tool_calls=(
+                    ToolCall(name="nmap", arguments={"target": "example.test"}),
+                ),
+            ),
             ProviderResponse(valid_result(), "stop"),
         ]
     )
@@ -91,13 +98,13 @@ def test_one_tool_call_is_reinjected_before_final_result(monkeypatch):
 
     def fake_run(calls, *args):
         dispatched.append(calls)
-        return "mock tool evidence", [{"command": calls[0][1], "blocked": False}]
+        return "mock tool evidence", [{"command": calls[0].name, "blocked": False}]
 
     monkeypatch.setattr("pentron.ai.analysis.workflow.run_tool_calls", fake_run)
 
     result = analyse_target("example.test", "short evidence", provider=provider)
 
-    assert dispatched == [[("TOOL", "nmap -sV example.test")]]
+    assert dispatched == [[ToolCall(name="nmap", arguments={"target": "example.test"})]]
     assert result["tool_calls"][0]["blocked"] is False
     assert "mock tool evidence" in provider.calls[1][0][-1]["content"]
 
@@ -105,16 +112,24 @@ def test_one_tool_call_is_reinjected_before_final_result(monkeypatch):
 def test_multiple_tool_rounds_are_supported(monkeypatch):
     provider = FakeProvider(
         [
-            ProviderResponse("[SEARCH: first query]", "stop"),
-            ProviderResponse("[SEARCH: second query]", "stop"),
+            ProviderResponse(
+                '<tool_call>{"name":"nmap","arguments":'
+                '{"target":"example.test"}}</tool_call>',
+                "stop",
+            ),
+            ProviderResponse(
+                '<tool_call>{"name":"whois","arguments":'
+                '{"target":"example.test"}}</tool_call>',
+                "stop",
+            ),
             ProviderResponse(valid_result(), "stop"),
         ]
     )
     monkeypatch.setattr(
         "pentron.ai.analysis.workflow.run_tool_calls",
         lambda calls, *args: (
-            f"result for {calls[0][1]}",
-            [{"command": calls[0][1], "blocked": False}],
+            f"result for {calls[0].name}",
+            [{"command": calls[0].name, "blocked": False}],
         ),
     )
 
@@ -122,20 +137,18 @@ def test_multiple_tool_rounds_are_supported(monkeypatch):
 
     assert len(provider.calls) == 3
     assert [record["command"] for record in result["tool_calls"]] == [
-        "first query",
-        "second query",
+        "nmap",
+        "whois",
     ]
 
 
 def test_out_of_scope_tool_is_recorded_as_blocked(monkeypatch):
     from pentron.ai.analysis.tool_dispatch import run_tool_calls
 
-    monkeypatch.setattr(
-        "pentron.ai.analysis.tool_dispatch.run_tool_by_command",
-        lambda *args: "[!] BLOCKED: target outside authorized scope",
+    _, records = run_tool_calls(
+        [ToolCall(name="nmap", arguments={"target": "attacker.example"})],
+        "example.test",
     )
-
-    _, records = run_tool_calls([("TOOL", "nmap attacker.example")], "example.test")
 
     assert records[0]["blocked"] is True
 
