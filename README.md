@@ -55,7 +55,10 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 - 📊 **Readable, traceable results** — short summary, safely rendered Markdown report, severity distribution, structured findings and fixes, suggested exploit paths, and separately logged AI-dispatched tool calls
 - ✏️ **Edit / Delete** — modify saved vulnerabilities, fixes, and the risk level from either interface
 - 💬 **Contextual AI chat (web only)** — ask follow-up questions about a specific scan session; the AI answers from that session's findings and summary only (not the raw recon output), with older turns automatically summarized once the conversation grows long
-- 🔁 **Agentic Loop** — AI can request more tool runs mid-analysis
+- 🔁 **Agentic Loop** — AI can request registered recon tools through typed,
+  provider-neutral calls; Pydantic validation, the tool allow-list, and target
+  scope checks run before the fixed Python runner is invoked (LLM output is never
+  forwarded to a shell)
 - 📤 **Export Reports** — PDF and HTML from either interface; the web UI also offers JSON (optionally including raw scan data)
 - 🌐 **Subdomain discovery (3 levels)** — disabled (default) / passive (crt.sh, informative only) / active (crt.sh + subfinder, discovered subdomains become scannable) — set from the Settings screen
 - 📧 **SPF/DMARC/DKIM checks** — dig now flags missing email-security DNS records (spoofing/phishing risk), not just the raw A/MX/NS/TXT dump
@@ -68,7 +71,9 @@ Both interfaces share the same scanning, AI, and database engine, so scan histor
 
 ## 🛡️ Security & safeguards
 
-- 🛡️ **Scoped tool dispatch** — every `[TOOL:]` call the AI issues must have *every* positional argument match the operator-declared target; anything else (a pivot to another host, or a second target smuggled alongside the real one) is blocked and reported, not silently run
+- 🛡️ **Scoped tool dispatch** — every AI tool request names a registered tool and
+  supplies its typed `target`; malformed, unauthorized, and out-of-scope requests
+  are rejected or blocked and audited without invoking an executor
 - 🔒 **SSRF-guarded recon** — header fetches don't blindly follow redirects onto localhost/internal services/cloud metadata, including same-host redirects to a different, non-standard port
 - 🧭 **Pre-flight target check** — before any recon runs, a domain that resolves to a private/loopback/internal address is refused outright (its DNS could have been changed to redirect scans onto your own infrastructure); a literal IP typed directly by the operator is always allowed
 - ✅ **CVE citation check** — a CVE the AI cites but that never appeared in the actual scan data is flagged `[UNVERIFIED CVE]` instead of trusted at face value

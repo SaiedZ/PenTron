@@ -3,7 +3,7 @@
 PENTRON - search.py
 Free web search via DuckDuckGo — no API key needed.
 Also fetches and extracts plain text from URLs.
-Used by LLM tool dispatch when AI writes [SEARCH: query]
+Used by the validated structured AI tool dispatcher.
 """
 
 import requests
@@ -132,7 +132,7 @@ def fetch_page(url: str, max_chars: int = 3000) -> str:
 
 def handle_search_dispatch(query: str) -> str:
     """
-    Called by the AI tool dispatcher when the model writes [SEARCH: something].
+    Called only after the structured AI tool dispatcher validates ``query``.
     Smartly routes to CVE lookup, exploit search, or general search.
     """
     query = query.strip()
