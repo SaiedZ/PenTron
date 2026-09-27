@@ -1,7 +1,7 @@
 """Shared validated AI-analysis and persistence workflow for CLI and Web."""
 
 from . import db
-from .llm import AnalysisIncompleteError, analyse_target
+from .ai.analysis import AnalysisIncompleteError, analyse_target
 
 
 def analyse_and_save(

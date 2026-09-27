@@ -9,8 +9,8 @@ live progress into the api.jobs store instead of print()ing to a terminal.
 
 from api import jobs
 from pentron import db
+from pentron.ai.providers import get_provider
 from pentron.analysis_pipeline import analyse_and_save
-from pentron.providers import get_provider
 from pentron.tools import (
     discover_subdomains,
     format_recon_for_llm,
