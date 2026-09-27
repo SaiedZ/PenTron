@@ -79,6 +79,15 @@ output and a safety margin before allocating the remaining input budget:
 input budget = context window - output reserve - safety margin
 ```
 
+Session chat divides that input budget into three independent categories:
+scan-session evidence, a rolling conversation summary, and recent history.
+Evidence is truncated only against its protected allocation, so conversation
+growth cannot evict it. Recent history is retained newest-first by estimated
+tokens rather than by a fixed message count. When history crosses its
+policy-defined pressure threshold, older messages and the previous summary are
+compressed into one replacement summary. Both compression requests and final
+chat requests are bounded deterministically by the active context policy.
+
 The current token estimator deliberately remains provider-independent. Exact
 tokenizers would add SDK dependencies, model-version coupling, and network/API
 accounting differences. Adopt provider-specific counting only if measurements
