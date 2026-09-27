@@ -103,6 +103,7 @@ def session_to_dict(data: dict) -> dict:
         "summary": summary_to_dict(data["summary"]),
         "suggestions": [suggestion_to_dict(x) for x in data["suggestions"]],
         "tool_calls": [tool_call_to_dict(x) for x in data["tool_calls"]],
+        "evidence_domain": data.get("evidence_domain"),
     }
 
 

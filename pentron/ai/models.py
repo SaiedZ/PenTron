@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from .evidence import Hypothesis
+
 
 class VulnerabilityResult(BaseModel):
     name: str
@@ -13,6 +15,12 @@ class VulnerabilityResult(BaseModel):
     evidence: str
     description: str
     fix: str
+
+
+class FindingResult(VulnerabilityResult):
+    """LLM finding whose evidence must match a raw observation."""
+
+    hypothesis_ids: list[str] = []
 
 
 class ExploitSuggestion(BaseModel):
@@ -26,5 +34,6 @@ class AnalysisResult(BaseModel):
     risk_level: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
     short_summary: str = Field(min_length=1, max_length=1200)
     analysis_markdown: str = Field(min_length=1)
-    vulnerabilities: list[VulnerabilityResult]
+    vulnerabilities: list[FindingResult]
     exploit_suggestions: list[ExploitSuggestion]
+    hypotheses: list[Hypothesis] = []
