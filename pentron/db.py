@@ -5,6 +5,7 @@ MariaDB connection + all read/write/edit/delete operations
 Database: pentron
 """
 
+import json
 import os
 from datetime import datetime
 
@@ -61,6 +62,14 @@ def _ensure_analysis_schema(cursor) -> None:
         CREATE TABLE IF NOT EXISTS exploit_suggestions (
           id INT AUTO_INCREMENT PRIMARY KEY,
           sl_no INT, name TEXT, rationale TEXT, tool TEXT, safe_validation TEXT,
+          FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS analysis_domains (
+          sl_no INT PRIMARY KEY,
+          schema_version INT NOT NULL,
+          document LONGTEXT NOT NULL,
           FOREIGN KEY (sl_no) REFERENCES history(sl_no)
         )
     """)
@@ -124,6 +133,23 @@ def save_analysis_result(sl_no: int, result: dict) -> None:
                 ),
             )
         _save_tool_calls(c, sl_no, result.get("tool_calls", []))
+        domain = result.get("evidence_domain")
+        if domain:
+            from .ai.evidence import EvidenceDomain
+
+            validated = EvidenceDomain.model_validate(domain)
+            validated.validate_raw_source(result["raw_scan"])
+            c.execute(
+                """INSERT INTO analysis_domains (sl_no, schema_version, document)
+                   VALUES (%s, %s, %s)
+                   ON DUPLICATE KEY UPDATE schema_version = VALUES(schema_version),
+                   document = VALUES(document)""",
+                (
+                    sl_no,
+                    validated.schema_version,
+                    json.dumps(validated.model_dump(mode="json")),
+                ),
+            )
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         c.execute(
             """INSERT INTO summary
@@ -285,6 +311,11 @@ def get_session(sl_no: int) -> dict:
     suggestions = c.fetchall()
     c.execute("SELECT * FROM ai_tool_calls WHERE sl_no = %s", (sl_no,))
     tool_calls = c.fetchall()
+    c.execute(
+        "SELECT schema_version, document FROM analysis_domains WHERE sl_no = %s",
+        (sl_no,),
+    )
+    domain_row = c.fetchone()
 
     conn.close()
 
@@ -295,6 +326,7 @@ def get_session(sl_no: int) -> dict:
         "summary": summary,
         "suggestions": suggestions,
         "tool_calls": tool_calls,
+        "evidence_domain": json.loads(domain_row[1]) if domain_row else None,
     }
 
 
@@ -395,6 +427,7 @@ def delete_full_session(sl_no: int):
     _ensure_analysis_schema(c)
     c.execute("DELETE FROM fixes             WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM ai_tool_calls      WHERE sl_no = %s", (sl_no,))
+    c.execute("DELETE FROM analysis_domains   WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM exploit_suggestions WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM vulnerabilities   WHERE sl_no = %s", (sl_no,))
     c.execute("DELETE FROM summary           WHERE sl_no = %s", (sl_no,))
@@ -554,6 +587,25 @@ def print_session(data: dict):
             print(f"  [{state}] {call[2]}: {call[3]}")
     else:
         print("  None executed.")
+
+    print("\n[ EVIDENCE DOMAIN ]")
+    domain = data.get("evidence_domain")
+    if domain:
+        print(
+            f"  v{domain['schema_version']} | "
+            f"{len(domain['observations'])} observations | "
+            f"{len(domain['facts'])} facts | "
+            f"{len(domain['hypotheses'])} hypotheses | "
+            f"{len(domain['findings'])} findings"
+        )
+        for finding in domain["findings"]:
+            references = ", ".join(
+                f"{ref['source_id']}:{ref['start_line']}-{ref['end_line']}"
+                for ref in finding["evidence"]
+            )
+            print(f"  {finding['id']}: {references}")
+    else:
+        print("  Legacy session: no evidence graph recorded.")
 
     print("\n[ SUMMARY ]")
     if data["summary"]:

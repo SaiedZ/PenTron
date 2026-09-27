@@ -86,6 +86,31 @@
 </section>
 
 <section class="mb-8">
+  <p class="field-label mb-3">Evidence provenance</p>
+  {% set domain = session.evidence_domain %}
+  {% if not domain %}
+  <p class="text-sm text-slate-500">Legacy session: no evidence graph recorded.</p>
+  {% else %}
+  <div class="panel p-5">
+    <p class="font-mono text-xs text-slate-400">
+      v{{ domain.schema_version }} · {{ domain.observations|length }} observations ·
+      {{ domain.facts|length }} facts · {{ domain.hypotheses|length }} hypotheses
+    </p>
+    {% for finding in domain.findings %}
+    <div class="mt-4 border-t border-[var(--border-soft)] pt-4">
+      <p class="text-sm text-slate-200">{{ finding.title }}</p>
+      {% for ref in finding.evidence %}
+      <p class="mt-1 font-mono text-xs text-slate-500">
+        {{ ref.source_id }}:{{ ref.start_line }}-{{ ref.end_line }} · {{ ref.excerpt }}
+      </p>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="mb-8">
   <div class="flex items-center justify-between mb-3">
     <p class="field-label">Vulnerabilities</p>
     {% if session.vulnerabilities %}

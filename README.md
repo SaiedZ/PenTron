@@ -27,6 +27,14 @@
 
 You give it a target IP or domain. It runs real recon tools (nmap, whois, whatweb, curl, dig, nikto, sslscan, testssl.sh, wafw00f, robots.txt/security.txt, opt-in WPScan) plus optional subdomain discovery (crt.sh, or crt.sh + subfinder), feeds all results to an AI model, and the AI analyzes the target, identifies vulnerabilities, suggests exploits, and recommends fixes. Everything gets saved to a MariaDB database with full scan history.
 
+Each new analysis also stores a versioned evidence graph: line-addressable tool
+observations, deduplicated facts with confidence, explicitly unverified hypotheses,
+and findings linked to both raw evidence and remediation. Evidence references are
+validated before an analysis is saved. Sessions created before this model remain
+fully readable through the legacy tables and expose `evidence_domain: null`; rerun
+the scan to create the evidence graph. Existing version 1 JSON exports include the
+graph when present, so consumers can adopt the additive field independently.
+
 Two ways to drive it:
 - **Web UI** — an ops-console homepage plus dedicated New Scan, live progress, history, report, and provider-settings screens. Also the only interface with the contextual AI chat and JSON export.
 - **Terminal CLI** — an interactive menu in the same spirit as the original (New Scan / History / Settings).
