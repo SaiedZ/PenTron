@@ -13,6 +13,9 @@ class ProviderResponse:
     truncated: bool = False
     tool_calls: tuple[ToolCall, ...] = ()
     rejected_tool_calls: tuple[RejectedToolCall, ...] = ()
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    usage_source: str = "unavailable"
 
     def __str__(self) -> str:
         return self.text

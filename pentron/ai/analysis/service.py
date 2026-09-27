@@ -1,6 +1,8 @@
 """Stable high-level API for target analysis."""
 
 import re
+from datetime import UTC, datetime
+from time import perf_counter
 
 from pydantic import ValidationError
 
@@ -13,6 +15,7 @@ from ..evidence import (
     observations_from_raw,
 )
 from ..providers.factory import get_provider
+from ..telemetry import InstrumentedProvider, new_analysis_telemetry
 from .validators import AnalysisIncompleteError as AnalysisIncompleteError
 from .workflow import create_analysis_state, run_analysis_workflow
 
@@ -62,16 +65,30 @@ def analyse_target(
     approval_gate=None,
 ) -> dict:
     provider = provider or get_provider()
+    started_at = datetime.now(UTC).isoformat()
+    telemetry = new_analysis_telemetry(provider, started_at)
+    provider = InstrumentedProvider(provider, telemetry)
+    started = perf_counter()
     state = create_analysis_state(target, raw_scan)
-    parsed, tool_call_records = run_analysis_workflow(
-        target,
-        raw_scan,
-        provider,
-        on_progress,
-        allowed_subdomains,
-        state=state,
-        approval_gate=approval_gate,
-    )
+    try:
+        parsed, tool_call_records = run_analysis_workflow(
+            target,
+            raw_scan,
+            provider,
+            on_progress,
+            allowed_subdomains,
+            state=state,
+            approval_gate=approval_gate,
+        )
+    except AnalysisIncompleteError as exc:
+        telemetry.duration_ms = round((perf_counter() - started) * 1000)
+        telemetry.rounds = state.iteration
+        _record_tool_metrics(telemetry, state.audit_records())
+        exc.telemetry = telemetry.as_dict()
+        raise
+    telemetry.duration_ms = round((perf_counter() - started) * 1000)
+    telemetry.rounds = state.iteration
+    _record_tool_metrics(telemetry, tool_call_records)
     raw_scan = state.raw_scan
 
     observations = observations_from_raw(raw_scan)
@@ -135,4 +152,16 @@ def analyse_target(
         "summary": parsed.short_summary,
         "raw_scan": raw_scan,
         "evidence_domain": domain.model_dump(mode="json"),
+        "telemetry": telemetry.as_dict(),
     }
+
+
+def _record_tool_metrics(telemetry, records: list[dict]) -> None:
+    telemetry.proposed_tool_calls = len(records)
+    telemetry.executed_tool_calls = sum(
+        record.get("status") == "accepted" for record in records
+    )
+    telemetry.blocked_tool_calls = sum(
+        record.get("status") in {"blocked", "rejected"} or bool(record.get("blocked"))
+        for record in records
+    )

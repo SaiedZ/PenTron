@@ -124,6 +124,53 @@ def _ensure_analysis_schema(cursor) -> None:
           FOREIGN KEY (action_id) REFERENCES proposed_actions(id)
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS analysis_runs (
+          run_id VARCHAR(36) PRIMARY KEY,
+          sl_no INT NOT NULL,
+          provider VARCHAR(50) NOT NULL,
+          model VARCHAR(255) NOT NULL,
+          started_at VARCHAR(40) NOT NULL,
+          duration_ms BIGINT NOT NULL,
+          input_tokens BIGINT NOT NULL,
+          output_tokens BIGINT NOT NULL,
+          token_usage_source VARCHAR(20) NOT NULL,
+          rounds INT NOT NULL,
+          proposed_tool_calls INT NOT NULL,
+          executed_tool_calls INT NOT NULL,
+          blocked_tool_calls INT NOT NULL,
+          first_pass_valid BOOLEAN NULL,
+          repair_attempts INT NOT NULL,
+          validation_outcome VARCHAR(30) NOT NULL,
+          validation_failure_reason VARCHAR(50) NULL,
+          INDEX idx_analysis_runs_session (sl_no),
+          FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ai_request_metrics (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          run_id VARCHAR(36) NOT NULL,
+          purpose VARCHAR(30) NOT NULL,
+          input_tokens INT NOT NULL,
+          output_tokens INT NOT NULL,
+          usage_source VARCHAR(20) NOT NULL,
+          duration_ms BIGINT NOT NULL,
+          outcome VARCHAR(50) NOT NULL,
+          FOREIGN KEY (run_id) REFERENCES analysis_runs(run_id)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS compression_metrics (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          run_id VARCHAR(36) NOT NULL,
+          policy VARCHAR(50) NOT NULL,
+          model VARCHAR(255) NOT NULL,
+          input_tokens INT NOT NULL,
+          output_tokens INT NOT NULL,
+          FOREIGN KEY (run_id) REFERENCES analysis_runs(run_id)
+        )
+    """)
 
 
 def update_session_status(sl_no: int, status: str) -> None:
@@ -176,6 +223,7 @@ def save_analysis_result(sl_no: int, result: dict) -> None:
                 ),
             )
         _save_tool_calls(c, sl_no, result.get("tool_calls", []))
+        _save_telemetry(c, sl_no, result.get("telemetry"))
         domain = result.get("evidence_domain")
         if domain:
             from .ai.evidence import EvidenceDomain
@@ -237,8 +285,76 @@ def _save_tool_calls(cursor, sl_no: int, calls: list) -> None:
         )
 
 
+def _save_telemetry(cursor, sl_no: int, telemetry: dict | None) -> None:
+    if not telemetry:
+        return
+    cursor.execute(
+        """INSERT INTO analysis_runs
+           (run_id, sl_no, provider, model, started_at, duration_ms,
+            input_tokens, output_tokens, token_usage_source, rounds,
+            proposed_tool_calls, executed_tool_calls, blocked_tool_calls,
+            first_pass_valid, repair_attempts, validation_outcome,
+            validation_failure_reason)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                   %s, %s, %s, %s, %s)""",
+        (
+            telemetry["run_id"],
+            sl_no,
+            telemetry["provider"],
+            telemetry["model"],
+            telemetry["started_at"],
+            telemetry["duration_ms"],
+            telemetry["input_tokens"],
+            telemetry["output_tokens"],
+            telemetry["token_usage_source"],
+            telemetry["rounds"],
+            telemetry["proposed_tool_calls"],
+            telemetry["executed_tool_calls"],
+            telemetry["blocked_tool_calls"],
+            telemetry["first_pass_valid"],
+            telemetry["repair_attempts"],
+            telemetry["validation_outcome"],
+            telemetry["validation_failure_reason"],
+        ),
+    )
+    for request in telemetry.get("requests", []):
+        cursor.execute(
+            """INSERT INTO ai_request_metrics
+               (run_id, purpose, input_tokens, output_tokens, usage_source,
+                duration_ms, outcome)
+               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            (
+                telemetry["run_id"],
+                request["purpose"],
+                request["input_tokens"],
+                request["output_tokens"],
+                request["usage_source"],
+                request["duration_ms"],
+                request["outcome"],
+            ),
+        )
+    for compression in telemetry.get("compressions", []):
+        cursor.execute(
+            """INSERT INTO compression_metrics
+               (run_id, policy, model, input_tokens, output_tokens)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (
+                telemetry["run_id"],
+                compression["policy"],
+                compression["model"],
+                compression["input_tokens"],
+                compression["output_tokens"],
+            ),
+        )
+
+
 def save_partial_analysis(
-    sl_no: int, raw_scan: str, raw_response: str, error: str, tool_calls: list
+    sl_no: int,
+    raw_scan: str,
+    raw_response: str,
+    error: str,
+    tool_calls: list,
+    telemetry: dict | None = None,
 ) -> None:
     """Keep recon and diagnostics when the AI contract cannot be validated."""
     conn = get_connection()
@@ -246,6 +362,7 @@ def save_partial_analysis(
     try:
         _ensure_analysis_schema(c)
         _save_tool_calls(c, sl_no, tool_calls)
+        _save_telemetry(c, sl_no, telemetry)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         c.execute(
             """INSERT INTO summary

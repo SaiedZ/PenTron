@@ -15,6 +15,18 @@ class AnalysisIncompleteError(RuntimeError):
         super().__init__(message)
         self.raw_response = raw_response
         self.tool_calls = tool_calls or []
+        self.telemetry = None
+
+
+def _failure_category(error: Exception) -> str:
+    if isinstance(error, json.JSONDecodeError):
+        return "invalid_json"
+    if isinstance(error, ValidationError):
+        return "schema_validation"
+    message = str(error).lower()
+    if "stopped early" in message:
+        return "truncated"
+    return "invalid_response"
 
 
 def _as_response(response) -> ProviderResponse:
@@ -40,26 +52,49 @@ def validate_or_repair_analysis(
     tool_calls: list[dict] | None = None,
 ) -> tuple[AnalysisResult, ProviderResponse]:
     response = _as_response(response)
+    telemetry = getattr(provider, "telemetry", None)
     try:
-        return validate_analysis_response(response), response
+        parsed = validate_analysis_response(response)
+        if telemetry is not None:
+            telemetry.first_pass_valid = True
+            telemetry.validation_outcome = "valid"
+        return parsed, response
     except (ValueError, json.JSONDecodeError, ValidationError) as first_error:
-        repaired = provider.send(
-            [
-                {"role": "system", "content": REPAIR_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": (
-                        f"Validation error: {first_error}\n\nAnswer:\n{response.text}"
-                    ),
-                },
-            ],
-            max_tokens=max_tokens,
-            temperature=0.1,
-        )
+        if telemetry is not None:
+            telemetry.first_pass_valid = False
+            telemetry.repair_attempts += 1
+            telemetry.validation_failure_reason = _failure_category(first_error)
+        previous_purpose = getattr(provider, "purpose", None)
+        if previous_purpose is not None:
+            provider.purpose = "repair"
+        try:
+            repaired = provider.send(
+                [
+                    {"role": "system", "content": REPAIR_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Validation error: {first_error}\n\nAnswer:\n"
+                            f"{response.text}"
+                        ),
+                    },
+                ],
+                max_tokens=max_tokens,
+                temperature=0.1,
+            )
+        finally:
+            if previous_purpose is not None:
+                provider.purpose = previous_purpose
         repaired = _as_response(repaired)
         try:
-            return validate_analysis_response(repaired), repaired
+            parsed = validate_analysis_response(repaired)
+            if telemetry is not None:
+                telemetry.validation_outcome = "repaired"
+            return parsed, repaired
         except (ValueError, json.JSONDecodeError, ValidationError) as repair_error:
+            if telemetry is not None:
+                telemetry.validation_outcome = "failed"
+                telemetry.validation_failure_reason = _failure_category(repair_error)
             raise AnalysisIncompleteError(
                 f"AI response remained invalid after repair: {repair_error}",
                 response.text,

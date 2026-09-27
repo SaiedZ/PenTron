@@ -119,10 +119,10 @@ failures. Until telemetry can provide that evidence, the decision is to defer.
 
 ## Database schema
 
-Ten tables, with scan results and proposed-action audit records linked to the
-session in `history`; `settings` is a standalone single-row table for runtime
-configuration. Source of truth: [`docker/schema.sql`](../docker/schema.sql) —
-update this diagram if it drifts.
+Scan results, proposed-action audit records, and content-free AI metrics are linked
+to the session in `history`; `settings` is a standalone single-row table for
+runtime configuration. Source of truth: [`docker/schema.sql`](../docker/schema.sql)
+— update this diagram if it drifts.
 
 ```
 history              ← one row per scan session (sl_no is the spine)
@@ -141,11 +141,22 @@ history              ← one row per scan session (sl_no is the spine)
     │       │
     │       └── proposed_action_events ← immutable lifecycle transition log, linked by action_id
     │
+    ├── analysis_runs      ← provider/model, aggregate usage, workflow, validation and latency metrics
+    │       ├── ai_request_metrics ← per-request tokens, source, duration and outcome
+    │       └── compression_metrics ← policy/model and before/after token sizes
+    │
     └── summary            ← full AI analysis dump, linked by sl_no
 
 settings              ← single row: active provider, model, timeouts, API key
                          (read/written from both the web UI and the CLI Settings screen)
 ```
+
+The versioned, sanitized evaluation corpus lives in
+`tests/fixtures/evaluation`. Run `python -m pentron.ai.evaluation evaluate
+<corpus-dir> <run.json>` to produce a stable JSON report, then compare reports
+with `python -m pentron.ai.evaluation compare <baseline.json> <candidate.json>`.
+Missing token or cost data is reported as `missing`, never silently guessed by
+the evaluator.
 
 For the top-level file/package layout, see the "Project Structure" section
 in the main [README](../README.md).

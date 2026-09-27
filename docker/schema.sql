@@ -102,6 +102,51 @@ CREATE TABLE IF NOT EXISTS proposed_action_events (
   FOREIGN KEY (action_id) REFERENCES proposed_actions(id)
 );
 
+-- Content-free observability. Historical sessions remain readable without rows.
+CREATE TABLE IF NOT EXISTS analysis_runs (
+  run_id VARCHAR(36) PRIMARY KEY,
+  sl_no INT NOT NULL,
+  provider VARCHAR(50) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  started_at VARCHAR(40) NOT NULL,
+  duration_ms BIGINT NOT NULL,
+  input_tokens BIGINT NOT NULL,
+  output_tokens BIGINT NOT NULL,
+  token_usage_source VARCHAR(20) NOT NULL,
+  rounds INT NOT NULL,
+  proposed_tool_calls INT NOT NULL,
+  executed_tool_calls INT NOT NULL,
+  blocked_tool_calls INT NOT NULL,
+  first_pass_valid BOOLEAN NULL,
+  repair_attempts INT NOT NULL,
+  validation_outcome VARCHAR(30) NOT NULL,
+  validation_failure_reason VARCHAR(50) NULL,
+  INDEX idx_analysis_runs_session (sl_no),
+  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+);
+
+CREATE TABLE IF NOT EXISTS ai_request_metrics (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  run_id VARCHAR(36) NOT NULL,
+  purpose VARCHAR(30) NOT NULL,
+  input_tokens INT NOT NULL,
+  output_tokens INT NOT NULL,
+  usage_source VARCHAR(20) NOT NULL,
+  duration_ms BIGINT NOT NULL,
+  outcome VARCHAR(50) NOT NULL,
+  FOREIGN KEY (run_id) REFERENCES analysis_runs(run_id)
+);
+
+CREATE TABLE IF NOT EXISTS compression_metrics (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  run_id VARCHAR(36) NOT NULL,
+  policy VARCHAR(50) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  input_tokens INT NOT NULL,
+  output_tokens INT NOT NULL,
+  FOREIGN KEY (run_id) REFERENCES analysis_runs(run_id)
+);
+
 -- Single-row runtime configuration (provider/model/timeouts), editable from
 -- the web settings screen without restarting containers or editing .env.
 CREATE TABLE IF NOT EXISTS settings (

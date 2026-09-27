@@ -59,7 +59,8 @@ class OpenAIProvider(BaseProvider):
                 timeout=self.timeout,
             )
             response.raise_for_status()
-            choice = response.json()["choices"][0]
+            data = response.json()
+            choice = data["choices"][0]
             message = choice["message"]
             text = (message.get("content") or "").strip()
             proposals = []
@@ -78,6 +79,7 @@ class OpenAIProvider(BaseProvider):
             tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
             rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = choice.get("finish_reason", "unknown")
+            usage = data.get("usage", {})
             return ProviderResponse(
                 text
                 if text or tool_calls or rejected
@@ -86,6 +88,9 @@ class OpenAIProvider(BaseProvider):
                 reason == "length",
                 tool_calls,
                 rejected,
+                usage.get("prompt_tokens"),
+                usage.get("completion_tokens"),
+                "provider" if usage else "unavailable",
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] OpenAI request timed out.", "timeout", True)

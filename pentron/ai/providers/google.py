@@ -55,7 +55,8 @@ class GoogleProvider(BaseProvider):
             )
             response = requests.post(url, json=payload, timeout=self.timeout)
             response.raise_for_status()
-            candidate = response.json()["candidates"][0]
+            data = response.json()
+            candidate = data["candidates"][0]
             parts = candidate["content"]["parts"]
             text = "".join(
                 part.get("text", "") for part in parts if isinstance(part, dict)
@@ -75,6 +76,7 @@ class GoogleProvider(BaseProvider):
             tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
             rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = candidate.get("finishReason", "unknown")
+            usage = data.get("usageMetadata", {})
             return ProviderResponse(
                 text
                 if text or tool_calls or rejected
@@ -83,6 +85,9 @@ class GoogleProvider(BaseProvider):
                 reason == "MAX_TOKENS",
                 tool_calls,
                 rejected,
+                usage.get("promptTokenCount"),
+                usage.get("candidatesTokenCount"),
+                "provider" if usage else "unavailable",
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] Google request timed out.", "timeout", True)

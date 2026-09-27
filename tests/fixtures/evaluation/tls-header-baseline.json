@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "tls-header-baseline",
+  "version": 1,
+  "description": "Synthetic HTTPS service missing HSTS.",
+  "scan": "[HTTP HEADERS]\nHTTP/1.1 200 OK\nServer: synthetic\nContent-Type: text/html",
+  "expected_findings": [
+    {
+      "id": "missing-hsts",
+      "severity": "medium",
+      "evidence_refs": ["HTTP HEADERS"],
+      "acceptable_alternatives": ["strict-transport-security-missing"]
+    }
+  ],
+  "intentionally_absent": ["sql-injection", "remote-code-execution"]
+}
