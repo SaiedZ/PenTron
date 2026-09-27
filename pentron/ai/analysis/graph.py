@@ -1,10 +1,12 @@
 """LangGraph orchestration for bounded, stateful target analysis."""
 
-from typing import Literal, TypedDict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Literal, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from ..capabilities import context_policy_for
+from ..capabilities import ContextPolicy, context_policy_for
 from ..providers.base import ProviderResponse
 from ..tool_calls import RejectedToolCall, ToolCall, parse_fallback_tool_calls
 from ..tool_registry import tool_schemas
@@ -56,31 +58,35 @@ def _queue_new_calls(state: AnalysisState, calls: list[ToolCall]) -> list[ToolCa
     return queued_calls
 
 
-def build_analysis_graph(
-    *,
-    provider,
-    target: str,
-    allowed_subdomains: frozenset,
-    max_iterations: int,
-    on_progress=None,
-    checkpointer=None,
-):
-    """Compile the graph; durable checkpointing is deliberately opt-in."""
-    policy = context_policy_for(provider)
+@dataclass
+class AnalysisGraphNodes:
+    """Independently testable node handlers and routing decisions."""
 
-    def investigate(value: AnalysisGraphState) -> dict:
+    provider: Any
+    target: str
+    allowed_subdomains: frozenset[str]
+    max_iterations: int
+    on_progress: Callable | None = None
+    policy: ContextPolicy = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.policy = context_policy_for(self.provider)
+
+    def investigate(self, value: AnalysisGraphState) -> dict:
         state = value["analysis"]
         iteration = state.start_iteration()
-        if on_progress:
-            on_progress("ai_round_start", f"{iteration}/{max_iterations}")
-        evidence = procedural._condense_recon(state.raw_scan, provider, policy)
-        native_tools = (
-            getattr(provider, "supports_native_tools", False)
-            and policy.capabilities.supports_tools
+        if self.on_progress:
+            self.on_progress("ai_round_start", f"{iteration}/{self.max_iterations}")
+        evidence = procedural._condense_recon(
+            state.raw_scan, self.provider, self.policy
         )
-        response = provider.send(
+        native_tools = (
+            getattr(self.provider, "supports_native_tools", False)
+            and self.policy.capabilities.supports_tools
+        )
+        response = self.provider.send(
             procedural._messages_for(state, evidence),
-            max_tokens=policy.max_output_tokens,
+            max_tokens=self.policy.max_output_tokens,
             tools=tool_schemas() if native_tools else None,
         )
         if not isinstance(response, ProviderResponse):
@@ -128,20 +134,24 @@ def build_analysis_graph(
             "evidence_decision": ("investigate" if proposed_calls else "sufficient"),
         }
 
-    def route_after_investigation(value: AnalysisGraphState) -> str:
+    def route_after_investigation(self, value: AnalysisGraphState) -> str:
         if value["dispatch_calls"]:
             return "execute_tools"
         if value["evidence_decision"] == "investigate":
             return "continue_or_limit"
         return "finalize"
 
-    def execute_tools(value: AnalysisGraphState) -> dict:
+    def execute_tools(self, value: AnalysisGraphState) -> dict:
         state = value["analysis"]
         calls = [ToolCall.model_validate(call) for call in value["dispatch_calls"]]
-        if on_progress:
-            on_progress("tool_dispatch", calls)
+        if self.on_progress:
+            self.on_progress("tool_dispatch", calls)
         tool_results, records = procedural.run_tool_calls(
-            calls, target, provider, on_progress, allowed_subdomains
+            calls,
+            self.target,
+            self.provider,
+            self.on_progress,
+            self.allowed_subdomains,
         )
         if len(records) == 1 and not records[0].get("result"):
             records[0]["result"] = tool_results
@@ -160,38 +170,62 @@ def build_analysis_graph(
         procedural._refresh_evidence(state)
         return {"analysis": state, "dispatch_calls": []}
 
-    def continue_or_limit(value: AnalysisGraphState) -> dict:
+    def continue_or_limit(self, value: AnalysisGraphState) -> dict:
         state = value["analysis"]
-        if state.iteration >= max_iterations:
+        if state.iteration >= self.max_iterations:
             state.transition_to("failed")
-            raise AnalysisLimitReached(state, max_iterations)
+            raise AnalysisLimitReached(state, self.max_iterations)
         return {"analysis": state}
 
-    def finalize(value: AnalysisGraphState) -> dict:
+    def route_after_limit_check(self, value: AnalysisGraphState) -> str:
+        if value["analysis"].iteration < self.max_iterations:
+            return "investigate"
+        return "limit"
+
+    def finalize(self, value: AnalysisGraphState) -> dict:
         state = value["analysis"]
         parsed, _ = validate_or_repair_analysis(
-            provider,
+            self.provider,
             ProviderResponse(
                 value["response_text"],
                 value["response_finish_reason"],
                 value["response_truncated"],
             ),
-            max_tokens=policy.max_output_tokens,
+            max_tokens=self.policy.max_output_tokens,
             tool_calls=state.audit_records(),
         )
         state.hypotheses = parsed.hypotheses
         state.complete(parsed)
         return {"analysis": state}
 
+
+def build_analysis_graph(
+    *,
+    provider,
+    target: str,
+    allowed_subdomains: frozenset,
+    max_iterations: int,
+    on_progress=None,
+    checkpointer=None,
+):
+    """Compile the graph; durable checkpointing is deliberately opt-in."""
+    nodes = AnalysisGraphNodes(
+        provider=provider,
+        target=target,
+        allowed_subdomains=allowed_subdomains,
+        max_iterations=max_iterations,
+        on_progress=on_progress,
+    )
+
     graph = StateGraph(AnalysisGraphState)
-    graph.add_node("investigate", investigate)
-    graph.add_node("execute_tools", execute_tools)
-    graph.add_node("continue_or_limit", continue_or_limit)
-    graph.add_node("finalize", finalize)
+    graph.add_node("investigate", nodes.investigate)
+    graph.add_node("execute_tools", nodes.execute_tools)
+    graph.add_node("continue_or_limit", nodes.continue_or_limit)
+    graph.add_node("finalize", nodes.finalize)
     graph.add_edge(START, "investigate")
     graph.add_conditional_edges(
         "investigate",
-        route_after_investigation,
+        nodes.route_after_investigation,
         {
             "execute_tools": "execute_tools",
             "continue_or_limit": "continue_or_limit",
@@ -201,9 +235,7 @@ def build_analysis_graph(
     graph.add_edge("execute_tools", "continue_or_limit")
     graph.add_conditional_edges(
         "continue_or_limit",
-        lambda value: (
-            "investigate" if value["analysis"].iteration < max_iterations else "limit"
-        ),
+        nodes.route_after_limit_check,
         {"investigate": "investigate", "limit": "continue_or_limit"},
     )
     graph.add_edge("finalize", END)
