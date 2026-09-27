@@ -63,6 +63,15 @@ CREATE TABLE IF NOT EXISTS ai_tool_calls (
   FOREIGN KEY (sl_no) REFERENCES history(sl_no)
 );
 
+-- Versioned evidence graph. Existing sessions remain valid without a row;
+-- newly analysed sessions write this atomically with their legacy projections.
+CREATE TABLE IF NOT EXISTS analysis_domains (
+  sl_no INT PRIMARY KEY,
+  schema_version INT NOT NULL,
+  document LONGTEXT NOT NULL,
+  FOREIGN KEY (sl_no) REFERENCES history(sl_no)
+);
+
 -- Single-row runtime configuration (provider/model/timeouts), editable from
 -- the web settings screen without restarting containers or editing .env.
 CREATE TABLE IF NOT EXISTS settings (

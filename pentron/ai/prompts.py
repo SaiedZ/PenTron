@@ -25,7 +25,9 @@ IMPORTANT RULES FOR ACCURACY:
 - curl timeouts and HTTP_CODE=000 mean the host is unreachable not exploitable
 - ab and stress tools are not Slowloris unless confirmed
 - Only assign CRITICAL if there is direct evidence of exploitability
-- If evidence is weak mark severity as LOW with note: unconfirmed"""
+- If evidence is weak mark severity as LOW with note: unconfirmed
+- Keep inferred possibilities as unverified hypotheses; never call them facts
+- Every finding evidence value must be an exact line from RECON EVIDENCE"""
 
 FINAL_PROMPT = """Return the final assessment as JSON only, matching this shape:
 {
@@ -35,7 +37,12 @@ FINAL_PROMPT = """Return the final assessment as JSON only, matching this shape:
   "vulnerabilities": [{
     "name": "...", "severity": "critical|high|medium|low",
     "port": "...", "service": "...", "evidence": "observed fact",
-    "description": "...", "fix": "..."
+    "description": "...", "fix": "...", "hypothesis_ids": []
+  }],
+  "hypotheses": [{
+    "id": "hypothesis-1", "statement": "...",
+    "evidence_observation_ids": [], "status": "unverified",
+    "validation": "safe step needed to confirm or reject"
   }],
   "exploit_suggestions": [{
     "name": "...", "rationale": "...", "tool": "...",
