@@ -362,6 +362,9 @@ PenTron/
 └── README.md
 ```
 
+The [architecture guide](docs/architecture.md#ai-engine) documents the AI module
+boundaries, supported imports, and migration from the former compatibility paths.
+
 ---
 
 ## 🗃️ Database Schema

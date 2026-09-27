@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 PENTRON - pentron/cli.py
-Main CLI entry point. Wires db.py + tools.py + search.py + llm.py together.
+Main CLI entry point. Wires persistence, reconnaissance, search, and AI services.
 Run with: python -m pentron.cli, or the `pentron` console script.
 """
 
