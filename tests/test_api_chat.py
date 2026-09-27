@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from api.routers import chat
 from api.schemas import ChatRequest
-from pentron.chat import ChatProviderError
+from pentron.ai.chat import ChatProviderError
 
 
 def _session_data():

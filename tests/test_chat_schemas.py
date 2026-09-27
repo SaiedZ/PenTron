@@ -7,7 +7,7 @@ from api.schemas import (
     ChatRequest,
     ChatResponse,
 )
-from pentron.chat import MAX_CHAT_MESSAGE_CHARS
+from pentron.ai.chat.context import MAX_CHAT_MESSAGE_CHARS
 
 
 def test_chat_message_accepts_allowed_roles_and_strips_content():

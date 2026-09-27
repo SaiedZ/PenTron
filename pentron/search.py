@@ -132,7 +132,7 @@ def fetch_page(url: str, max_chars: int = 3000) -> str:
 
 def handle_search_dispatch(query: str) -> str:
     """
-    Called by llm.py when AI writes [SEARCH: something].
+    Called by the AI tool dispatcher when the model writes [SEARCH: something].
     Smartly routes to CVE lookup, exploit search, or general search.
     """
     query = query.strip()

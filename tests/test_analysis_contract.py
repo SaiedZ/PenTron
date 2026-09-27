@@ -3,8 +3,8 @@ import json
 import pytest
 
 from api.routers.pages import render_safe_markdown
-from pentron.llm import AnalysisIncompleteError, analyse_target
-from pentron.providers import ProviderResponse
+from pentron.ai.analysis import AnalysisIncompleteError, analyse_target
+from pentron.ai.providers import ProviderResponse
 
 
 def valid_result(**overrides):
