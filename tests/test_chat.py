@@ -1,8 +1,9 @@
 from pentron.ai.capabilities import ContextPolicy, ModelCapabilities, context_policy_for
 from pentron.ai.chat.compression import (
-    CHAT_RECENT_MESSAGES,
     CONVERSATION_SUMMARY_PREFIX,
+    ConversationMemory,
     maybe_compress,
+    split_memory,
 )
 from pentron.ai.chat.context import (
     CHAT_MESSAGE_OVERHEAD,
@@ -11,10 +12,13 @@ from pentron.ai.chat.context import (
     _append_if_value,
     _compact,
     _format_fields,
+    bound_history_by_tokens,
     build_seed_context,
     estimate_history_tokens,
+    estimate_message_tokens,
     estimate_tokens,
     normalize_history,
+    truncate_to_tokens,
 )
 from pentron.ai.chat.service import ChatProviderError, send_chat_message
 from pentron.ai.prompts import CHAT_SYSTEM_PROMPT
@@ -68,6 +72,11 @@ def test_estimate_tokens():
     assert estimate_tokens("abcde") == 2
     assert estimate_tokens("abcdefgh") == 2
     assert estimate_tokens("abcdefghi") == 3
+
+
+def test_truncate_to_tokens_respects_zero_and_exact_budget():
+    assert truncate_to_tokens("abcdefgh", 0) == ""
+    assert truncate_to_tokens("abcdefghij", 2) == "abcdefgh"
 
 
 def test_compact():
@@ -480,6 +489,31 @@ def test_estimate_history_tokens_safely_normalizes_malformed_history():
     assert estimate_history_tokens(None) == 0
 
 
+def test_bound_history_by_tokens_keeps_newest_messages_not_a_fixed_count():
+    history = [
+        {"role": "user", "content": "a" * 40},
+        {"role": "assistant", "content": "b" * 4},
+        {"role": "user", "content": "c" * 4},
+    ]
+
+    result = bound_history_by_tokens(history, 10)
+
+    assert result == [
+        {"role": "assistant", "content": "b" * 4},
+        {"role": "user", "content": "c" * 4},
+    ]
+    assert estimate_history_tokens(result) <= 10
+
+
+def test_bound_history_by_tokens_truncates_oversized_latest_message():
+    result = bound_history_by_tokens(
+        [{"role": "user", "content": "x" * 100}],
+        CHAT_MESSAGE_OVERHEAD + 5,
+    )
+
+    assert result == [{"role": "user", "content": "x" * 20}]
+
+
 def _long_history(count=8):
     return [
         {
@@ -499,16 +533,17 @@ def test_maybe_compress_normalizes_history_below_threshold():
 
     result = maybe_compress(history, provider)
 
-    assert result == [{"role": "user", "content": "Hello"}]
+    assert result == ConversationMemory("", [{"role": "user", "content": "Hello"}])
     assert provider.calls == []
 
 
 def test_maybe_compress_does_not_call_provider_below_threshold():
     provider = FakeProvider()
 
-    result = maybe_compress(_long_history(), provider)
+    history = _long_history()
+    result = maybe_compress(history, provider)
 
-    assert result == _long_history()
+    assert result == ConversationMemory("", history)
     assert provider.calls == []
 
 
@@ -519,13 +554,10 @@ def test_maybe_compress_summarizes_old_and_preserves_recent_messages():
     result = maybe_compress(history, provider, policy=_tight_policy())
 
     assert len(provider.calls) == 1
-    assert result[0] == {
-        "role": "assistant",
-        "content": (
-            CONVERSATION_SUMMARY_PREFIX + "Confirmed facts and one unresolved question."
-        ),
-    }
-    assert result[1:] == history[-CHAT_RECENT_MESSAGES:]
+    assert result.summary == "Confirmed facts and one unresolved question."
+    assert result.history == bound_history_by_tokens(
+        history, int(_tight_policy().history_budget * 0.5)
+    )
     assert history[0]["content"] not in str(result)
     assert history[1]["content"] not in str(result)
 
@@ -547,27 +579,26 @@ def test_maybe_compress_uses_expected_provider_parameters_and_transcript():
     }
 
 
-def test_maybe_compress_counts_fixed_context_toward_threshold():
+def test_maybe_compress_uses_history_token_pressure():
     provider = FakeProvider()
     history = _long_history()
 
     maybe_compress(
         history,
         provider,
-        fixed_context="x" * 400,
         policy=_tight_policy(),
     )
 
     assert len(provider.calls) == 1
 
 
-def test_maybe_compress_requires_messages_older_than_recent_window():
+def test_maybe_compress_requires_history_outside_token_window():
     provider = FakeProvider()
-    history = _long_history(CHAT_RECENT_MESSAGES)
+    history = [{"role": "user", "content": "short"}]
 
     result = maybe_compress(history, provider, policy=_tight_policy())
 
-    assert result == history
+    assert result == ConversationMemory("", history)
     assert provider.calls == []
 
 
@@ -577,7 +608,9 @@ def test_maybe_compress_keeps_history_on_empty_provider_response():
 
     result = maybe_compress(history, provider, policy=_tight_policy())
 
-    assert result == history
+    assert result.history == bound_history_by_tokens(
+        history, _tight_policy().history_budget
+    )
 
 
 def test_maybe_compress_keeps_history_on_provider_error_response():
@@ -586,7 +619,9 @@ def test_maybe_compress_keeps_history_on_provider_error_response():
 
     result = maybe_compress(history, provider, policy=_tight_policy())
 
-    assert result == history
+    assert result.history == bound_history_by_tokens(
+        history, _tight_policy().history_budget
+    )
 
 
 def test_maybe_compress_keeps_history_when_provider_raises():
@@ -595,7 +630,9 @@ def test_maybe_compress_keeps_history_when_provider_raises():
 
     result = maybe_compress(history, provider, policy=_tight_policy())
 
-    assert result == history
+    assert result.history == bound_history_by_tokens(
+        history, _tight_policy().history_budget
+    )
 
 
 def test_maybe_compress_does_not_mutate_original_history():
@@ -606,6 +643,46 @@ def test_maybe_compress_does_not_mutate_original_history():
     maybe_compress(history, provider, policy=_tight_policy())
 
     assert history == original
+
+
+def test_split_memory_separates_summary_from_recent_history():
+    history = [
+        {
+            "role": "assistant",
+            "content": CONVERSATION_SUMMARY_PREFIX + "Known facts",
+        },
+        {"role": "user", "content": "Latest question"},
+    ]
+
+    assert split_memory(history) == ConversationMemory(
+        "Known facts", [{"role": "user", "content": "Latest question"}]
+    )
+
+
+def test_repeated_compression_replaces_instead_of_nesting_summary():
+    provider = FakeProvider("Updated facts")
+    history = [
+        {
+            "role": "assistant",
+            "content": CONVERSATION_SUMMARY_PREFIX + "Earlier facts",
+        },
+        *_long_history(),
+    ]
+
+    result = maybe_compress(history, provider, policy=_tight_policy())
+
+    assert result.summary == "Updated facts"
+    assert "PREVIOUS SUMMARY: Earlier facts" in provider.calls[0][0][1]["content"]
+    assert CONVERSATION_SUMMARY_PREFIX not in result.summary
+
+
+def test_compression_request_stays_within_input_budget():
+    provider = FakeProvider("Bounded summary")
+
+    maybe_compress(_long_history(100), provider, policy=_tight_policy())
+
+    messages, _ = provider.calls[0]
+    assert estimate_message_tokens(messages) <= _tight_policy().input_budget
 
 
 def test_send_chat_message_returns_reply_and_updated_history():
@@ -747,3 +824,29 @@ def test_send_chat_message_compresses_before_final_response():
     assert updated[-2] == {"role": "user", "content": "Latest question"}
     assert updated[-1] == {"role": "assistant", "content": "Final reply"}
     assert reply == "Final reply"
+
+
+def test_send_chat_message_protects_evidence_under_heavy_history(monkeypatch):
+    from pentron.ai.chat import service
+
+    policy = ContextPolicy(
+        capabilities=ModelCapabilities(1_024, 128),
+        output_reserve=128,
+        safety_margin=64,
+        compression_threshold=0.5,
+        session_context_budget=400,
+        history_budget=300,
+        summary_budget=100,
+    )
+    monkeypatch.setattr(service, "context_policy_for", lambda provider: policy)
+    provider = SequenceProvider(["Known facts", "Final reply"])
+    history = _long_history(100)
+
+    send_chat_message(history, "Target: protected.example", "Question", provider)
+
+    final_messages, _ = provider.calls[-1]
+    assert "Target: protected.example" in final_messages[0]["content"]
+    assert estimate_message_tokens(final_messages) <= policy.input_budget
+    assert estimate_history_tokens(final_messages[1:]) <= (
+        policy.history_budget + policy.summary_budget
+    )

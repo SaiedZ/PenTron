@@ -27,6 +27,13 @@ def estimate_tokens(text: str | None) -> int:
     return math.ceil(len(text) / TOKEN_CHAR_RATIO) if text else 0
 
 
+def truncate_to_tokens(text: str, max_tokens: int) -> str:
+    """Return a deterministic prefix that fits the approximate token budget."""
+    if not isinstance(text, str) or max_tokens <= 0:
+        return ""
+    return text[: max_tokens * TOKEN_CHAR_RATIO].rstrip()
+
+
 def _compact(value, max_chars: int | None = None) -> str:
     if value is None:
         return ""
@@ -126,3 +133,38 @@ def estimate_history_tokens(history: list[dict[str, str]]) -> int:
         estimate_tokens(message["content"]) + CHAT_MESSAGE_OVERHEAD
         for message in normalize_history(history)
     )
+
+
+def estimate_message_tokens(messages: list[dict[str, str]]) -> int:
+    """Estimate any provider message list, including privileged roles."""
+    return sum(
+        estimate_tokens(message.get("content")) + CHAT_MESSAGE_OVERHEAD
+        for message in messages
+        if isinstance(message, dict) and isinstance(message.get("content"), str)
+    )
+
+
+def bound_history_by_tokens(
+    history: list[dict[str, str]], max_tokens: int
+) -> list[dict[str, str]]:
+    """Keep the newest messages that fit, truncating only the newest if needed."""
+    if max_tokens <= CHAT_MESSAGE_OVERHEAD:
+        return []
+    kept = []
+    remaining = max_tokens
+    for message in reversed(normalize_history(history)):
+        content_budget = remaining - CHAT_MESSAGE_OVERHEAD
+        if content_budget <= 0:
+            break
+        content_tokens = estimate_tokens(message["content"])
+        if content_tokens <= content_budget:
+            kept.append(message)
+            remaining -= content_tokens + CHAT_MESSAGE_OVERHEAD
+            continue
+        if kept:
+            break
+        content = truncate_to_tokens(message["content"], content_budget)
+        if content:
+            kept.append({"role": message["role"], "content": content})
+        break
+    return list(reversed(kept))
