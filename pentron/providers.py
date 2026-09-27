@@ -1,4 +1,9 @@
-"""Temporary compatibility facade for :mod:`pentron.ai.providers`."""
+"""Compatibility facade for :mod:`pentron.ai.providers`.
+
+Deprecated internal import path. Application code should use
+``pentron.ai.providers``. This module is kept temporarily for downstream callers
+using the historical path.
+"""
 
 from .ai.providers import (
     PROVIDERS,

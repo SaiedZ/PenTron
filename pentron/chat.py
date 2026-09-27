@@ -1,4 +1,8 @@
-"""Temporary compatibility facade for :mod:`pentron.ai.chat`."""
+"""Compatibility facade for :mod:`pentron.ai.chat`.
+
+Deprecated internal import path. Application code should use ``pentron.ai.chat``.
+This module is kept temporarily for downstream callers using the historical path.
+"""
 
 from .ai.chat.compression import (
     CHAT_COMPRESSION_MAX_TOKENS,

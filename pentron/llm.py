@@ -1,4 +1,9 @@
-"""Temporary compatibility facade for the modular :mod:`pentron.ai` engine."""
+"""Compatibility facade for the modular :mod:`pentron.ai` engine.
+
+Deprecated internal import path. Application code should import analysis APIs from
+``pentron.ai.analysis`` and shared models from ``pentron.ai.models``. This module is
+kept temporarily for downstream callers that still use the historical path.
+"""
 
 import os
 import re
