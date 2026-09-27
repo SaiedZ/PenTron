@@ -7,7 +7,8 @@ from api.schemas import ChatRequest, ChatResponse
 from api.security import verify_token
 from api.serializers import session_to_dict
 from pentron import db
-from pentron.ai.chat import ChatProviderError, build_seed_context, send_chat_message
+from pentron.ai.capabilities import context_policy_for
+from pentron.ai.chat import ChatProviderError, load_chat_context, send_chat_message
 from pentron.ai.providers import get_provider
 
 router = APIRouter(prefix="/api", tags=["chat"], dependencies=[Depends(verify_token)])
@@ -21,7 +22,10 @@ def chat_with_session(sl_no: int, payload: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=404, detail=f"SL# {sl_no} not found")
 
     session = session_to_dict(data)
-    seed = build_seed_context(session)
+    provider = get_provider()
+    policy = context_policy_for(provider)
+    context = load_chat_context(session, sl_no, payload.message, policy)
+    seed = context.render(policy.session_context_budget)
     history = [message.model_dump() for message in payload.history]
 
     try:
@@ -29,7 +33,7 @@ def chat_with_session(sl_no: int, payload: ChatRequest) -> ChatResponse:
             history,
             seed,
             payload.message,
-            get_provider(),
+            provider,
         )
     except ChatProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

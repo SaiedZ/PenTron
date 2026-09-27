@@ -29,7 +29,9 @@ def test_chat_with_session_returns_reply_and_resynchronized_history(monkeypatch)
     send = Mock(return_value=("Answer", updated_history))
 
     monkeypatch.setattr(chat.db, "get_session", Mock(return_value=_session_data()))
-    monkeypatch.setattr(chat, "build_seed_context", Mock(return_value="seed"))
+    context = Mock()
+    context.render.return_value = "seed"
+    monkeypatch.setattr(chat, "load_chat_context", Mock(return_value=context))
     monkeypatch.setattr(chat, "get_provider", Mock(return_value=provider))
     monkeypatch.setattr(chat, "send_chat_message", send)
 
@@ -45,8 +47,8 @@ def test_chat_with_session_returns_reply_and_resynchronized_history(monkeypatch)
         "reply": "Answer",
         "history": updated_history,
     }
-    chat.build_seed_context.assert_called_once()
-    serialized_session = chat.build_seed_context.call_args.args[0]
+    chat.load_chat_context.assert_called_once()
+    serialized_session = chat.load_chat_context.call_args.args[0]
     assert serialized_session["history"]["target"] == "example.com"
     send.assert_called_once_with(
         [{"role": "user", "content": "Previous"}],
@@ -58,15 +60,15 @@ def test_chat_with_session_returns_reply_and_resynchronized_history(monkeypatch)
 
 def test_chat_with_session_returns_404_before_building_context(monkeypatch):
     monkeypatch.setattr(chat.db, "get_session", Mock(return_value={"history": None}))
-    build_seed = Mock()
-    monkeypatch.setattr(chat, "build_seed_context", build_seed)
+    load_context = Mock()
+    monkeypatch.setattr(chat, "load_chat_context", load_context)
 
     with pytest.raises(HTTPException) as exc_info:
         chat.chat_with_session(404, ChatRequest(message="Question"))
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "SL# 404 not found"
-    build_seed.assert_not_called()
+    load_context.assert_not_called()
 
 
 def test_chat_with_session_maps_provider_error_to_502(monkeypatch):
