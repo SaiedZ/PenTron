@@ -16,7 +16,7 @@ from .ai.analysis.tool_dispatch import (
 from .ai.analysis.workflow import MAX_TOKENS, MAX_TOOL_LOOPS, SUMMARY_THRESHOLD
 from .ai.models import AnalysisResult, ExploitSuggestion, VulnerabilityResult
 from .ai.prompts import FINAL_PROMPT, SYSTEM_PROMPT
-from .providers import OllamaProvider
+from .ai.providers import OllamaProvider
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "localhost:11434")
 MODEL_NAME = "huihui_ai/qwen3.5-abliterated:9b"

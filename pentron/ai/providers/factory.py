@@ -2,12 +2,21 @@
 
 import os
 
+from .anthropic import AnthropicProvider
 from .base import BaseProvider
+from .google import GoogleProvider
+from .ollama import OllamaProvider
+from .openai import OpenAIProvider
+
+PROVIDERS = {
+    "ollama": OllamaProvider,
+    "openai": OpenAIProvider,
+    "anthropic": AnthropicProvider,
+    "google": GoogleProvider,
+}
 
 
 def get_provider(settings: dict | None = None) -> BaseProvider:
-    from ...providers import PROVIDERS, OllamaProvider
-
     if settings is None:
         try:
             from ...db import get_settings

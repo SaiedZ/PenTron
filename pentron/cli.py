@@ -8,6 +8,7 @@ Run with: python -m pentron.cli, or the `pentron` console script.
 import os
 import sys
 
+from .ai.providers import OllamaProvider
 from .analysis_pipeline import analyse_and_save
 from .db import (
     create_session,
@@ -29,7 +30,6 @@ from .db import (
     update_session_status,
 )
 from .export import export_menu
-from .providers import OllamaProvider
 from .tools import (
     check_target_safety,
     discover_subdomains,
