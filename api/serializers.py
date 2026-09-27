@@ -83,7 +83,7 @@ def suggestion_to_dict(row) -> dict:
 
 
 def tool_call_to_dict(row) -> dict:
-    id_, sl_no, call_type, command, result, blocked = row
+    id_, sl_no, call_type, command, result, blocked, *audit = row
     return {
         "id": id_,
         "sl_no": sl_no,
@@ -91,6 +91,11 @@ def tool_call_to_dict(row) -> dict:
         "command": command,
         "result": result,
         "blocked": bool(blocked),
+        "arguments": audit[0] if len(audit) > 0 else "{}",
+        "status": audit[1]
+        if len(audit) > 1
+        else ("blocked" if blocked else "accepted"),
+        "reason": audit[2] if len(audit) > 2 else "",
     }
 
 

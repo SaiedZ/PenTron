@@ -4,6 +4,12 @@ import os
 
 import requests
 
+from ..tool_calls import (
+    RejectedToolCall,
+    ToolCall,
+    native_proposal_fields,
+    normalize_native_tool_call,
+)
 from .base import BaseProvider, ProviderResponse
 
 
@@ -29,7 +35,11 @@ class OpenAIProvider(BaseProvider):
         }
 
     def send(
-        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+        self,
+        messages: list,
+        max_tokens: int = 8192,
+        temperature: float = 0.7,
+        tools: list[dict] | None = None,
     ) -> ProviderResponse:
         try:
             payload = {
@@ -38,6 +48,10 @@ class OpenAIProvider(BaseProvider):
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
+            if tools:
+                payload["tools"] = [
+                    {"type": "function", "function": tool} for tool in tools
+                ]
             response = requests.post(
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
@@ -46,10 +60,32 @@ class OpenAIProvider(BaseProvider):
             )
             response.raise_for_status()
             choice = response.json()["choices"][0]
-            text = choice["message"]["content"].strip()
+            message = choice["message"]
+            text = (message.get("content") or "").strip()
+            proposals = []
+            for item in message.get("tool_calls", []):
+                call_id, name, arguments = native_proposal_fields(
+                    item, function_key="function"
+                )
+                proposals.append(
+                    normalize_native_tool_call(
+                        name,
+                        arguments,
+                        call_id=call_id,
+                        json_arguments=True,
+                    )
+                )
+            tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
+            rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = choice.get("finish_reason", "unknown")
             return ProviderResponse(
-                text or "[!] Model returned empty response.", reason, reason == "length"
+                text
+                if text or tool_calls or rejected
+                else "[!] Model returned empty response.",
+                reason,
+                reason == "length",
+                tool_calls,
+                rejected,
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] OpenAI request timed out.", "timeout", True)

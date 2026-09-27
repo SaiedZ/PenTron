@@ -55,7 +55,7 @@ def export_html(data: dict, output_dir: str) -> str:
         + "</td><td><code>"
         + escape(str(row[3] or ""))
         + "</code></td><td>"
-        + ("blocked" if row[5] else "executed")
+        + (row[7] if len(row) > 7 and row[7] else ("blocked" if row[5] else "accepted"))
         + "</td></tr>"
         for row in data.get("tool_calls", [])
     )

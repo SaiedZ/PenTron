@@ -4,6 +4,12 @@ import os
 
 import requests
 
+from ..tool_calls import (
+    RejectedToolCall,
+    ToolCall,
+    native_proposal_fields,
+    normalize_native_tool_call,
+)
 from .base import BaseProvider, ProviderResponse
 
 
@@ -36,7 +42,11 @@ class AnthropicProvider(BaseProvider):
         return system_text, rest
 
     def send(
-        self, messages: list, max_tokens: int = 8192, temperature: float = 0.7
+        self,
+        messages: list,
+        max_tokens: int = 8192,
+        temperature: float = 0.7,
+        tools: list[dict] | None = None,
     ) -> ProviderResponse:
         try:
             system_text, rest = self._split_system(messages)
@@ -48,6 +58,15 @@ class AnthropicProvider(BaseProvider):
             }
             if system_text:
                 payload["system"] = system_text
+            if tools:
+                payload["tools"] = [
+                    {
+                        "name": tool["name"],
+                        "description": tool["description"],
+                        "input_schema": tool["parameters"],
+                    }
+                    for tool in tools
+                ]
             response = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers=self._headers(),
@@ -58,11 +77,25 @@ class AnthropicProvider(BaseProvider):
             data = response.json()
             text = "".join(block.get("text", "") for block in data.get("content", []))
             text = text.strip()
+            proposals = []
+            for block in data.get("content", []):
+                if not isinstance(block, dict) or block.get("type") != "tool_use":
+                    continue
+                call_id, name, arguments = native_proposal_fields(block)
+                proposals.append(
+                    normalize_native_tool_call(name, arguments, call_id=call_id)
+                )
+            tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
+            rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = data.get("stop_reason", "unknown")
             return ProviderResponse(
-                text or "[!] Model returned empty response.",
+                text
+                if text or tool_calls or rejected
+                else "[!] Model returned empty response.",
                 reason,
                 reason == "max_tokens",
+                tool_calls,
+                rejected,
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] Anthropic request timed out.", "timeout", True)
