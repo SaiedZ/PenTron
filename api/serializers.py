@@ -118,3 +118,34 @@ def mask_api_key(key: str) -> str:
     if len(key) <= 4:
         return "*" * len(key)
     return f"{'*' * (len(key) - 4)}{key[-4:]}"
+
+
+SCAN_STATUS_LABELS = {
+    "QUEUED": "Queued",
+    "RECON_RUNNING": "Reconnaissance in progress",
+    "AI_ANALYSIS_ROUND": "AI analysis in progress",
+    "WAITING_APPROVAL": "Waiting for your approval",
+    "SAVING_RESULTS": "Saving results",
+    "DONE": "Completed",
+    "PARTIAL": "Completed with partial results",
+    "FAILED": "Failed",
+    "UNKNOWN": "Status unavailable",
+}
+
+
+def scan_status_to_view(status: dict) -> dict:
+    """Add user-facing progress fields without changing the API status contract."""
+    view = dict(status)
+    state = status.get("state", "UNKNOWN")
+    current_tool = status.get("current_tool")
+    detail = status.get("detail") or ""
+
+    view["display_state"] = SCAN_STATUS_LABELS.get(
+        state, state.replace("_", " ").title()
+    )
+    view["phase_state"] = "AI_ANALYSIS_ROUND" if state == "WAITING_APPROVAL" else state
+    duplicate_tool_detail = (
+        current_tool and detail.casefold() == f"running {current_tool}".casefold()
+    )
+    view["display_detail"] = "" if duplicate_tool_detail else detail
+    return view

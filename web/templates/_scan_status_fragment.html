@@ -6,8 +6,8 @@
 
   {% set phases = ["RECON_RUNNING", "AI_ANALYSIS_ROUND", "SAVING_RESULTS", "DONE"] %}
   {% set phase_labels = {"RECON_RUNNING": "Recon", "AI_ANALYSIS_ROUND": "AI Analysis", "SAVING_RESULTS": "Saving", "DONE": "Done"} %}
-  {% if status.state in phases %}
-  {% set current_index = phases.index(status.state) %}
+  {% if status.phase_state in phases %}
+  {% set current_index = phases.index(status.phase_state) %}
   <div class="panel p-4">
     <div class="flex items-center">
       {% for p in phases %}
@@ -32,6 +32,8 @@
       {% endfor %}
     </div>
   </div>
+
+  {% endif %}
 
   {% if status.approvals %}
   <div class="panel p-4">
@@ -66,24 +68,22 @@
     </div>
   </div>
   {% endif %}
-  {% endif %}
-
   <div class="border p-4
     {% if status.state == 'DONE' %}border-emerald-900 bg-emerald-950/40
     {% elif status.state == 'PARTIAL' %}border-amber-900 bg-amber-950/40
     {% elif status.state == 'FAILED' %}border-red-900 bg-red-950/40
     {% else %}border-slate-800 bg-slate-900{% endif %}">
-    <p class="text-sm font-medium text-slate-100">Status: {{ status.state }}</p>
+    <p class="text-sm font-medium text-slate-100">Status: {{ status.display_state }}</p>
 
     {% if status.current_tool %}
-    <p class="mt-1 text-sm text-slate-400">Running: {{ status.current_tool }}</p>
+    <p class="mt-1 text-sm text-slate-400">Currently running: {{ status.current_tool }}</p>
     {% endif %}
-    {% if status.detail %}
-    <p class="mt-1 text-sm text-slate-400">{{ status.detail }}</p>
+    {% if status.display_detail %}
+    <p class="mt-1 text-sm text-slate-400">{{ status.display_detail }}</p>
     {% endif %}
-    {% if status.round_num %}
+    {% if status.round_num and status.max_rounds %}
     <p class="mt-1 text-sm text-slate-400">
-      AI analysis — round {{ status.round_num }}/{{ status.max_rounds }}
+      Round {{ status.round_num }} of {{ status.max_rounds }}
     </p>
     {% endif %}
 

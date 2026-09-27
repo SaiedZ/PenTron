@@ -14,7 +14,12 @@ from markdown_it import MarkdownIt
 from markupsafe import Markup
 
 from api import jobs
-from api.serializers import history_to_dict, mask_api_key, session_to_dict
+from api.serializers import (
+    history_to_dict,
+    mask_api_key,
+    scan_status_to_view,
+    session_to_dict,
+)
 from pentron import db
 from pentron.ai.approval_db import get_approval_service
 from pentron.tools import registry as tool_registry
@@ -85,7 +90,9 @@ def scan_status_fragment(request: Request, sl_no: int):
     if status is None:
         raise HTTPException(status_code=404, detail=f"SL# {sl_no} not found")
     return templates.TemplateResponse(
-        request, "_scan_status_fragment.html", {"sl_no": sl_no, "status": status}
+        request,
+        "_scan_status_fragment.html",
+        {"sl_no": sl_no, "status": scan_status_to_view(status)},
     )
 
 
