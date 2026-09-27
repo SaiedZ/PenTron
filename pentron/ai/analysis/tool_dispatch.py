@@ -6,11 +6,11 @@ from urllib.parse import urlparse
 
 from pydantic import ValidationError
 
-from ...tools import registry
 from ..capabilities import context_policy_for
 from ..prompts import TOOL_OUTPUT_SYSTEM_PROMPT
 from ..providers.factory import get_provider
 from ..tool_calls import ToolCall, parse_fallback_tool_calls
+from ..tool_registry import get as get_ai_tool
 
 
 def extract_tool_calls(response: str) -> list[ToolCall]:
@@ -37,9 +37,11 @@ def _in_scope(value: str, session_target: str, allowed_subdomains: frozenset) ->
         return False
 
 
-def _audit(call, status: str, result: str, reason: str = "") -> dict:
+def _audit(
+    call, status: str, result: str, reason: str = "", call_type: str = "TOOL"
+) -> dict:
     return {
-        "call_type": "TOOL",
+        "call_type": call_type,
         "command": call.name,
         "arguments": call.arguments,
         "result": result,
@@ -50,7 +52,7 @@ def _audit(call, status: str, result: str, reason: str = "") -> dict:
 
 
 def _execute(call: ToolCall, session_target: str, allowed_subdomains: frozenset):
-    spec = registry.find_by_command(call.name)
+    spec = get_ai_tool(call.name)
     if spec is None:
         reason = f"tool '{call.name}' is not registered or AI-dispatchable"
         return f"[!] REJECTED: {reason}", _audit(call, "rejected", "", reason)
@@ -58,13 +60,21 @@ def _execute(call: ToolCall, session_target: str, allowed_subdomains: frozenset)
         arguments = spec.argument_model.model_validate(call.arguments)
     except ValidationError as exc:
         reason = f"invalid arguments: {exc}"
-        return f"[!] REJECTED: {reason}", _audit(call, "rejected", "", reason)
-    target = arguments.target
-    if not _in_scope(target, session_target, allowed_subdomains):
-        reason = f"target '{target}' is outside authorized scope '{session_target}'"
-        return f"[!] BLOCKED: {reason}", _audit(call, "blocked", "", reason)
-    output = spec.runner(target)
-    return output, _audit(call, "accepted", output.strip())
+        return f"[!] REJECTED: {reason}", _audit(
+            call, "rejected", "", reason, spec.call_type
+        )
+    if spec.scope_bound:
+        target = arguments.target
+        if not _in_scope(target, session_target, allowed_subdomains):
+            reason = f"target '{target}' is outside authorized scope '{session_target}'"
+            return f"[!] BLOCKED: {reason}", _audit(
+                call, "blocked", "", reason, spec.call_type
+            )
+        value = target
+    else:
+        value = arguments.query
+    output = spec.runner(value)
+    return output, _audit(call, "accepted", output.strip(), call_type=spec.call_type)
 
 
 def summarize_tool_output(raw_output: str, provider=None) -> str:

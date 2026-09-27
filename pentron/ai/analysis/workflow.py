@@ -2,12 +2,12 @@
 
 import re
 
-from ...tools.registry import ai_tool_specs
 from ..capabilities import ContextPolicy, context_policy_for
 from ..models import AnalysisResult
 from ..prompts import FINAL_PROMPT, SYSTEM_PROMPT
 from ..providers.base import ProviderResponse
-from ..tool_calls import parse_fallback_tool_calls
+from ..tool_calls import RejectedToolCall, parse_fallback_tool_calls
+from ..tool_registry import tool_schemas
 from .tool_dispatch import run_tool_calls, summarize_tool_output
 from .validators import validate_or_repair_analysis
 
@@ -59,13 +59,15 @@ When no more tools are needed, return the final JSON assessment.""",
     for loop in range(max_tool_loops):
         if on_progress:
             on_progress("ai_round_start", f"{loop + 1}/{max_tool_loops}")
-        schemas = ai_tool_specs()
+        schemas = tool_schemas()
+        native_tools = (
+            getattr(provider, "supports_native_tools", False)
+            and policy.capabilities.supports_tools
+        )
         response = provider.send(
             messages,
             max_tokens=policy.max_output_tokens,
-            tools=schemas
-            if getattr(provider, "supports_native_tools", False)
-            else None,
+            tools=schemas if native_tools else None,
         )
         if not isinstance(response, ProviderResponse):
             response = ProviderResponse(str(response))
@@ -76,8 +78,32 @@ When no more tools are needed, return the final JSON assessment.""",
         print(response.text)
         final_response = response
 
+        rejected_proposals = list(response.rejected_tool_calls)
+        if not native_tools:
+            rejected_proposals.extend(
+                RejectedToolCall(
+                    id=call.id,
+                    name=call.name,
+                    arguments=call.arguments,
+                    reason="native tool proposal rejected: native tools are disabled",
+                )
+                for call in response.tool_calls
+            )
+        for rejected in rejected_proposals:
+            tool_call_records.append(
+                {
+                    "call_type": "TOOL",
+                    "command": rejected.name,
+                    "arguments": rejected.arguments,
+                    "result": "",
+                    "status": "rejected",
+                    "reason": rejected.reason,
+                    "blocked": True,
+                }
+            )
+
         fallback_errors = []
-        if response.tool_calls:
+        if native_tools and response.tool_calls:
             tool_calls = list(response.tool_calls)
         else:
             tool_calls, fallback_errors = parse_fallback_tool_calls(response.text)

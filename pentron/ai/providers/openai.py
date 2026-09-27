@@ -4,7 +4,12 @@ import os
 
 import requests
 
-from ..tool_calls import ToolCall
+from ..tool_calls import (
+    RejectedToolCall,
+    ToolCall,
+    native_proposal_fields,
+    normalize_native_tool_call,
+)
 from .base import BaseProvider, ProviderResponse
 
 
@@ -57,22 +62,30 @@ class OpenAIProvider(BaseProvider):
             choice = response.json()["choices"][0]
             message = choice["message"]
             text = (message.get("content") or "").strip()
-            tool_calls = tuple(
-                ToolCall(
-                    id=item.get("id", ""),
-                    name=item["function"]["name"],
-                    arguments=__import__("json").loads(
-                        item["function"].get("arguments") or "{}"
-                    ),
+            proposals = []
+            for item in message.get("tool_calls", []):
+                call_id, name, arguments = native_proposal_fields(
+                    item, function_key="function"
                 )
-                for item in message.get("tool_calls", [])
-            )
+                proposals.append(
+                    normalize_native_tool_call(
+                        name,
+                        arguments,
+                        call_id=call_id,
+                        json_arguments=True,
+                    )
+                )
+            tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
+            rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = choice.get("finish_reason", "unknown")
             return ProviderResponse(
-                text if text or tool_calls else "[!] Model returned empty response.",
+                text
+                if text or tool_calls or rejected
+                else "[!] Model returned empty response.",
                 reason,
                 reason == "length",
                 tool_calls,
+                rejected,
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] OpenAI request timed out.", "timeout", True)

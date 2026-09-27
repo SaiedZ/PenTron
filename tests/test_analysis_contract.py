@@ -6,7 +6,7 @@ from api.routers.pages import render_safe_markdown
 from pentron.ai.analysis import AnalysisIncompleteError, analyse_target
 from pentron.ai.capabilities import context_policy_for
 from pentron.ai.providers import ProviderResponse
-from pentron.ai.tool_calls import ToolCall
+from pentron.ai.tool_calls import RejectedToolCall, ToolCall
 
 
 def valid_result(**overrides):
@@ -22,6 +22,10 @@ def valid_result(**overrides):
 
 
 class FakeProvider:
+    provider_name = "ollama"
+    model = "huihui_ai/qwen3.5-abliterated:9b"
+    supports_native_tools = True
+
     def __init__(self, responses):
         self.responses = iter(responses)
         self.calls = []
@@ -151,6 +155,89 @@ def test_out_of_scope_tool_is_recorded_as_blocked(monkeypatch):
     )
 
     assert records[0]["blocked"] is True
+
+
+def test_rejected_native_proposal_is_audited_without_executor_call(monkeypatch):
+    provider = FakeProvider(
+        [
+            ProviderResponse(
+                valid_result(),
+                "stop",
+                rejected_tool_calls=(
+                    RejectedToolCall(
+                        name="nmap",
+                        arguments='["wrong"]',
+                        reason="invalid native tool proposal",
+                    ),
+                ),
+            )
+        ]
+    )
+    executor_calls = []
+    monkeypatch.setattr(
+        "pentron.ai.analysis.workflow.run_tool_calls",
+        lambda *args: executor_calls.append(args) or ("", []),
+    )
+
+    result = analyse_target("example.test", "short evidence", provider=provider)
+
+    assert executor_calls == []
+    assert result["tool_calls"][0]["status"] == "rejected"
+    assert result["tool_calls"][0]["command"] == "nmap"
+
+
+def test_native_schemas_require_provider_and_effective_model_support():
+    known = FakeProvider([ProviderResponse(valid_result(), "stop")])
+    known.provider_name = "ollama"
+    known.model = "huihui_ai/qwen3.5-abliterated:9b"
+    known.supports_native_tools = True
+    analyse_target("example.test", "short evidence", provider=known)
+    assert known.calls[0][1]["tools"]
+
+    unknown = FakeProvider([ProviderResponse(valid_result(), "stop")])
+    unknown.provider_name = "ollama"
+    unknown.model = "unknown-model"
+    unknown.supports_native_tools = True
+    analyse_target("example.test", "short evidence", provider=unknown)
+    assert unknown.calls[0][1]["tools"] is None
+
+    unsupported = FakeProvider([ProviderResponse(valid_result(), "stop")])
+    unsupported.provider_name = "ollama"
+    unsupported.model = "huihui_ai/qwen3.5-abliterated:9b"
+    unsupported.supports_native_tools = False
+    analyse_target("example.test", "short evidence", provider=unsupported)
+    assert unsupported.calls[0][1]["tools"] is None
+
+
+def test_native_proposal_is_rejected_when_effective_policy_disables_tools(
+    monkeypatch,
+):
+    provider = FakeProvider(
+        [
+            ProviderResponse(
+                valid_result(),
+                "tool_calls",
+                tool_calls=(
+                    ToolCall(name="nmap", arguments={"target": "example.test"}),
+                ),
+            )
+        ]
+    )
+    provider.provider_name = "ollama"
+    provider.model = "unknown-model"
+    provider.supports_native_tools = True
+    executor_calls = []
+    monkeypatch.setattr(
+        "pentron.ai.analysis.workflow.run_tool_calls",
+        lambda *args: executor_calls.append(args) or ("", []),
+    )
+
+    result = analyse_target("example.test", "short evidence", provider=provider)
+
+    assert provider.calls[0][1]["tools"] is None
+    assert executor_calls == []
+    assert result["tool_calls"][0]["status"] == "rejected"
+    assert "native tools are disabled" in result["tool_calls"][0]["reason"]
 
 
 def test_markdown_renderer_disables_raw_html_and_unsafe_links():

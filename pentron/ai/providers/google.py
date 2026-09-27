@@ -4,7 +4,7 @@ import os
 
 import requests
 
-from ..tool_calls import ToolCall
+from ..tool_calls import RejectedToolCall, ToolCall, normalize_native_tool_call
 from .base import BaseProvider, ProviderResponse
 
 
@@ -57,21 +57,32 @@ class GoogleProvider(BaseProvider):
             response.raise_for_status()
             candidate = response.json()["candidates"][0]
             parts = candidate["content"]["parts"]
-            text = "".join(part.get("text", "") for part in parts).strip()
-            tool_calls = tuple(
-                ToolCall(
-                    name=part["functionCall"]["name"],
-                    arguments=part["functionCall"].get("args", {}),
-                )
-                for part in parts
-                if "functionCall" in part
-            )
+            text = "".join(
+                part.get("text", "") for part in parts if isinstance(part, dict)
+            ).strip()
+            proposals = []
+            for part in parts:
+                if not isinstance(part, dict) or "functionCall" not in part:
+                    continue
+                function = part["functionCall"]
+                if isinstance(function, dict):
+                    name = function.get("name")
+                    arguments = function.get("args")
+                else:
+                    name = None
+                    arguments = function
+                proposals.append(normalize_native_tool_call(name, arguments))
+            tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
+            rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = candidate.get("finishReason", "unknown")
             return ProviderResponse(
-                text if text or tool_calls else "[!] Model returned empty response.",
+                text
+                if text or tool_calls or rejected
+                else "[!] Model returned empty response.",
                 reason,
                 reason == "MAX_TOKENS",
                 tool_calls,
+                rejected,
             )
         except requests.exceptions.Timeout:
             return ProviderResponse("[!] Google request timed out.", "timeout", True)

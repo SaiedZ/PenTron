@@ -68,19 +68,6 @@ def allowed_commands() -> frozenset[str]:
     )
 
 
-def ai_tool_specs() -> list[dict]:
-    """Provider-neutral JSON schemas for the registered AI-safe tools."""
-    return [
-        {
-            "name": spec.command_name,
-            "description": f"Run the registered {spec.name} reconnaissance tool.",
-            "parameters": spec.argument_model.model_json_schema(),
-        }
-        for spec in all_tools().values()
-        if spec.ai_dispatch
-    ]
-
-
 def find_by_command(name: str) -> ToolSpec | None:
     normalized = name.strip().lower()
     for spec in _REGISTRY.values():

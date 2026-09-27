@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from ..tool_calls import ToolCall
+from ..tool_calls import RejectedToolCall, ToolCall
 
 
 @dataclass(frozen=True)
@@ -12,6 +12,7 @@ class ProviderResponse:
     finish_reason: str = "unknown"
     truncated: bool = False
     tool_calls: tuple[ToolCall, ...] = ()
+    rejected_tool_calls: tuple[RejectedToolCall, ...] = ()
 
     def __str__(self) -> str:
         return self.text

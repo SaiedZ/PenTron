@@ -130,3 +130,64 @@ def test_native_provider_calls_normalize_to_internal_contract(
         ),
     )
     assert "tools" in sent
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    ["{not-json", '["wrong", "shape"]'],
+)
+def test_malformed_openai_tool_arguments_are_normalized_as_rejected(
+    monkeypatch, arguments
+):
+    payload = {
+        "choices": [
+            {
+                "message": {
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "bad-call",
+                            "function": {"name": "nmap", "arguments": arguments},
+                        }
+                    ],
+                },
+                "finish_reason": "tool_calls",
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        "pentron.ai.providers.openai.requests.post",
+        lambda *args, **kwargs: FakeResponse(payload),
+    )
+
+    response = OpenAIProvider("model", api_key="key").send([], tools=[])
+
+    assert response.tool_calls == ()
+    assert len(response.rejected_tool_calls) == 1
+    assert response.rejected_tool_calls[0].name == "nmap"
+    assert "invalid native tool proposal" in response.rejected_tool_calls[0].reason
+
+
+@pytest.mark.parametrize(
+    "proposal",
+    ["not-an-object", {"function": "not-an-object"}, {"function": {}}],
+)
+def test_malformed_openai_tool_shapes_are_auditable(monkeypatch, proposal):
+    payload = {
+        "choices": [
+            {
+                "message": {"content": None, "tool_calls": [proposal]},
+                "finish_reason": "tool_calls",
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        "pentron.ai.providers.openai.requests.post",
+        lambda *args, **kwargs: FakeResponse(payload),
+    )
+
+    response = OpenAIProvider("model", api_key="key").send([], tools=[])
+
+    assert response.tool_calls == ()
+    assert len(response.rejected_tool_calls) == 1
+    assert "invalid native tool proposal" in response.rejected_tool_calls[0].reason

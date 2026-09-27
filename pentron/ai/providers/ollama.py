@@ -5,7 +5,12 @@ import os
 import requests
 
 from ..capabilities import context_policy_for
-from ..tool_calls import ToolCall
+from ..tool_calls import (
+    RejectedToolCall,
+    ToolCall,
+    native_proposal_fields,
+    normalize_native_tool_call,
+)
 from .base import BaseProvider, ProviderResponse
 
 
@@ -49,19 +54,25 @@ class OllamaProvider(BaseProvider):
             data = response.json()
             message = data.get("message", {})
             text = message.get("content", "").strip()
-            tool_calls = tuple(
-                ToolCall(
-                    name=item["function"]["name"],
-                    arguments=item["function"].get("arguments", {}),
+            proposals = []
+            for item in message.get("tool_calls", []):
+                call_id, name, arguments = native_proposal_fields(
+                    item, function_key="function"
                 )
-                for item in message.get("tool_calls", [])
-            )
+                proposals.append(
+                    normalize_native_tool_call(name, arguments, call_id=call_id)
+                )
+            tool_calls = tuple(x for x in proposals if isinstance(x, ToolCall))
+            rejected = tuple(x for x in proposals if isinstance(x, RejectedToolCall))
             reason = data.get("done_reason", "unknown")
             return ProviderResponse(
-                text if text or tool_calls else "[!] Model returned empty response.",
+                text
+                if text or tool_calls or rejected
+                else "[!] Model returned empty response.",
                 reason,
                 reason == "length",
                 tool_calls,
+                rejected,
             )
         except requests.exceptions.ConnectionError:
             return ProviderResponse("[!] Cannot connect to Ollama. Is it running?")
