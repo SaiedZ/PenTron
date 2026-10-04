@@ -18,7 +18,7 @@ dependencies = [
     "charset-normalizer==3.5.1",
     "click==8.5.0",
     "colorama==0.4.6",
-    "ddgs==9.12.1",
+    "ddgs==9.16.0",
     "duckduckgo_search==8.1.1",
     "fastapi==0.141.1",
     "h11==0.16.0",
