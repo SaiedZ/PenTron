@@ -20,7 +20,7 @@ dependencies = [
     "colorama==0.4.6",
     "ddgs==9.12.1",
     "duckduckgo_search==8.1.1",
-    "fastapi==0.141.1",
+    "fastapi==0.142.2",
     "h11==0.16.0",
     "httpcore==1.0.9",
     "httptools==0.8.0",
